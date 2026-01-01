@@ -37,10 +37,18 @@ contextBridge.exposeInMainWorld("chat", {
   saveChat: (data) => ipcRenderer.invoke("chat:saveChat", data),
   deleteChat: (chatId) => ipcRenderer.invoke("chat:deleteChat", chatId),
 
-  // MCP
+  // MCP - Installed servers
   getMcpServers: () => ipcRenderer.invoke("chat:getMcpServers"),
   addMcpServer: (server) => ipcRenderer.invoke("chat:addMcpServer", server),
   removeMcpServer: (name) => ipcRenderer.invoke("chat:removeMcpServer", name),
+
+  // MCP - Server Catalog (one-click install)
+  getMcpCatalog: () => ipcRenderer.invoke("chat:getMcpCatalog"),
+  getMcpCategories: () => ipcRenderer.invoke("chat:getMcpCategories"),
+  getMcpByCategory: (category) => ipcRenderer.invoke("chat:getMcpByCategory", category),
+  getPopularMcp: () => ipcRenderer.invoke("chat:getPopularMcp"),
+  searchMcp: (query) => ipcRenderer.invoke("chat:searchMcp", query),
+  installMcpFromCatalog: (serverId) => ipcRenderer.invoke("chat:installMcpFromCatalog", serverId),
 
   // Files
   attachFile: () => ipcRenderer.invoke("chat:attachFile"),

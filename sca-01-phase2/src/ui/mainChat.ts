@@ -4,6 +4,7 @@ import fs from "node:fs";
 import { ConfigStore } from "../config/configStore.js";
 import { HyperLog } from "../logging/hyperlog.js";
 import { bootstrap, startOllama, isOllamaRunning, type BootstrapResult, type CheckResult } from "../startup/bootstrap.js";
+import { MCP_SERVER_CATALOG, getServersByCategory, getPopularServers, searchServers, getServerById, getAllCategories, getCategoryLabel, type McpServerDefinition, type McpCategory } from "../mcp/serverCatalog.js";
 
 // ============================================================================
 // CHAT MAIN PROCESS
@@ -804,6 +805,60 @@ function setupIpcHandlers(): void {
       configStore.removeService(service.id);
     }
     return true;
+  });
+
+  // MCP Catalog
+  ipcMain.handle("chat:getMcpCatalog", () => {
+    return MCP_SERVER_CATALOG;
+  });
+
+  ipcMain.handle("chat:getMcpCategories", () => {
+    return getAllCategories().map(cat => ({
+      id: cat,
+      label: getCategoryLabel(cat)
+    }));
+  });
+
+  ipcMain.handle("chat:getMcpByCategory", (_event, category: McpCategory) => {
+    return getServersByCategory(category);
+  });
+
+  ipcMain.handle("chat:getPopularMcp", () => {
+    return getPopularServers();
+  });
+
+  ipcMain.handle("chat:searchMcp", (_event, query: string) => {
+    return searchServers(query);
+  });
+
+  ipcMain.handle("chat:installMcpFromCatalog", (_event, serverId: string) => {
+    const server = getServerById(serverId);
+    if (!server) {
+      return { success: false, error: "Server not found in catalog" };
+    }
+
+    // Build command string
+    let command = server.command ?? "";
+    if (server.args) {
+      command += " " + server.args.join(" ");
+    }
+
+    // Add to config store
+    configStore.addService({
+      name: server.name,
+      type: "custom", // All catalog servers are custom type for config store
+      endpoint: server.url ?? command,
+      enabled: true
+    });
+
+    log.info("mcp.install", `Installed MCP server: ${server.name}`, { serverId });
+
+    return { 
+      success: true, 
+      server,
+      requiresAuth: server.requiresAuth,
+      authEnvVar: server.authEnvVar
+    };
   });
 
   // Files

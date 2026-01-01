@@ -33,9 +33,9 @@
     "shellTimeout": 300000,
     "maxFileSize": 10000000,
     "logLevel": "info",
-    "ollamaModel": "qwen3",
+    "ollamaModel": "qwen3-coder:480b-cloud",
     "ollamaHost": "http://localhost:11434"
   },
-  "lastModified": "2026-01-01T19:20:09.597Z",
+  "lastModified": "2026-01-01T23:14:35.463Z",
   "modifiedBy": "system"
 }

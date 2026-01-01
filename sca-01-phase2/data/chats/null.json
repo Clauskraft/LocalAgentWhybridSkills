@@ -1,0 +1,26 @@
+{
+  "id": null,
+  "messages": [
+    {
+      "role": "user",
+      "content": "yo",
+      "timestamp": "2026-01-01T23:14:23.421Z"
+    },
+    {
+      "role": "assistant",
+      "content": "❌ Fejl: Error invoking remote method 'chat:sendMessage': Error: Ollama error: 404 Not Found - {\"error\":\"model 'qwen3' not found\"}",
+      "timestamp": "2026-01-01T23:14:23.467Z"
+    },
+    {
+      "role": "user",
+      "content": "yo",
+      "timestamp": "2026-01-01T23:14:38.518Z"
+    },
+    {
+      "role": "assistant",
+      "content": "Hello! How can I assist you today?",
+      "timestamp": "2026-01-01T23:14:39.316Z"
+    }
+  ],
+  "createdAt": "2026-01-01T23:14:39.324Z"
+}
