@@ -67,7 +67,7 @@ export class McpToolClient {
     const result = await this.client.callTool({ name, arguments: args });
     return {
       content: result.content,
-      isError: result.isError
+      isError: result.isError as boolean | undefined
     };
   }
 

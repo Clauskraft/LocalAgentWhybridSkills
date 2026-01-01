@@ -13,7 +13,7 @@ function createWindow(): void {
     minHeight: 700,
     backgroundColor: "#0a0a12",
     webPreferences: {
-      preload: path.join(import.meta.dirname, "preloadCockpit.js"),
+      preload: path.join(import.meta.dirname, "preloadCockpit.js"), // This is in build/ui
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
@@ -22,7 +22,9 @@ function createWindow(): void {
     title: "SCA-01 Configuration Cockpit"
   });
 
-  mainWindow.loadFile(path.join(import.meta.dirname, "cockpit.html"));
+  // HTML files are in src/ui, not build/ui
+  const htmlPath = path.join(import.meta.dirname, "..", "..", "src", "ui", "cockpit.html");
+  mainWindow.loadFile(htmlPath);
   
   mainWindow.on("closed", () => {
     mainWindow = null;

@@ -10,8 +10,8 @@
   },
   "scripts": {
     "dev": "tsx src/cli.ts",
-    "dev:ui": "electron src/ui/main.ts",
-    "dev:cockpit": "electron src/ui/mainCockpit.ts",
+    "dev:ui": "tsc && electron build/ui/main.js",
+    "dev:cockpit": "tsc && electron build/ui/mainCockpit.js",
     "build": "tsc -p tsconfig.json",
     "build:ui": "tsc -p tsconfig.ui.json && electron-builder",
     "lint": "eslint .",

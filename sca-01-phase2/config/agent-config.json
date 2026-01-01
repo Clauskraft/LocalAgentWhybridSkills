@@ -1,0 +1,41 @@
+{
+  "version": "1.0.0",
+  "pathRules": [],
+  "blockedPaths": [
+    "C:\\Windows\\System32\\config",
+    "C:\\Windows\\System32\\drivers",
+    "/etc/shadow",
+    "/etc/sudoers",
+    ".ssh/id_rsa",
+    ".ssh/id_ed25519",
+    ".gnupg",
+    ".aws/credentials"
+  ],
+  "safePaths": [
+    "."
+  ],
+  "repos": [],
+  "toolCredentials": [],
+  "services": [
+    {
+      "id": "ollama-local",
+      "name": "Ollama Local",
+      "type": "ollama",
+      "endpoint": "http://localhost:11434",
+      "enabled": true,
+      "createdAt": "2026-01-01T19:20:09.442Z"
+    }
+  ],
+  "settings": {
+    "fullAccess": false,
+    "autoApprove": false,
+    "maxTurns": 16,
+    "shellTimeout": 300000,
+    "maxFileSize": 10000000,
+    "logLevel": "info",
+    "ollamaModel": "qwen3",
+    "ollamaHost": "http://localhost:11434"
+  },
+  "lastModified": "2026-01-01T19:20:09.597Z",
+  "modifiedBy": "system"
+}
