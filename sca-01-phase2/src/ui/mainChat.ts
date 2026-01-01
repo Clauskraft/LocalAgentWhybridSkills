@@ -3,6 +3,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { ConfigStore } from "../config/configStore.js";
 import { HyperLog } from "../logging/hyperlog.js";
+import { bootstrap, startOllama, isOllamaRunning, type BootstrapResult, type CheckResult } from "../startup/bootstrap.js";
 
 // ============================================================================
 // CHAT MAIN PROCESS
@@ -10,8 +11,10 @@ import { HyperLog } from "../logging/hyperlog.js";
 // ============================================================================
 
 let mainWindow: BrowserWindow | null = null;
+let splashWindow: BrowserWindow | null = null;
 let configStore: ConfigStore;
 let log: HyperLog;
+let bootstrapResult: BootstrapResult | null = null;
 
 // Chat storage
 interface ChatMessage {
@@ -34,6 +37,216 @@ function ensureChatStorage(): void {
   if (!fs.existsSync(chatStorePath)) {
     fs.mkdirSync(chatStorePath, { recursive: true });
   }
+}
+
+// ========== SPLASH / STARTUP SCREEN ==========
+
+function createSplashWindow(): void {
+  splashWindow = new BrowserWindow({
+    width: 500,
+    height: 400,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    }
+  });
+  
+  // Load inline splash HTML
+  splashWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(getSplashHtml())}`);
+}
+
+function getSplashHtml(): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(145deg, #0d0d14, #1a1a2e);
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      -webkit-app-region: drag;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .logo {
+      font-size: 48px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #00ff88, #00d4ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 32px;
+    }
+    .status {
+      font-size: 14px;
+      color: #00ff88;
+      margin-bottom: 16px;
+      min-height: 20px;
+    }
+    .checks {
+      width: 80%;
+      max-width: 350px;
+    }
+    .check {
+      display: flex;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .check-icon {
+      width: 24px;
+      height: 24px;
+      margin-right: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .check-icon.pending { color: #666; }
+    .check-icon.running { color: #00d4ff; animation: pulse 1s infinite; }
+    .check-icon.pass { color: #00ff88; }
+    .check-icon.warn { color: #ffaa00; }
+    .check-icon.fail { color: #ff4466; }
+    .check-name { flex: 1; font-size: 13px; }
+    .check-status { font-size: 12px; color: #666; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #333;
+      border-top-color: #00ff88;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .error-box {
+      background: rgba(255,68,102,0.1);
+      border: 1px solid rgba(255,68,102,0.3);
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-size: 12px;
+      color: #ff4466;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo">SCA-01</div>
+  <div class="subtitle">The Finisher • Executive Edition</div>
+  <div id="status" class="status">
+    <div class="spinner" style="display: inline-block; margin-right: 8px;"></div>
+    Running startup checks...
+  </div>
+  <div class="checks" id="checks"></div>
+  <div class="error-box" id="errorBox"></div>
+</body>
+</html>`;
+}
+
+function updateSplashStatus(status: string): void {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.webContents.executeJavaScript(`
+      document.getElementById('status').innerHTML = '${status.replace(/'/g, "\\'")}';
+    `).catch(() => {/* ignore */});
+  }
+}
+
+function updateSplashChecks(checks: CheckResult[]): void {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    const html = checks.map(c => {
+      const iconClass = c.status;
+      const icon = c.status === "pass" ? "✓" : c.status === "warn" ? "⚠" : "✕";
+      return `<div class="check">
+        <div class="check-icon ${iconClass}">${icon}</div>
+        <div class="check-name">${c.name}</div>
+        <div class="check-status">${c.message}</div>
+      </div>`;
+    }).join("");
+    
+    splashWindow.webContents.executeJavaScript(`
+      document.getElementById('checks').innerHTML = \`${html.replace(/`/g, "\\`")}\`;
+    `).catch(() => {/* ignore */});
+  }
+}
+
+function showSplashError(errors: string[]): void {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    const html = errors.map(e => `• ${e}`).join("<br>");
+    splashWindow.webContents.executeJavaScript(`
+      const box = document.getElementById('errorBox');
+      box.innerHTML = \`${html.replace(/`/g, "\\`")}\`;
+      box.style.display = 'block';
+      document.getElementById('status').innerHTML = '<span style="color:#ff4466">❌ Startup failed</span>';
+    `).catch(() => {/* ignore */});
+  }
+}
+
+function closeSplash(): void {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.close();
+    splashWindow = null;
+  }
+}
+
+async function runStartupChecks(): Promise<boolean> {
+  const settings = configStore.getSettings();
+  
+  // Parse Ollama host
+  let port = 11434;
+  let host = "localhost";
+  
+  try {
+    const url = new URL(settings.ollamaHost);
+    host = url.hostname;
+    port = parseInt(url.port, 10) || 11434;
+  } catch {
+    // Use defaults
+  }
+  
+  updateSplashStatus('<div class="spinner" style="display: inline-block; margin-right: 8px;"></div> Running startup checks...');
+  
+  bootstrapResult = await bootstrap({
+    host,
+    port,
+    model: settings.ollamaModel,
+    autoStart: true,
+    startTimeout: 30000,
+  });
+  
+  updateSplashChecks(bootstrapResult.checks);
+  
+  if (!bootstrapResult.success) {
+    showSplashError(bootstrapResult.errors);
+    
+    // Wait a bit before closing
+    await new Promise(r => setTimeout(r, 5000));
+    return false;
+  }
+  
+  updateSplashStatus('<span style="color:#00ff88">✓ All checks passed!</span>');
+  await new Promise(r => setTimeout(r, 1000));
+  
+  return true;
 }
 
 function createWindow(): void {
@@ -236,6 +449,75 @@ function getAvailableTools(): Array<{ type: string; function: unknown }> {
 // ========== IPC HANDLERS ==========
 
 function setupIpcHandlers(): void {
+  // Bootstrap / Startup
+  ipcMain.handle("chat:getBootstrapResult", () => {
+    return bootstrapResult;
+  });
+
+  ipcMain.handle("chat:rerunStartupChecks", async () => {
+    const settings = configStore.getSettings();
+    let port = 11434;
+    let host = "localhost";
+    
+    try {
+      const url = new URL(settings.ollamaHost);
+      host = url.hostname;
+      port = parseInt(url.port, 10) || 11434;
+    } catch {
+      // Use defaults
+    }
+    
+    bootstrapResult = await bootstrap({
+      host,
+      port,
+      model: settings.ollamaModel,
+      autoStart: false, // Don't auto-start on recheck
+      startTimeout: 15000,
+    });
+    
+    return bootstrapResult;
+  });
+
+  ipcMain.handle("chat:startOllama", async () => {
+    const settings = configStore.getSettings();
+    let port = 11434;
+    let host = "localhost";
+    
+    try {
+      const url = new URL(settings.ollamaHost);
+      host = url.hostname;
+      port = parseInt(url.port, 10) || 11434;
+    } catch {
+      // Use defaults
+    }
+    
+    const started = await startOllama({
+      host,
+      port,
+      model: settings.ollamaModel,
+      autoStart: true,
+      startTimeout: 30000,
+    });
+    
+    return { success: started };
+  });
+
+  ipcMain.handle("chat:isOllamaRunning", async () => {
+    const settings = configStore.getSettings();
+    let port = 11434;
+    let host = "localhost";
+    
+    try {
+      const url = new URL(settings.ollamaHost);
+      host = url.hostname;
+      port = parseInt(url.port, 10) || 11434;
+    } catch {
+      // Use defaults
+    }
+    
+    return await isOllamaRunning({ host, port, model: "", autoStart: false, startTimeout: 0 });
+  });
+
   // Config
   ipcMain.handle("chat:getConfig", () => {
     const settings = configStore.getSettings();
@@ -556,13 +838,36 @@ function setupIpcHandlers(): void {
 
 // ========== APP LIFECYCLE ==========
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   configStore = new ConfigStore("./config");
   log = new HyperLog("./logs", "chat.jsonl");
   
   ensureChatStorage();
   setupIpcHandlers();
-  createWindow();
+  
+  // Show splash and run startup checks
+  createSplashWindow();
+  
+  log.info("app.startup", "Running startup checks...");
+  
+  const startupOk = await runStartupChecks();
+  
+  if (startupOk) {
+    log.info("app.startup", "Startup checks passed", { checks: bootstrapResult?.checks.length });
+    closeSplash();
+    createWindow();
+  } else {
+    log.error("app.startup", "Startup checks failed", { errors: bootstrapResult?.errors });
+    
+    // Show main window anyway but with error state
+    closeSplash();
+    createWindow();
+    
+    // Notify window of startup failure
+    mainWindow?.webContents.once("did-finish-load", () => {
+      mainWindow?.webContents.send("chat:startupFailed", bootstrapResult);
+    });
+  }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {

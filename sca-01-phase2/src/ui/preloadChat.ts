@@ -2,6 +2,15 @@ import { contextBridge, ipcRenderer } from "electron";
 
 // Chat API exposed to renderer
 contextBridge.exposeInMainWorld("chat", {
+  // Startup / Bootstrap
+  getBootstrapResult: () => ipcRenderer.invoke("chat:getBootstrapResult"),
+  rerunStartupChecks: () => ipcRenderer.invoke("chat:rerunStartupChecks"),
+  startOllama: () => ipcRenderer.invoke("chat:startOllama"),
+  isOllamaRunning: () => ipcRenderer.invoke("chat:isOllamaRunning"),
+  onStartupFailed: (callback: (data: unknown) => void) => {
+    ipcRenderer.on("chat:startupFailed", (_event, data) => callback(data));
+  },
+  
   // Config
   getConfig: () => ipcRenderer.invoke("chat:getConfig"),
   updateSettings: (settings: unknown) => ipcRenderer.invoke("chat:updateSettings", settings),
