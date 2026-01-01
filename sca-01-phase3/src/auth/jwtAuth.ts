@@ -68,13 +68,15 @@ export class JwtAuthService {
         const age = Date.now() - stored.createdAt;
         
         if (age < this.config.keyRotationInterval * 1000) {
-          this.currentKey = await jose.importJWK(stored.key, "ES256");
+          const imported = await jose.importJWK(stored.key, "ES256");
+          this.currentKey = imported as jose.KeyLike;
           this.keyId = stored.keyId;
           return;
         }
         
         // Key rotation: keep old key for verification
-        this.previousKey = await jose.importJWK(stored.key, "ES256");
+        const prevImported = await jose.importJWK(stored.key, "ES256");
+        this.previousKey = prevImported as jose.KeyLike;
       }
     } catch {
       // Generate new key on any error

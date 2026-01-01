@@ -3,8 +3,11 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import { z } from "zod";
-import { getAuthService, JwtAuthService, TokenPayload } from "../auth/jwtAuth.js";
+import { getAuthService, TokenPayload } from "../auth/jwtAuth.js";
 import { HyperLog } from "../logging/hyperlog.js";
+import { initializeDatabase } from "../db/database.js";
+import { registerAuthRoutes } from "../routes/authRoutes.js";
+import { registerSessionRoutes } from "../routes/sessionRoutes.js";
 
 // ============================================================================
 // HTTP SERVER FOR MCP OVER HTTP
@@ -82,10 +85,10 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
     timeWindow: cfg.rateLimit.timeWindow
   });
 
-  // Request ID decorator
-  app.decorateRequest("requestId", "");
+  // Request ID decorator - store in custom property
   app.addHook("onRequest", async (request) => {
-    request.requestId = request.headers["x-request-id"] as string || crypto.randomUUID();
+    (request as unknown as { reqId: string }).reqId = 
+      (request.headers["x-request-id"] as string) || crypto.randomUUID();
   });
 
   // Auth decorator
@@ -330,10 +333,10 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
 
   // ========== ERROR HANDLER ==========
   
-  app.setErrorHandler((error, _request, reply) => {
-    log.error("http.error", error.message, { statusCode: error.statusCode });
-    
+  app.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) => {
     const statusCode = error.statusCode ?? 500;
+    log.error("http.error", error.message, { statusCode });
+    
     reply.status(statusCode).send({
       error: statusCode >= 500 ? "Internal Server Error" : error.message,
       statusCode
@@ -458,16 +461,57 @@ async function handleMcpMethod(
 
 // Main entry point
 async function main(): Promise<void> {
-  const port = parseInt(process.env.SCA_PORT ?? "8787", 10);
+  const port = parseInt(process.env.PORT ?? process.env.SCA_PORT ?? "8787", 10);
   const host = process.env.SCA_HOST ?? "0.0.0.0";
+  const log = new HyperLog("./logs", "startup.jsonl");
+
+  // Initialize database if DATABASE_URL is set
+  if (process.env.DATABASE_URL) {
+    console.log("📦 Initializing database...");
+    try {
+      await initializeDatabase();
+      console.log("✅ Database ready");
+    } catch (err) {
+      console.error("❌ Database initialization failed:", err);
+      // Continue without database in dev mode
+      if (process.env.NODE_ENV === "production") {
+        process.exit(1);
+      }
+    }
+  } else {
+    console.log("⚠️ DATABASE_URL not set - running without persistence");
+  }
   
   const server = await createServer({ port, host });
+
+  // Register user auth routes (register/login)
+  if (process.env.DATABASE_URL) {
+    registerAuthRoutes(server, log);
+    registerSessionRoutes(server, log);
+    console.log("✅ User routes registered");
+  }
+
+  // Add JWT verify decorator for routes
+  server.decorate("verifyJwt", async (request: { headers: { authorization?: string }; user: TokenPayload | null }) => {
+    const authHeader = request.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      throw { statusCode: 401, message: "Missing authorization header" };
+    }
+    const token = authHeader.slice(7);
+    const auth = getAuthService();
+    const payload = await auth.verifyToken(token);
+    if (!payload) {
+      throw { statusCode: 401, message: "Invalid token" };
+    }
+    request.user = payload;
+  });
   
   try {
     await server.listen({ port, host });
     console.log(`🚀 SCA-01 Cloud Server running at http://${host}:${port}`);
     console.log(`📋 MCP endpoint: http://${host}:${port}/mcp`);
-    console.log(`🔐 Get token: POST http://${host}:${port}/auth/token`);
+    console.log(`🔐 Auth: POST http://${host}:${port}/auth/login`);
+    console.log(`📊 API: http://${host}:${port}/api/sessions`);
   } catch (err) {
     server.log.error(err);
     process.exit(1);
