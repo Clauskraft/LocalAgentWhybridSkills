@@ -257,7 +257,7 @@ function createWindow(): void {
     minHeight: 600,
     backgroundColor: "#0d0d14",
     webPreferences: {
-      preload: path.join(import.meta.dirname, "preloadChat.js"),
+      preload: path.join(import.meta.dirname, "..", "..", "src", "ui", "preloadChat.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false // Must be false for preload to work correctly
