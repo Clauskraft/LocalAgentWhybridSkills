@@ -9,6 +9,13 @@ contextBridge.exposeInMainWorld("chat", {
   // Ollama
   checkOllama: () => ipcRenderer.invoke("chat:checkOllama"),
   getModels: () => ipcRenderer.invoke("chat:getModels"),
+  getAvailableModels: () => ipcRenderer.invoke("chat:getAvailableModels"),
+  pullModel: (name: string) => ipcRenderer.invoke("chat:pullModel", name),
+  pullModelStream: (name: string) => ipcRenderer.invoke("chat:pullModelStream", name),
+  deleteModel: (name: string) => ipcRenderer.invoke("chat:deleteModel", name),
+  onPullProgress: (callback: (data: unknown) => void) => {
+    ipcRenderer.on("chat:pullProgress", (_event, data) => callback(data));
+  },
   
   // Chat
   sendMessage: (data: unknown) => ipcRenderer.invoke("chat:sendMessage", data),

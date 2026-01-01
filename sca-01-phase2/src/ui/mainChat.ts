@@ -272,6 +272,146 @@ function setupIpcHandlers(): void {
     return await getOllamaModels();
   });
 
+  ipcMain.handle("chat:getAvailableModels", async () => {
+    // Popular models from Ollama library
+    return [
+      { name: "qwen3", description: "Alibaba's Qwen3 - excellent tool calling", size: "4.7GB", recommended: true },
+      { name: "qwen3:14b", description: "Qwen3 14B - more capable", size: "9.0GB", recommended: true },
+      { name: "llama3.1", description: "Meta Llama 3.1 8B", size: "4.7GB", recommended: true },
+      { name: "llama3.1:70b", description: "Meta Llama 3.1 70B - very capable", size: "40GB", recommended: false },
+      { name: "llama3.2", description: "Meta Llama 3.2 3B - fast", size: "2.0GB", recommended: true },
+      { name: "mistral", description: "Mistral 7B v0.3", size: "4.1GB", recommended: true },
+      { name: "mixtral", description: "Mixtral 8x7B MoE", size: "26GB", recommended: false },
+      { name: "codellama", description: "Code Llama 7B", size: "3.8GB", recommended: false },
+      { name: "deepseek-coder-v2", description: "DeepSeek Coder V2", size: "8.9GB", recommended: true },
+      { name: "phi3", description: "Microsoft Phi-3 Mini", size: "2.2GB", recommended: true },
+      { name: "phi3:medium", description: "Microsoft Phi-3 Medium", size: "7.9GB", recommended: false },
+      { name: "gemma2", description: "Google Gemma 2 9B", size: "5.4GB", recommended: true },
+      { name: "gemma2:27b", description: "Google Gemma 2 27B", size: "16GB", recommended: false },
+      { name: "command-r", description: "Cohere Command R", size: "20GB", recommended: false },
+      { name: "wizardlm2", description: "WizardLM 2 7B", size: "4.1GB", recommended: false },
+      { name: "dolphin-mixtral", description: "Dolphin Mixtral uncensored", size: "26GB", recommended: false },
+      { name: "nous-hermes2", description: "Nous Hermes 2 Mixtral", size: "26GB", recommended: false },
+      { name: "starcoder2", description: "StarCoder2 3B", size: "1.7GB", recommended: false },
+      { name: "codegemma", description: "Google CodeGemma 7B", size: "5.0GB", recommended: false },
+      { name: "llava", description: "LLaVA 7B - vision model", size: "4.5GB", recommended: false },
+    ];
+  });
+
+  ipcMain.handle("chat:pullModel", async (_event, modelName: string) => {
+    const settings = configStore.getSettings();
+    log.info("chat.pullModel", `Starting download: ${modelName}`);
+    
+    try {
+      const response = await fetch(`${settings.ollamaHost}/api/pull`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: modelName, stream: false })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to pull model: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      log.info("chat.pullModel", `Download complete: ${modelName}`);
+      return { success: true, result };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      log.error("chat.pullModel", msg);
+      return { success: false, error: msg };
+    }
+  });
+
+  ipcMain.handle("chat:pullModelStream", async (_event, modelName: string) => {
+    const settings = configStore.getSettings();
+    log.info("chat.pullModelStream", `Starting streamed download: ${modelName}`);
+    
+    try {
+      const response = await fetch(`${settings.ollamaHost}/api/pull`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: modelName, stream: true })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to pull model: ${response.statusText}`);
+      }
+
+      // Stream the response
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let lastStatus = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n").filter(Boolean);
+
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line) as { status?: string; completed?: number; total?: number };
+            lastStatus = data.status ?? lastStatus;
+            
+            // Send progress to renderer
+            if (data.completed && data.total) {
+              const percent = Math.round((data.completed / data.total) * 100);
+              mainWindow?.webContents.send("chat:pullProgress", {
+                model: modelName,
+                status: lastStatus,
+                percent,
+                completed: data.completed,
+                total: data.total
+              });
+            } else {
+              mainWindow?.webContents.send("chat:pullProgress", {
+                model: modelName,
+                status: lastStatus,
+                percent: 0
+              });
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        }
+      }
+
+      log.info("chat.pullModelStream", `Download complete: ${modelName}`);
+      return { success: true };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      log.error("chat.pullModelStream", msg);
+      return { success: false, error: msg };
+    }
+  });
+
+  ipcMain.handle("chat:deleteModel", async (_event, modelName: string) => {
+    const settings = configStore.getSettings();
+    log.info("chat.deleteModel", `Deleting: ${modelName}`);
+    
+    try {
+      const response = await fetch(`${settings.ollamaHost}/api/delete`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: modelName })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to delete model: ${response.statusText}`);
+      }
+      
+      return { success: true };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      log.error("chat.deleteModel", msg);
+      return { success: false, error: msg };
+    }
+  });
+
   // Chat
   ipcMain.handle("chat:sendMessage", async (_event, data: { 
     chatId: string; 

@@ -693,6 +693,98 @@
     .mcp-server-name { font-weight: 600; font-size: 0.9rem; }
     .mcp-server-type { font-size: 0.75rem; color: var(--text-muted); }
 
+    /* Model Manager */
+    .model-manager-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .model-manager-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .model-manager-item.recommended {
+      border-color: var(--accent);
+    }
+
+    .model-manager-item .model-info { flex: 1; }
+    .model-manager-item .model-name { font-weight: 600; font-size: 0.9rem; }
+    .model-manager-item .model-desc { font-size: 0.75rem; color: var(--text-muted); }
+    .model-manager-item .model-size { 
+      font-size: 0.7rem; 
+      color: var(--text-muted); 
+      background: var(--bg-primary);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+    }
+
+    .model-manager-item .model-actions {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .badge-recommended {
+      background: var(--accent);
+      color: white;
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      margin-left: 0.5rem;
+    }
+
+    .badge-installed {
+      background: var(--success);
+      color: white;
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+    }
+
+    /* Download Progress */
+    .download-progress {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .download-progress-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .download-progress-bar {
+      height: 8px;
+      background: var(--bg-primary);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .download-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .download-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
     .btn {
       padding: 0.6rem 1rem;
       border-radius: 8px;
@@ -917,12 +1009,49 @@
           <!-- Models -->
           <div class="settings-tab hidden" id="tab-models">
             <div class="settings-section">
-              <div class="settings-section-title">Installerede Modeller</div>
-              <div id="modelList">
+              <div class="settings-section-title">📦 Installerede Modeller</div>
+              <div id="installedModelList" class="model-manager-list">
                 <p style="color: var(--text-muted);">Henter modeller fra Ollama...</p>
               </div>
+              <button class="btn btn-secondary" onclick="refreshModels()" style="margin-top: 0.5rem;">🔄 Opdater liste</button>
             </div>
-            <button class="btn btn-secondary" onclick="refreshModels()">🔄 Opdater liste</button>
+
+            <div class="settings-section">
+              <div class="settings-section-title">⬇️ Download Nye Modeller</div>
+              <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+                Vælg en model at downloade. Anbefalet modeller understøtter tool calling.
+              </p>
+              
+              <!-- Download progress -->
+              <div id="downloadProgress" class="download-progress hidden">
+                <div class="download-progress-header">
+                  <span id="downloadModelName">Downloader...</span>
+                  <span id="downloadPercent">0%</span>
+                </div>
+                <div class="download-progress-bar">
+                  <div class="download-progress-fill" id="downloadFill"></div>
+                </div>
+                <div class="download-status" id="downloadStatus">Starter...</div>
+              </div>
+
+              <div id="availableModelList" class="model-manager-list">
+                <p style="color: var(--text-muted);">Henter tilgængelige modeller...</p>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <div class="settings-section-title">🔧 Manuel Download</div>
+              <div class="form-group">
+                <label class="form-label">Model navn (fra Ollama library)</label>
+                <div style="display: flex; gap: 0.5rem;">
+                  <input type="text" class="form-input" id="customModelName" placeholder="f.eks. llama3.1:70b">
+                  <button class="btn btn-primary" onclick="downloadCustomModel()">Download</button>
+                </div>
+              </div>
+              <p style="color: var(--text-muted); font-size: 0.75rem;">
+                Se alle modeller på <a href="https://ollama.com/library" target="_blank" style="color: var(--accent);">ollama.com/library</a>
+              </p>
+            </div>
           </div>
 
           <!-- MCP Servers -->
@@ -1332,25 +1461,154 @@ node_modules
       document.querySelectorAll('.settings-tab').forEach(tab => {
         tab.classList.toggle('hidden', tab.id !== `tab-${tabId}`);
       });
+
+      // Load models when switching to models tab
+      if (tabId === 'models') {
+        refreshModels();
+      }
     }
+
+    let installedModels = [];
+    let downloadingModel = null;
 
     async function refreshModels() {
       try {
+        // Get installed models
         const models = await window.chat.getModels();
-        const container = document.getElementById('modelList');
+        installedModels = models.map(m => m.name);
         
-        container.innerHTML = models.map(m => `
-          <div class="mcp-server-item">
-            <div class="mcp-server-status connected"></div>
-            <div class="mcp-server-info">
-              <div class="mcp-server-name">${m.name}</div>
-              <div class="mcp-server-type">${m.size || 'Ukendt størrelse'}</div>
+        const container = document.getElementById('installedModelList');
+        
+        if (models.length === 0) {
+          container.innerHTML = '<p style="color: var(--text-muted);">Ingen modeller installeret</p>';
+        } else {
+          container.innerHTML = models.map(m => `
+            <div class="model-manager-item">
+              <div class="model-info">
+                <div class="model-name">
+                  ${m.name}
+                  ${m.name === settings.model ? '<span class="badge-installed">Aktiv</span>' : ''}
+                </div>
+                <div class="model-desc">${m.size || 'Ukendt størrelse'}</div>
+              </div>
+              <div class="model-actions">
+                <button class="btn btn-sm btn-primary" onclick="selectModel('${m.name}')">Vælg</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteModel('${m.name}')" title="Slet">🗑</button>
+              </div>
             </div>
-            <button class="btn btn-sm btn-primary" onclick="selectModel('${m.name}')">Vælg</button>
-          </div>
-        `).join('');
+          `).join('');
+        }
+
+        // Also refresh available models
+        await refreshAvailableModels();
       } catch (e) {
-        document.getElementById('modelList').innerHTML = '<p style="color: var(--error);">Kunne ikke hente modeller</p>';
+        document.getElementById('installedModelList').innerHTML = '<p style="color: var(--error);">Kunne ikke hente modeller. Er Ollama kørende?</p>';
+      }
+    }
+
+    async function refreshAvailableModels() {
+      try {
+        const available = await window.chat.getAvailableModels();
+        const container = document.getElementById('availableModelList');
+        
+        // Sort: recommended first, then by name
+        const sorted = available.sort((a, b) => {
+          if (a.recommended && !b.recommended) return -1;
+          if (!a.recommended && b.recommended) return 1;
+          return a.name.localeCompare(b.name);
+        });
+        
+        container.innerHTML = sorted.map(m => {
+          const isInstalled = installedModels.some(im => im.startsWith(m.name.split(':')[0]));
+          
+          return `
+            <div class="model-manager-item ${m.recommended ? 'recommended' : ''}">
+              <div class="model-info">
+                <div class="model-name">
+                  ${m.name}
+                  ${m.recommended ? '<span class="badge-recommended">Anbefalet</span>' : ''}
+                  ${isInstalled ? '<span class="badge-installed">Installeret</span>' : ''}
+                </div>
+                <div class="model-desc">${m.description}</div>
+                <span class="model-size">${m.size}</span>
+              </div>
+              <div class="model-actions">
+                ${isInstalled 
+                  ? `<button class="btn btn-sm btn-primary" onclick="selectModel('${m.name}')">Vælg</button>`
+                  : `<button class="btn btn-sm btn-secondary" onclick="downloadModel('${m.name}')" ${downloadingModel ? 'disabled' : ''}>⬇️ Download</button>`
+                }
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        document.getElementById('availableModelList').innerHTML = '<p style="color: var(--error);">Kunne ikke hente modeller</p>';
+      }
+    }
+
+    async function downloadModel(modelName) {
+      if (downloadingModel) {
+        alert('Vent venligst til den nuværende download er færdig.');
+        return;
+      }
+      
+      downloadingModel = modelName;
+      
+      // Show progress
+      const progress = document.getElementById('downloadProgress');
+      progress.classList.remove('hidden');
+      document.getElementById('downloadModelName').textContent = modelName;
+      document.getElementById('downloadPercent').textContent = '0%';
+      document.getElementById('downloadFill').style.width = '0%';
+      document.getElementById('downloadStatus').textContent = 'Starter download...';
+      
+      try {
+        const result = await window.chat.pullModelStream(modelName);
+        
+        if (result.success) {
+          document.getElementById('downloadStatus').textContent = '✅ Download færdig!';
+          document.getElementById('downloadPercent').textContent = '100%';
+          document.getElementById('downloadFill').style.width = '100%';
+          
+          // Refresh model lists
+          setTimeout(async () => {
+            progress.classList.add('hidden');
+            downloadingModel = null;
+            await refreshModels();
+          }, 2000);
+        } else {
+          document.getElementById('downloadStatus').textContent = '❌ Fejl: ' + result.error;
+          downloadingModel = null;
+        }
+      } catch (e) {
+        document.getElementById('downloadStatus').textContent = '❌ Fejl: ' + e.message;
+        downloadingModel = null;
+      }
+    }
+
+    async function downloadCustomModel() {
+      const modelName = document.getElementById('customModelName').value.trim();
+      if (!modelName) {
+        alert('Indtast et model navn');
+        return;
+      }
+      await downloadModel(modelName);
+    }
+
+    async function deleteModel(modelName) {
+      if (!confirm(`Er du sikker på at du vil slette ${modelName}?`)) {
+        return;
+      }
+      
+      try {
+        const result = await window.chat.deleteModel(modelName);
+        if (result.success) {
+          await refreshModels();
+        } else {
+          alert('Kunne ikke slette model: ' + result.error);
+        }
+      } catch (e) {
+        alert('Fejl: ' + e.message);
       }
     }
 
@@ -1358,7 +1616,23 @@ node_modules
       settings.model = modelName;
       document.getElementById('currentModel').textContent = modelName;
       document.getElementById('settingModel').value = modelName;
-      window.chat.updateSettings({ model: modelName });
+      window.chat.updateSettings({ ollamaModel: modelName });
+      
+      // Close settings
+      closeSettings();
+    }
+
+    // Listen for download progress
+    if (window.chat.onPullProgress) {
+      window.chat.onPullProgress((data) => {
+        if (data.model === downloadingModel) {
+          document.getElementById('downloadStatus').textContent = data.status || 'Downloader...';
+          if (data.percent) {
+            document.getElementById('downloadPercent').textContent = data.percent + '%';
+            document.getElementById('downloadFill').style.width = data.percent + '%';
+          }
+        }
+      });
     }
 
     function addMcpServer() {
