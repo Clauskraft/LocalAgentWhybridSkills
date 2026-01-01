@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <title>SCA-01 The Finisher</title>
+  <style>
+    :root {
+      --bg-primary: #0d0d14;
+      --bg-secondary: #14141f;
+      --bg-tertiary: #1a1a28;
+      --bg-hover: #222235;
+      --bg-active: #2a2a42;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --accent-dim: #4f46e5;
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --border: #27272a;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --user-bg: #3730a3;
+      --assistant-bg: #1e1e2e;
+      --code-bg: #0f0f17;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      height: 100vh;
+    }
+
+    /* ========== SIDEBAR ========== */
+    .sidebar {
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .sidebar-header {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .new-chat-btn {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.15s;
+    }
+
+    .new-chat-btn:hover { background: var(--accent-hover); }
+
+    .chat-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+
+    .chat-list-header {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      padding: 0.75rem 0.5rem 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .chat-item {
+      padding: 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: background 0.1s;
+      margin-bottom: 2px;
+    }
+
+    .chat-item:hover { background: var(--bg-hover); }
+    .chat-item.active { background: var(--bg-active); }
+
+    .chat-item-icon { 
+      font-size: 1rem; 
+      opacity: 0.7;
+    }
+
+    .chat-item-title {
+      flex: 1;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-item-actions {
+      opacity: 0;
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .chat-item:hover .chat-item-actions { opacity: 1; }
+
+    .chat-item-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+    }
+
+    .chat-item-btn:hover { 
+      color: var(--text-primary); 
+      background: var(--bg-tertiary);
+    }
+
+    .sidebar-footer {
+      padding: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .sidebar-nav-item {
+      padding: 0.6rem 0.75rem;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      transition: all 0.1s;
+    }
+
+    .sidebar-nav-item:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    /* ========== MAIN CONTENT ========== */
+    .main {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: var(--bg-primary);
+    }
+
+    .main-header {
+      padding: 0.75rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-secondary);
+    }
+
+    .model-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .model-selector:hover { background: var(--bg-hover); }
+
+    .model-name { font-weight: 600; }
+    .model-provider { color: var(--text-muted); font-size: 0.75rem; }
+
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .header-btn {
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .header-btn:hover { 
+      background: var(--bg-hover); 
+      color: var(--text-primary);
+    }
+
+    /* ========== CHAT AREA ========== */
+    .chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem 0;
+    }
+
+    .chat-messages {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    .message {
+      margin-bottom: 1.5rem;
+      display: flex;
+      gap: 1rem;
+    }
+
+    .message-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .message-avatar.user { background: var(--accent); }
+    .message-avatar.assistant { background: var(--bg-tertiary); }
+    .message-avatar.system { background: var(--warning); color: #000; }
+
+    .message-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .message-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .message-role {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .message-time {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .message-text {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text-primary);
+    }
+
+    .message-text p { margin-bottom: 0.75rem; }
+    .message-text p:last-child { margin-bottom: 0; }
+
+    .message-text code {
+      background: var(--code-bg);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85em;
+    }
+
+    .message-text pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 0.75rem 0;
+    }
+
+    .message-text pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .tool-call {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      font-size: 0.85rem;
+    }
+
+    .tool-call-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .tool-call-args {
+      background: var(--code-bg);
+      padding: 0.5rem;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    /* ========== WELCOME SCREEN ========== */
+    .welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .welcome-logo {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .welcome-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .welcome-subtitle {
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .quick-action {
+      padding: 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+    }
+
+    .quick-action:hover {
+      background: var(--bg-tertiary);
+      border-color: var(--accent);
+    }
+
+    .quick-action-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .quick-action-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* ========== INPUT AREA ========== */
+    .input-area {
+      padding: 1rem 2rem 1.5rem;
+      background: var(--bg-primary);
+    }
+
+    .input-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .input-wrapper {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.15s;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: var(--accent);
+    }
+
+    .input-main {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.75rem;
+    }
+
+    .input-textarea {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      resize: none;
+      min-height: 24px;
+      max-height: 200px;
+      line-height: 1.5;
+      padding: 0.25rem 0.5rem;
+      font-family: inherit;
+    }
+
+    .input-textarea:focus { outline: none; }
+
+    .input-textarea::placeholder { color: var(--text-muted); }
+
+    .input-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .input-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: none;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      transition: all 0.15s;
+    }
+
+    .input-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .input-btn.send {
+      background: var(--accent);
+      color: white;
+    }
+
+    .input-btn.send:hover { background: var(--accent-hover); }
+    .input-btn.send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .input-tools {
+      display: flex;
+      gap: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border);
+      margin-top: 0.5rem;
+    }
+
+    .input-tool-btn {
+      padding: 0.35rem 0.6rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .input-tool-btn:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+    }
+
+    .input-hint {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.75rem;
+    }
+
+    /* ========== SETTINGS MODAL ========== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 700px;
+      max-width: 90vw;
+      max-height: 85vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title { font-size: 1.1rem; font-weight: 600; }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.25rem;
+    }
+
+    .modal-close:hover { color: var(--text-primary); }
+
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+    }
+
+    .modal-sidebar {
+      width: 180px;
+      background: var(--bg-tertiary);
+      border-right: 1px solid var(--border);
+      padding: 0.5rem;
+    }
+
+    .modal-nav-item {
+      padding: 0.6rem 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 2px;
+    }
+
+    .modal-nav-item:hover { background: var(--bg-hover); }
+    .modal-nav-item.active { background: var(--accent); color: white; }
+
+    .modal-content {
+      flex: 1;
+      padding: 1.5rem;
+    }
+
+    .settings-section {
+      margin-bottom: 2rem;
+    }
+
+    .settings-section-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--accent);
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .form-textarea {
+      min-height: 120px;
+      resize: vertical;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85rem;
+    }
+
+    .mcp-server-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .mcp-server-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .mcp-server-status {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .mcp-server-status.connected { background: var(--success); }
+    .mcp-server-status.disconnected { background: var(--error); }
+    .mcp-server-status.pending { background: var(--warning); }
+
+    .mcp-server-info { flex: 1; }
+    .mcp-server-name { font-weight: 600; font-size: 0.9rem; }
+    .mcp-server-type { font-size: 0.75rem; color: var(--text-muted); }
+
+    .btn {
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--bg-hover); }
+    .btn-danger { background: var(--error); color: white; }
+
+    .btn-sm { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
+
+    /* Loading */
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 0.5rem;
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: typing 1.4s infinite;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* Hidden sections */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <button class="new-chat-btn" onclick="newChat()">
+          <span>✨</span> Ny samtale
+        </button>
+      </div>
+
+      <div class="chat-list" id="chatList">
+        <div class="chat-list-header">I dag</div>
+        <!-- Chat items will be inserted here -->
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-nav-item" onclick="openSettings('mcp')">
+          <span>🔌</span> MCP Servere
+        </div>
+        <div class="sidebar-nav-item" onclick="openSettings('prompts')">
+          <span>📝</span> System Prompts
+        </div>
+        <div class="sidebar-nav-item" onclick="openSettings('general')">
+          <span>⚙️</span> Indstillinger
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+      <header class="main-header">
+        <div class="model-selector" onclick="openSettings('models')">
+          <div>
+            <div class="model-name" id="currentModel">qwen3</div>
+            <div class="model-provider">Ollama</div>
+          </div>
+          <span>▼</span>
+        </div>
+
+        <div class="header-actions">
+          <button class="header-btn" onclick="openSettings('mcp')">
+            <span>🔌</span> <span id="mcpCount">0</span> MCP
+          </button>
+          <button class="header-btn" id="statusBtn">
+            <span id="statusDot">🟢</span> Online
+          </button>
+        </div>
+      </header>
+
+      <!-- Welcome Screen (shown when no chat) -->
+      <div class="welcome" id="welcomeScreen">
+        <div class="welcome-logo">⚡</div>
+        <h1 class="welcome-title">SCA-01 "The Finisher"</h1>
+        <p class="welcome-subtitle">Din lokale AI-agent med fuld PC-adgang</p>
+
+        <div class="quick-actions">
+          <div class="quick-action" onclick="quickStart('Læs docs/HANDOVER_LOG.md og giv mig en status')">
+            <div class="quick-action-title">📋 Læs Blackboard</div>
+            <div class="quick-action-desc">Tjek HANDOVER_LOG status</div>
+          </div>
+          <div class="quick-action" onclick="quickStart('List filer i denne mappe')">
+            <div class="quick-action-title">📁 List filer</div>
+            <div class="quick-action-desc">Se indholdet af mappen</div>
+          </div>
+          <div class="quick-action" onclick="quickStart('Kør make test og vis resultatet')">
+            <div class="quick-action-title">🧪 Kør tests</div>
+            <div class="quick-action-desc">Eksekver test suite</div>
+          </div>
+          <div class="quick-action" onclick="quickStart('Hvad kan du hjælpe mig med?')">
+            <div class="quick-action-title">❓ Hvad kan du?</div>
+            <div class="quick-action-desc">Se capabilities</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Container (hidden initially) -->
+      <div class="chat-container hidden" id="chatContainer">
+        <div class="chat-messages" id="chatMessages">
+          <!-- Messages will be inserted here -->
+        </div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="input-area">
+        <div class="input-container">
+          <div class="input-wrapper">
+            <div class="input-main">
+              <textarea 
+                class="input-textarea" 
+                id="messageInput"
+                placeholder="Skriv en besked..."
+                rows="1"
+                onkeydown="handleKeydown(event)"
+                oninput="autoResize(this)"
+              ></textarea>
+              <div class="input-actions">
+                <button class="input-btn" onclick="openSettings('mcp')" title="MCP Tools">🔌</button>
+                <button class="input-btn send" id="sendBtn" onclick="sendMessage()" title="Send (Enter)">➤</button>
+              </div>
+            </div>
+            <div class="input-tools">
+              <button class="input-tool-btn" onclick="attachFile()">📎 Vedhæft fil</button>
+              <button class="input-tool-btn" onclick="toggleTools()">🔧 Tools</button>
+              <button class="input-tool-btn" onclick="openSettings('prompts')">📝 System Prompt</button>
+            </div>
+          </div>
+          <div class="input-hint">
+            SCA-01 kan udføre handlinger på din PC. Alle operationer logges.
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay hidden" id="settingsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Indstillinger</h2>
+        <button class="modal-close" onclick="closeSettings()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <nav class="modal-sidebar">
+          <div class="modal-nav-item active" data-tab="general" onclick="switchSettingsTab('general')">⚙️ Generelt</div>
+          <div class="modal-nav-item" data-tab="models" onclick="switchSettingsTab('models')">🤖 Modeller</div>
+          <div class="modal-nav-item" data-tab="mcp" onclick="switchSettingsTab('mcp')">🔌 MCP Servere</div>
+          <div class="modal-nav-item" data-tab="prompts" onclick="switchSettingsTab('prompts')">📝 System Prompts</div>
+          <div class="modal-nav-item" data-tab="security" onclick="switchSettingsTab('security')">🔐 Sikkerhed</div>
+        </nav>
+        <div class="modal-content">
+          <!-- General Settings -->
+          <div class="settings-tab" id="tab-general">
+            <div class="settings-section">
+              <div class="settings-section-title">Ollama Konfiguration</div>
+              <div class="form-group">
+                <label class="form-label">Ollama Host</label>
+                <input type="text" class="form-input" id="settingOllamaHost" value="http://localhost:11434">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Standard Model</label>
+                <select class="form-select" id="settingModel">
+                  <option value="qwen3">qwen3</option>
+                  <option value="llama3.1">llama3.1</option>
+                  <option value="mistral">mistral</option>
+                  <option value="codellama">codellama</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <div class="settings-section-title">Agent Opførsel</div>
+              <div class="form-group">
+                <label class="form-label">Max samtale-ture</label>
+                <input type="number" class="form-input" id="settingMaxTurns" value="16">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Shell timeout (sekunder)</label>
+                <input type="number" class="form-input" id="settingShellTimeout" value="300">
+              </div>
+            </div>
+          </div>
+
+          <!-- Models -->
+          <div class="settings-tab hidden" id="tab-models">
+            <div class="settings-section">
+              <div class="settings-section-title">Installerede Modeller</div>
+              <div id="modelList">
+                <p style="color: var(--text-muted);">Henter modeller fra Ollama...</p>
+              </div>
+            </div>
+            <button class="btn btn-secondary" onclick="refreshModels()">🔄 Opdater liste</button>
+          </div>
+
+          <!-- MCP Servers -->
+          <div class="settings-tab hidden" id="tab-mcp">
+            <div class="settings-section">
+              <div class="settings-section-title">Konfigurerede MCP Servere</div>
+              <div class="mcp-server-list" id="mcpServerList">
+                <div class="mcp-server-item">
+                  <div class="mcp-server-status connected"></div>
+                  <div class="mcp-server-info">
+                    <div class="mcp-server-name">SCA-01 Tools</div>
+                    <div class="mcp-server-type">stdio • Lokal</div>
+                  </div>
+                  <button class="btn btn-sm btn-secondary">Rediger</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <div class="settings-section-title">Tilføj MCP Server</div>
+              <div class="form-group">
+                <label class="form-label">Server Navn</label>
+                <input type="text" class="form-input" id="mcpServerName" placeholder="min-server">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-select" id="mcpServerType">
+                  <option value="stdio">stdio (Lokal)</option>
+                  <option value="http">HTTP</option>
+                  <option value="sse">SSE</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Kommando / URL</label>
+                <input type="text" class="form-input" id="mcpServerCommand" placeholder="node build/mcp/toolServer.js">
+              </div>
+              <button class="btn btn-primary" onclick="addMcpServer()">+ Tilføj Server</button>
+            </div>
+          </div>
+
+          <!-- System Prompts -->
+          <div class="settings-tab hidden" id="tab-prompts">
+            <div class="settings-section">
+              <div class="settings-section-title">Aktiv System Prompt</div>
+              <div class="form-group">
+                <label class="form-label">Vælg Prompt</label>
+                <select class="form-select" id="activePrompt" onchange="loadPrompt()">
+                  <option value="default">Standard (The Finisher)</option>
+                  <option value="coder">Koder-fokus</option>
+                  <option value="security">Sikkerhedsrevisor</option>
+                  <option value="custom">Brugerdefineret</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <div class="settings-section-title">System Prompt Tekst</div>
+              <div class="form-group">
+                <textarea class="form-textarea" id="systemPromptText" rows="12">You are SCA-01 ("The Finisher"), a completion engine.
+You prioritize: security by design, robustness, compliance readiness, and business alignment.
+
+Operational loop:
+1) READ: First read docs/HANDOVER_LOG.md (blackboard) to determine active task.
+2) PLAN: Provide an execution plan (files, tests, security notes).
+3) ACT: Use tools to read/write full files as needed.
+4) TEST: Run make targets (test/audit) if allowed.
+5) REPORT: Update docs/HANDOVER_LOG.md with executive summary + status changes.
+
+Constraints:
+- Strict TypeScript mindset. No secrets in code. Treat all data as sensitive.
+- Zero Trust: validate inputs, deny-by-default, least privilege.
+- Prefer Markdown state (no JSON inboxes).</textarea>
+              </div>
+              <button class="btn btn-primary" onclick="savePrompt()">💾 Gem Prompt</button>
+            </div>
+          </div>
+
+          <!-- Security -->
+          <div class="settings-tab hidden" id="tab-security">
+            <div class="settings-section">
+              <div class="settings-section-title">Adgangskontrol</div>
+              <div class="form-group">
+                <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                  <input type="checkbox" id="settingFullAccess">
+                  Fuld system-adgang (⚠️ Farligt)
+                </label>
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                  <input type="checkbox" id="settingAutoApprove">
+                  Auto-godkend alle operationer (⚠️ Farligt)
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <div class="settings-section-title">Sikre Stier</div>
+              <div class="form-group">
+                <textarea class="form-textarea" id="safePaths" rows="4" placeholder="Én sti per linje">.</textarea>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <div class="settings-section-title">Blokerede Stier</div>
+              <div class="form-group">
+                <textarea class="form-textarea" id="blockedPaths" rows="4">.git
+node_modules
+.env</textarea>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="saveSecuritySettings()">💾 Gem Sikkerhed</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============ STATE ============
+    let currentChatId = null;
+    let chats = [];
+    let messages = [];
+    let settings = {
+      ollamaHost: 'http://localhost:11434',
+      model: 'qwen3',
+      maxTurns: 16,
+      shellTimeout: 300,
+      fullAccess: false,
+      autoApprove: false,
+      systemPrompt: '',
+      mcpServers: []
+    };
+
+    // ============ INITIALIZATION ============
+    async function init() {
+      try {
+        // Load settings from backend
+        const config = await window.chat.getConfig();
+        if (config) {
+          settings = { ...settings, ...config };
+          document.getElementById('settingOllamaHost').value = settings.ollamaHost;
+          document.getElementById('settingModel').value = settings.model;
+          document.getElementById('currentModel').textContent = settings.model;
+        }
+
+        // Load chat history
+        chats = await window.chat.getChatHistory() || [];
+        renderChatList();
+
+        // Check Ollama status
+        checkStatus();
+      } catch (e) {
+        console.error('Init error:', e);
+      }
+    }
+
+    async function checkStatus() {
+      try {
+        const status = await window.chat.checkOllama();
+        document.getElementById('statusDot').textContent = status ? '🟢' : '🔴';
+        document.getElementById('statusBtn').querySelector('span:last-child').textContent = status ? 'Online' : 'Offline';
+      } catch {
+        document.getElementById('statusDot').textContent = '🔴';
+      }
+    }
+
+    // ============ CHAT FUNCTIONS ============
+    function newChat() {
+      currentChatId = 'chat-' + Date.now();
+      messages = [];
+      
+      document.getElementById('welcomeScreen').classList.remove('hidden');
+      document.getElementById('chatContainer').classList.add('hidden');
+      document.getElementById('chatMessages').innerHTML = '';
+      document.getElementById('messageInput').value = '';
+      
+      // Add to history
+      chats.unshift({
+        id: currentChatId,
+        title: 'Ny samtale',
+        createdAt: new Date().toISOString()
+      });
+      renderChatList();
+    }
+
+    function renderChatList() {
+      const container = document.getElementById('chatList');
+      const today = new Date().toDateString();
+      
+      let html = '';
+      let currentSection = '';
+      
+      for (const chat of chats) {
+        const chatDate = new Date(chat.createdAt).toDateString();
+        const section = chatDate === today ? 'I dag' : 'Tidligere';
+        
+        if (section !== currentSection) {
+          currentSection = section;
+          html += `<div class="chat-list-header">${section}</div>`;
+        }
+        
+        html += `
+          <div class="chat-item ${chat.id === currentChatId ? 'active' : ''}" onclick="loadChat('${chat.id}')">
+            <span class="chat-item-icon">💬</span>
+            <span class="chat-item-title">${chat.title}</span>
+            <div class="chat-item-actions">
+              <button class="chat-item-btn" onclick="event.stopPropagation(); deleteChat('${chat.id}')">🗑</button>
+            </div>
+          </div>
+        `;
+      }
+      
+      container.innerHTML = html || '<p style="color: var(--text-muted); padding: 1rem; text-align: center;">Ingen samtaler endnu</p>';
+    }
+
+    async function loadChat(chatId) {
+      currentChatId = chatId;
+      const chatData = await window.chat.loadChat(chatId);
+      
+      if (chatData) {
+        messages = chatData.messages || [];
+        renderMessages();
+        
+        document.getElementById('welcomeScreen').classList.add('hidden');
+        document.getElementById('chatContainer').classList.remove('hidden');
+      }
+      
+      renderChatList();
+    }
+
+    function deleteChat(chatId) {
+      chats = chats.filter(c => c.id !== chatId);
+      window.chat.deleteChat(chatId);
+      
+      if (chatId === currentChatId) {
+        newChat();
+      }
+      
+      renderChatList();
+    }
+
+    function renderMessages() {
+      const container = document.getElementById('chatMessages');
+      
+      container.innerHTML = messages.map(msg => `
+        <div class="message">
+          <div class="message-avatar ${msg.role}">${msg.role === 'user' ? '👤' : msg.role === 'system' ? '⚙️' : '⚡'}</div>
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-role">${msg.role === 'user' ? 'Dig' : msg.role === 'system' ? 'System' : 'SCA-01'}</span>
+              <span class="message-time">${new Date(msg.timestamp || Date.now()).toLocaleTimeString()}</span>
+            </div>
+            <div class="message-text">${formatMessage(msg.content)}</div>
+            ${msg.toolCalls ? msg.toolCalls.map(tc => `
+              <div class="tool-call">
+                <div class="tool-call-header">🔧 ${tc.name}</div>
+                <div class="tool-call-args">${JSON.stringify(tc.arguments, null, 2)}</div>
+              </div>
+            `).join('') : ''}
+          </div>
+        </div>
+      `).join('');
+      
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function formatMessage(content) {
+      if (!content) return '';
+      
+      // Simple markdown-like formatting
+      return content
+        .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+    }
+
+    // ============ MESSAGING ============
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const content = input.value.trim();
+      
+      if (!content) return;
+      
+      // Show chat area
+      document.getElementById('welcomeScreen').classList.add('hidden');
+      document.getElementById('chatContainer').classList.remove('hidden');
+      
+      // Add user message
+      messages.push({
+        role: 'user',
+        content,
+        timestamp: new Date().toISOString()
+      });
+      
+      renderMessages();
+      input.value = '';
+      autoResize(input);
+      
+      // Update chat title
+      if (messages.length === 1) {
+        const chat = chats.find(c => c.id === currentChatId);
+        if (chat) {
+          chat.title = content.substring(0, 40) + (content.length > 40 ? '...' : '');
+          renderChatList();
+        }
+      }
+      
+      // Show typing indicator
+      showTyping();
+      
+      try {
+        // Send to backend
+        const response = await window.chat.sendMessage({
+          chatId: currentChatId,
+          messages,
+          settings
+        });
+        
+        hideTyping();
+        
+        if (response) {
+          messages.push({
+            role: 'assistant',
+            content: response.content,
+            toolCalls: response.toolCalls,
+            timestamp: new Date().toISOString()
+          });
+          
+          renderMessages();
+          
+          // Save chat
+          window.chat.saveChat({
+            id: currentChatId,
+            title: chats.find(c => c.id === currentChatId)?.title,
+            messages
+          });
+        }
+      } catch (e) {
+        hideTyping();
+        messages.push({
+          role: 'assistant',
+          content: `❌ Fejl: ${e.message || 'Kunne ikke få svar'}`,
+          timestamp: new Date().toISOString()
+        });
+        renderMessages();
+      }
+    }
+
+    function showTyping() {
+      const container = document.getElementById('chatMessages');
+      container.innerHTML += `
+        <div class="message" id="typingIndicator">
+          <div class="message-avatar assistant">⚡</div>
+          <div class="message-content">
+            <div class="typing-indicator">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+      `;
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function hideTyping() {
+      const indicator = document.getElementById('typingIndicator');
+      if (indicator) indicator.remove();
+    }
+
+    function handleKeydown(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+      }
+    }
+
+    function autoResize(textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+    }
+
+    function quickStart(prompt) {
+      document.getElementById('messageInput').value = prompt;
+      sendMessage();
+    }
+
+    // ============ SETTINGS ============
+    function openSettings(tab = 'general') {
+      document.getElementById('settingsModal').classList.remove('hidden');
+      switchSettingsTab(tab);
+    }
+
+    function closeSettings() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    function switchSettingsTab(tabId) {
+      // Update nav
+      document.querySelectorAll('.modal-nav-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.tab === tabId);
+      });
+      
+      // Update content
+      document.querySelectorAll('.settings-tab').forEach(tab => {
+        tab.classList.toggle('hidden', tab.id !== `tab-${tabId}`);
+      });
+    }
+
+    async function refreshModels() {
+      try {
+        const models = await window.chat.getModels();
+        const container = document.getElementById('modelList');
+        
+        container.innerHTML = models.map(m => `
+          <div class="mcp-server-item">
+            <div class="mcp-server-status connected"></div>
+            <div class="mcp-server-info">
+              <div class="mcp-server-name">${m.name}</div>
+              <div class="mcp-server-type">${m.size || 'Ukendt størrelse'}</div>
+            </div>
+            <button class="btn btn-sm btn-primary" onclick="selectModel('${m.name}')">Vælg</button>
+          </div>
+        `).join('');
+      } catch (e) {
+        document.getElementById('modelList').innerHTML = '<p style="color: var(--error);">Kunne ikke hente modeller</p>';
+      }
+    }
+
+    function selectModel(modelName) {
+      settings.model = modelName;
+      document.getElementById('currentModel').textContent = modelName;
+      document.getElementById('settingModel').value = modelName;
+      window.chat.updateSettings({ model: modelName });
+    }
+
+    function addMcpServer() {
+      const name = document.getElementById('mcpServerName').value;
+      const type = document.getElementById('mcpServerType').value;
+      const command = document.getElementById('mcpServerCommand').value;
+      
+      if (!name || !command) {
+        alert('Udfyld alle felter');
+        return;
+      }
+      
+      window.chat.addMcpServer({ name, type, command });
+      
+      // Clear form
+      document.getElementById('mcpServerName').value = '';
+      document.getElementById('mcpServerCommand').value = '';
+      
+      // Refresh list
+      loadMcpServers();
+    }
+
+    async function loadMcpServers() {
+      const servers = await window.chat.getMcpServers();
+      document.getElementById('mcpCount').textContent = servers?.length || 0;
+      
+      // Update list...
+    }
+
+    function savePrompt() {
+      settings.systemPrompt = document.getElementById('systemPromptText').value;
+      window.chat.updateSettings({ systemPrompt: settings.systemPrompt });
+      alert('System prompt gemt!');
+    }
+
+    function saveSecuritySettings() {
+      settings.fullAccess = document.getElementById('settingFullAccess').checked;
+      settings.autoApprove = document.getElementById('settingAutoApprove').checked;
+      
+      window.chat.updateSettings({
+        fullAccess: settings.fullAccess,
+        autoApprove: settings.autoApprove,
+        safePaths: document.getElementById('safePaths').value.split('\n').filter(Boolean),
+        blockedPaths: document.getElementById('blockedPaths').value.split('\n').filter(Boolean)
+      });
+      
+      alert('Sikkerhedsindstillinger gemt!');
+    }
+
+    function attachFile() {
+      window.chat.attachFile();
+    }
+
+    function toggleTools() {
+      openSettings('mcp');
+    }
+
+    // Initialize
+    init();
+  </script>
+</body>
+</html>
+

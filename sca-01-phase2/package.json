@@ -12,6 +12,7 @@
     "dev": "tsx src/cli.ts",
     "dev:ui": "tsc && electron build/ui/main.js",
     "dev:cockpit": "tsc && electron build/ui/mainCockpit.js",
+    "dev:chat": "tsc && electron build/ui/mainChat.js",
     "build": "tsc -p tsconfig.json",
     "build:ui": "tsc -p tsconfig.ui.json && electron-builder",
     "lint": "eslint .",
