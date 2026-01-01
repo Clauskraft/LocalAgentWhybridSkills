@@ -1,0 +1,40 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+        working-directory: sca-01-phase1
+
+      - name: Lint
+        run: make lint
+        working-directory: sca-01-phase1
+
+      - name: Test
+        run: make test
+        working-directory: sca-01-phase1
+
+      - name: Build
+        run: make mvp
+        working-directory: sca-01-phase1
+
+      - name: Audit (high)
+        run: make audit
+        working-directory: sca-01-phase1
+

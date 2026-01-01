@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+  <title>SCA-01 The Finisher - Desktop Agent</title>
+  <style>
+    :root {
+      --bg-dark: #0f0f1a;
+      --bg-panel: #1a1a2e;
+      --bg-input: #252540;
+      --accent: #00d4ff;
+      --accent-dim: #00a8cc;
+      --danger: #ff4757;
+      --warning: #ffa502;
+      --success: #2ed573;
+      --text: #e8e8e8;
+      --text-dim: #8888aa;
+      --border: #333355;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--bg-panel) 0%, #1e1e3f 100%);
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--accent), #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo span {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-input);
+      border-radius: 20px;
+      font-size: 0.85rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    .status-dot.warning { background: var(--warning); }
+    .status-dot.danger { background: var(--danger); }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 1rem;
+      padding: 1rem;
+      overflow: hidden;
+    }
+
+    .panel {
+      background: var(--bg-panel);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+
+    /* Agent Panel */
+    .agent-input {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .agent-input input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    .agent-input input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .agent-input button {
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .agent-input button:hover {
+      transform: scale(1.02);
+    }
+
+    .agent-input button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .output {
+      background: var(--bg-dark);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 200px;
+    }
+
+    /* Approval Panel */
+    .approval-item {
+      background: var(--bg-input);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      border-left: 4px solid var(--warning);
+    }
+
+    .approval-item.high {
+      border-left-color: var(--danger);
+    }
+
+    .approval-item.low {
+      border-left-color: var(--success);
+    }
+
+    .approval-item h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .approval-item p {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+    }
+
+    .approval-item .meta {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+    }
+
+    .approval-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.1s;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .btn-approve {
+      background: var(--success);
+      color: #000;
+    }
+
+    .btn-reject {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: var(--bg-dark);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-dim);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-dim);
+    }
+
+    /* Loading indicator */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--text-dim);
+      border-radius: 50%;
+      border-top-color: var(--accent);
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .risk-badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .risk-badge.high { background: var(--danger); color: #fff; }
+    .risk-badge.medium { background: var(--warning); color: #000; }
+    .risk-badge.low { background: var(--success); color: #000; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <h1>SCA-01</h1>
+      <span>"The Finisher" Desktop Agent</span>
+    </div>
+    <div class="status-badge">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Ready</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="panel">
+      <div class="panel-header">
+        <h2>🤖 Agent Console</h2>
+        <span id="configInfo"></span>
+      </div>
+      <div class="panel-content" style="display: flex; flex-direction: column;">
+        <div class="agent-input">
+          <input type="text" id="goalInput" placeholder="Enter your goal or task..." />
+          <button id="runBtn">Run Agent</button>
+        </div>
+        <div class="output" id="output">Waiting for input...</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h2>🔐 Approval Queue</h2>
+        <div>
+          <button class="btn btn-secondary" id="approveAllBtn">Approve All</button>
+          <button class="btn btn-secondary" id="rejectAllBtn">Reject All</button>
+        </div>
+      </div>
+      <div class="panel-content" id="approvalList">
+        <div class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p>No pending approvals</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const goalInput = document.getElementById('goalInput');
+    const runBtn = document.getElementById('runBtn');
+    const output = document.getElementById('output');
+    const approvalList = document.getElementById('approvalList');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const configInfo = document.getElementById('configInfo');
+    const approveAllBtn = document.getElementById('approveAllBtn');
+    const rejectAllBtn = document.getElementById('rejectAllBtn');
+
+    let pendingApprovals = [];
+    let isRunning = false;
+
+    // Initialize
+    async function init() {
+      const config = await window.sca01.getConfig();
+      configInfo.textContent = config.fullAccess ? '⚠️ Full Access' : '🔒 Restricted';
+      refreshApprovals();
+    }
+
+    // Update status
+    function setStatus(status, type = 'success') {
+      statusText.textContent = status;
+      statusDot.className = 'status-dot';
+      if (type === 'warning') statusDot.classList.add('warning');
+      if (type === 'danger') statusDot.classList.add('danger');
+    }
+
+    // Run agent
+    async function runAgent() {
+      const goal = goalInput.value.trim();
+      if (!goal || isRunning) return;
+
+      isRunning = true;
+      runBtn.disabled = true;
+      runBtn.innerHTML = '<span class="loading"></span>';
+      output.textContent = 'Agent is working...\n\n(Check Approval Queue for any pending requests)';
+      setStatus('Running...', 'warning');
+
+      try {
+        const result = await window.sca01.runAgent(goal);
+        if (result.error) {
+          output.textContent = 'ERROR: ' + result.error;
+          setStatus('Error', 'danger');
+        } else {
+          output.textContent = result.result || '(No output)';
+          setStatus('Completed');
+        }
+      } catch (e) {
+        output.textContent = 'ERROR: ' + e.message;
+        setStatus('Error', 'danger');
+      } finally {
+        isRunning = false;
+        runBtn.disabled = false;
+        runBtn.textContent = 'Run Agent';
+      }
+    }
+
+    // Refresh approvals
+    async function refreshApprovals() {
+      pendingApprovals = await window.sca01.getPendingApprovals();
+      renderApprovals();
+    }
+
+    // Render approvals
+    function renderApprovals() {
+      if (pendingApprovals.length === 0) {
+        approvalList.innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p>No pending approvals</p>
+          </div>
+        `;
+        return;
+      }
+
+      approvalList.innerHTML = pendingApprovals.map(req => `
+        <div class="approval-item ${req.riskLevel}">
+          <h3>${req.operation} <span class="risk-badge ${req.riskLevel}">${req.riskLevel}</span></h3>
+          <p>${req.description}</p>
+          <div class="meta">ID: ${req.id} | ${new Date(req.timestamp).toLocaleTimeString()}</div>
+          <div class="approval-actions">
+            <button class="btn btn-approve" onclick="approve('${req.id}')">✓ Approve</button>
+            <button class="btn btn-reject" onclick="reject('${req.id}')">✗ Reject</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Approve request
+    async function approve(id) {
+      await window.sca01.approveRequest(id);
+      refreshApprovals();
+    }
+
+    // Reject request
+    async function reject(id) {
+      await window.sca01.rejectRequest(id);
+      refreshApprovals();
+    }
+
+    // Event listeners
+    runBtn.addEventListener('click', runAgent);
+    goalInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') runAgent();
+    });
+
+    approveAllBtn.addEventListener('click', async () => {
+      await window.sca01.approveAll();
+      refreshApprovals();
+    });
+
+    rejectAllBtn.addEventListener('click', async () => {
+      await window.sca01.rejectAll();
+      refreshApprovals();
+    });
+
+    // Listen for new approvals
+    window.sca01.onApprovalRequest((request) => {
+      pendingApprovals.push(request);
+      renderApprovals();
+      setStatus('Approval needed', 'warning');
+    });
+
+    window.sca01.onApprovalResolved((request) => {
+      pendingApprovals = pendingApprovals.filter(r => r.id !== request.id);
+      renderApprovals();
+      if (pendingApprovals.length === 0) {
+        setStatus('Ready');
+      }
+    });
+
+    // Make functions global for onclick handlers
+    window.approve = approve;
+    window.reject = reject;
+
+    // Initialize
+    init();
+  </script>
+</body>
+</html>
+
