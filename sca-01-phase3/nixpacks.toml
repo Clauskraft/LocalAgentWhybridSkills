@@ -1,15 +1,19 @@
 # Nixpacks configuration for Railway
-# Fixes cache locking issue by skipping automatic install
+# Fixes cache locking issue
 
 [phases.setup]
 nixPkgs = ["nodejs_20", "npm-9_x"]
 
 [phases.install]
 cmds = ["npm install --prefer-offline --no-audit"]
+cacheDirectories = []
 
 [phases.build]
 cmds = ["npm run build"]
+cacheDirectories = []
 
 [start]
-cmd = "npm start"
+cmd = "node build/server/httpServer.js"
 
+[variables]
+NPM_CONFIG_CACHE = "/tmp/.npm"
