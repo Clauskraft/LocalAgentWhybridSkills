@@ -9,6 +9,7 @@ import { initializeDatabase } from "../db/database.js";
 import { registerAuthRoutes } from "../routes/authRoutes.js";
 import { registerSessionRoutes } from "../routes/sessionRoutes.js";
 import { notionRoutes } from "../routes/notionRoutes.js";
+import { executionRoutes } from "../routes/executionRoutes.js";
 
 // ============================================================================
 // HTTP SERVER FOR MCP OVER HTTP
@@ -495,6 +496,10 @@ async function main(): Promise<void> {
   // Register Notion integration routes
   await server.register(notionRoutes, { prefix: "/api" });
   console.log("✅ Notion routes registered");
+
+  // Register execution routes
+  await server.register(executionRoutes, { prefix: "/api" });
+  console.log("✅ Execution routes registered");
 
   // Add JWT verify decorator for routes
   server.decorate("verifyJwt", async (request: { headers: { authorization?: string }; user: TokenPayload | null }) => {
