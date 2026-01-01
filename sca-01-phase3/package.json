@@ -11,6 +11,7 @@
     "dev": "tsx src/cli.ts",
     "dev:server": "tsx src/server/httpServer.ts",
     "build": "tsc -p tsconfig.json",
+    "start": "node build/server/httpServer.js",
     "lint": "eslint .",
     "test": "vitest run",
     "sca": "node build/cli.js",
