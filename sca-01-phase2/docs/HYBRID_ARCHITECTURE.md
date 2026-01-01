@@ -1,8 +1,9 @@
 # SCA-01 Hybrid Mode Architecture
 
-> **Version:** 1.0  
-> **Status:** PROPOSED  
+> **Version:** 2.0  
+> **Status:** APPROVED  
 > **Author:** SCA-01 + CLAK  
+> **Decision:** Railway (primær) + Notion (integration)
 
 ## 1. Executive Summary
 
@@ -12,40 +13,219 @@ SCA-01 kører **lokalt** for maksimal privacy og hastighed, men synkroniserer **
 - 🤝 Deling/collaboration
 - 📊 Analytics & audit trail
 
+### Beslutning: Railway + Notion
+
+| Komponent | Provider | Formål |
+|-----------|----------|--------|
+| **Database & API** | Railway (EU) | Sessions, messages, sync |
+| **Blackboard** | Notion | HANDOVER_LOG, dokumentation |
+| **Lokal** | SQLite | Offline-first, cache |
+
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     SCA-01 HYBRID MODE                       │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐      │
-│  │   Desktop   │    │   Laptop    │    │   Mobile    │      │
-│  │   (Win11)   │    │   (Mac)     │    │   (Web?)    │      │
-│  └──────┬──────┘    └──────┬──────┘    └──────┬──────┘      │
-│         │                  │                  │              │
-│         └────────────┬─────┴─────────────────┘              │
-│                      │                                       │
-│              ┌───────▼───────┐                              │
-│              │  SYNC LAYER   │                              │
-│              │  - Encryption │                              │
-│              │  - Conflict   │                              │
-│              │  - Queue      │                              │
-│              └───────┬───────┘                              │
-│                      │                                       │
-│         ┌────────────┼────────────┐                         │
-│         ▼            ▼            ▼                         │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐                    │
-│  │  Notion  │ │  Google  │ │ Supabase │                    │
-│  │   API    │ │  Drive   │ │   (EU)   │                    │
-│  └──────────┘ └──────────┘ └──────────┘                    │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                     SCA-01 HYBRID MODE (v2)                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐              │
+│  │   Desktop   │    │   Laptop    │    │   Mobile    │              │
+│  │   (Win11)   │    │   (Mac)     │    │   (Web)     │              │
+│  └──────┬──────┘    └──────┬──────┘    └──────┬──────┘              │
+│         │                  │                  │                      │
+│         └────────────┬─────┴─────────────────┘                      │
+│                      │                                               │
+│              ┌───────▼───────┐                                      │
+│              │  SYNC LAYER   │                                      │
+│              │  - JWT Auth   │                                      │
+│              │  - Encryption │                                      │
+│              │  - Queue      │                                      │
+│              └───────┬───────┘                                      │
+│                      │                                               │
+│         ┌────────────┴────────────┐                                 │
+│         ▼                         ▼                                 │
+│  ┌──────────────────┐     ┌──────────────────┐                     │
+│  │  🚂 RAILWAY (EU) │     │  📝 NOTION       │                     │
+│  │  ┌────────────┐  │     │                  │                     │
+│  │  │ Fastify API│  │     │  - HANDOVER_LOG  │                     │
+│  │  └─────┬──────┘  │     │  - Blackboard    │                     │
+│  │        │         │     │  - Dokumentation │                     │
+│  │  ┌─────▼──────┐  │     │                  │                     │
+│  │  │ PostgreSQL │  │     └──────────────────┘                     │
+│  │  │ (sessions) │  │                                              │
+│  │  └────────────┘  │                                              │
+│  └──────────────────┘                                              │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Cloud Provider Options
+## 1.1 Railway + Notion Split
 
-### 2.1 Notion (Recommended for CLAK workflow)
+| Data Type | Storage | Reason |
+|-----------|---------|--------|
+| **Chat sessions** | Railway PostgreSQL | Structured, queryable, fast |
+| **Messages** | Railway PostgreSQL | Relational, indexes |
+| **Settings** | Railway PostgreSQL | User preferences |
+| **HANDOVER_LOG** | Notion | Eksisterende workflow |
+| **Blackboard docs** | Notion | Human-readable, shareable |
+| **Audit trail** | Railway PostgreSQL | Compliance, immutable |
+| **Tool executions** | Railway PostgreSQL | Analytics, debugging |
+
+---
+
+## 2. Valgt Arkitektur: Railway + Notion
+
+### 2.1 Railway (Primær Backend)
+
+| Aspect | Details |
+|--------|---------|
+| **Region** | EU (Frankfurt) - GDPR compliant |
+| **Database** | PostgreSQL 15 (managed) |
+| **API** | Fastify (Phase 3 kode) |
+| **Auth** | JWT med refresh tokens |
+| **Pris** | ~$5-10/mo (hobby tier) |
+| **Uptime** | 99.9% SLA |
+
+**Railway Services:**
+```
+📦 Railway Project: sca-01-cloud
+├── 🚀 Service: sca-01-api (Fastify)
+│   ├── PORT: 3000
+│   ├── JWT_SECRET: [encrypted]
+│   └── DATABASE_URL: [auto]
+│
+└── 🗄️ Database: PostgreSQL
+    ├── sessions
+    ├── messages
+    ├── users
+    ├── settings
+    └── audit_log
+```
+
+**PostgreSQL Schema:**
+```sql
+-- Users (for multi-device)
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE,
+  password_hash TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Sessions (chat conversations)
+CREATE TABLE sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id),
+  title TEXT NOT NULL,
+  model TEXT DEFAULT 'qwen3',
+  system_prompt TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  synced_to_notion BOOLEAN DEFAULT FALSE,
+  notion_page_id TEXT
+);
+
+-- Messages
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
+  role TEXT CHECK (role IN ('user', 'assistant', 'system', 'tool')),
+  content TEXT,
+  tool_calls JSONB,
+  tool_name TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Audit log (immutable)
+CREATE TABLE audit_log (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID REFERENCES users(id),
+  action TEXT NOT NULL,
+  resource TEXT,
+  details JSONB,
+  ip_address INET,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX idx_sessions_user ON sessions(user_id);
+CREATE INDEX idx_messages_session ON messages(session_id);
+CREATE INDEX idx_audit_user ON audit_log(user_id, created_at);
+```
+
+### 2.2 Notion (Blackboard Integration)
+
+| Aspect | Details |
+|--------|---------|
+| **Formål** | HANDOVER_LOG, dokumentation, blackboard |
+| **Sync** | Bi-directional (Railway ↔ Notion) |
+| **Trigger** | Session complete → create Notion page |
+| **Auth** | OAuth 2.0 integration |
+
+**Notion Integration Flow:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│                NOTION INTEGRATION                            │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌─────────────┐         ┌─────────────┐                    │
+│  │   Railway   │         │   Notion    │                    │
+│  │  PostgreSQL │────────▶│  Database   │                    │
+│  └─────────────┘         └─────────────┘                    │
+│         │                       │                            │
+│         │ On session complete   │                            │
+│         ▼                       ▼                            │
+│  ┌─────────────┐         ┌─────────────┐                    │
+│  │ Session     │────────▶│ Notion Page │                    │
+│  │ Summary     │         │ with blocks │                    │
+│  └─────────────┘         └─────────────┘                    │
+│                                                              │
+│  📝 HANDOVER_LOG.md ◀──────────────────▶ Notion Database    │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Notion Database: "SCA-01 Sessions"**
+```
+📊 Properties:
+├── Title (title)
+├── Status (select: Active, Completed, Archived)
+├── Model (select: qwen3, llama3.1, etc.)
+├── Messages (number)
+├── Created (date)
+├── Updated (date)
+├── Railway ID (text) - link back to PostgreSQL
+└── Tags (multi-select)
+```
+
+**Notion Page Template:**
+```markdown
+# Session: {title}
+
+**Model:** {model}
+**Created:** {date}
+**Status:** {status}
+
+## System Prompt
+{system_prompt}
+
+## Conversation
+> 👤 **User:** {message}
+> ⚡ **Assistant:** {response}
+> 🔧 **Tool Call:** {tool_name}({args})
+
+## Executive Summary
+{auto-generated summary}
+
+## Next Steps
+- [ ] {suggested actions}
+```
+
+---
+
+## 3. Legacy Provider Options (Reference)
+
+### 3.1 Notion (Standalone - NOT USED)
 
 | Aspect | Details |
 |--------|---------|
@@ -247,7 +427,7 @@ const token = await keytar.getPassword('sca-01', 'notion-token');
 
 ## 5. Implementation Plan
 
-### Phase 2.5: Hybrid Mode (4 Sprints)
+### Phase 2.5: Hybrid Mode - Railway + Notion (5 Sprints)
 
 #### Sprint 1: Local Persistence (Week 1)
 - [ ] Migrate from `electron-store` to `better-sqlite3`
@@ -260,36 +440,82 @@ const token = await keytar.getPassword('sca-01', 'notion-token');
 - `src/db/LocalStore.ts`
 - `src/db/migrations/`
 
-#### Sprint 2: Sync Infrastructure (Week 2)
-- [ ] Define `CloudAdapter` interface
-- [ ] Implement `SyncManager` with queue
-- [ ] Add conflict resolution logic
-- [ ] Optional encryption layer
+#### Sprint 2: Railway Backend (Week 2)
+- [ ] Deploy Phase 3 til Railway
+- [ ] Setup PostgreSQL database
+- [ ] Implement user auth (register/login)
+- [ ] Add session CRUD endpoints
+- [ ] Add message endpoints
 
 **Deliverables:**
-- `src/sync/CloudAdapter.ts`
-- `src/sync/SyncManager.ts`
-- `src/sync/EncryptionService.ts`
+- Railway project setup
+- `src/server/routes/sessions.ts`
+- `src/server/routes/messages.ts`
+- `src/server/routes/auth.ts`
 
-#### Sprint 3: Notion Adapter (Week 3)
-- [ ] Implement OAuth flow in Electron
-- [ ] Create `NotionAdapter`
+#### Sprint 3: Desktop ↔ Railway Sync (Week 3)
+- [ ] Implement `RailwayAdapter`
 - [ ] Background sync worker
-- [ ] Rate limiting & retry logic
+- [ ] Conflict resolution (last-write-wins)
+- [ ] Offline queue with retry
 
 **Deliverables:**
-- `src/sync/adapters/NotionAdapter.ts`
+- `src/sync/RailwayAdapter.ts`
+- `src/sync/SyncManager.ts`
+- `src/sync/OfflineQueue.ts`
+
+#### Sprint 4: Notion Integration (Week 4)
+- [ ] Notion OAuth flow in Electron
+- [ ] Create `NotionAdapter` for blackboard
+- [ ] Sync HANDOVER_LOG bi-directionally
+- [ ] Auto-create Notion pages on session complete
+
+**Deliverables:**
+- `src/sync/NotionAdapter.ts`
 - `src/auth/NotionOAuth.ts`
+- `src/notion/BlackboardSync.ts`
 
-#### Sprint 4: Google Drive Adapter (Week 4)
-- [ ] Implement Google OAuth
-- [ ] Create `DriveAdapter`
-- [ ] File-based storage logic
-- [ ] Folder structure management
+#### Sprint 5: UI Integration (Week 5)
+- [ ] Sync status indicator i header
+- [ ] Settings: Railway + Notion config
+- [ ] Login/register UI
+- [ ] Conflict resolution UI
 
 **Deliverables:**
-- `src/sync/adapters/DriveAdapter.ts`
-- `src/auth/GoogleOAuth.ts`
+- Updated `chat.html` with sync UI
+- `src/ui/auth/LoginView.ts`
+- `src/ui/sync/SyncStatus.ts`
+
+---
+
+### Railway Deployment Checklist
+
+```bash
+# 1. Install Railway CLI
+npm install -g @railway/cli
+
+# 2. Login
+railway login
+
+# 3. Create project
+railway init
+
+# 4. Add PostgreSQL
+railway add --plugin postgresql
+
+# 5. Deploy
+cd sca-01-phase3
+railway up
+
+# 6. Set environment variables
+railway variables set JWT_SECRET=$(openssl rand -base64 32)
+railway variables set NODE_ENV=production
+
+# 7. Get public URL
+railway domain
+```
+
+**Estimated cost:** ~$5-10/month for hobby usage
 
 ---
 
@@ -376,19 +602,47 @@ interface ChangeSet {
 
 ---
 
-## 9. Decision Required
+## 9. Decision Log
 
-**Anbefaling:** Start med **Notion** (matcher eksisterende workflow), men byg adapter-interface så andre providers nemt kan tilføjes.
+### ✅ BESLUTTET: Railway (primær) + Notion (integration)
 
-**Spørgsmål til CLAK:**
-1. Skal encryption være mandatory eller optional?
-2. Foretrækker du Notion eller Google Drive først?
-3. Skal vi overveje Supabase EU for bedre compliance?
-4. Ønskes multi-user/sharing support?
+| Beslutning | Valg | Begrundelse |
+|------------|------|-------------|
+| **Primær backend** | Railway (EU) | GDPR compliant, billig, nem deploy |
+| **Database** | PostgreSQL | Structured, queryable, reliable |
+| **Blackboard** | Notion | Eksisterende workflow, human-readable |
+| **Auth** | JWT + refresh | Stateless, skalerbar |
+| **Encryption** | Optional (anbefalet) | User choice for extra security |
+
+### Åbne spørgsmål
+
+1. **Multi-user?** - Skal flere brugere kunne dele sessions?
+2. **Team features?** - Shared workspaces i Notion?
+3. **Audit retention?** - Hvor længe gemmes audit logs?
 
 ---
 
-> **Restrisiko:** Lav. Offline-first sikrer drift uden cloud. Encryption mitigerer compliance-risiko ved US-providers.
+## 10. Summary
 
-**Status:** READY FOR REVIEW
+```
+┌─────────────────────────────────────────────────────────────┐
+│                 SCA-01 HYBRID STACK                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  LOCAL                  RAILWAY (EU)         NOTION          │
+│  ┌─────────┐           ┌─────────┐          ┌─────────┐     │
+│  │ SQLite  │◀─────────▶│PostgreSQL│─────────▶│Blackboard│    │
+│  │ Cache   │   Sync    │ Primary │  Export  │ Docs     │    │
+│  └─────────┘           └─────────┘          └─────────┘     │
+│                                                              │
+│  ✅ Offline-first      ✅ GDPR EU           ✅ Workflow     │
+│  ✅ Fast               ✅ $5/mo             ✅ Shareable    │
+│  ✅ Private            ✅ Scalable          ✅ Human-read   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+> **Restrisiko:** Lav. Offline-first sikrer drift uden cloud. Railway EU region sikrer GDPR compliance. Notion bruges kun til non-sensitive blackboard docs.
+
+**Status:** ✅ APPROVED - READY FOR IMPLEMENTATION
 
