@@ -1,0 +1,166 @@
+{
+  "$schema": "./integrations.schema.json",
+  "_comment": "Copy this file to integrations.json and fill in your API keys",
+  
+  "github": {
+    "enabled": true,
+    "token": "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "scopes": ["repo", "user", "read:org"],
+    "getTokenUrl": "https://github.com/settings/tokens"
+  },
+  
+  "notion": {
+    "enabled": true,
+    "apiKey": "secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "databaseId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "getTokenUrl": "https://www.notion.so/my-integrations"
+  },
+  
+  "huggingface": {
+    "enabled": true,
+    "token": "hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "getTokenUrl": "https://huggingface.co/settings/tokens"
+  },
+  
+  "braveSearch": {
+    "enabled": true,
+    "apiKey": "BSAxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "getTokenUrl": "https://brave.com/search/api/"
+  },
+  
+  "google": {
+    "maps": {
+      "enabled": false,
+      "apiKey": "AIzaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "drive": {
+      "enabled": false,
+      "clientId": "xxxxxxxxxxxx.apps.googleusercontent.com",
+      "clientSecret": "GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "calendar": {
+      "enabled": false
+    },
+    "youtube": {
+      "enabled": false,
+      "apiKey": "AIzaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "getTokenUrl": "https://console.cloud.google.com/apis/credentials"
+  },
+  
+  "twitter": {
+    "enabled": false,
+    "bearerToken": "AAAAAAAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "apiKey": "xxxxxxxxxxxxxxxxxxxxxxx",
+    "apiSecret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "getTokenUrl": "https://developer.twitter.com/en/portal/dashboard"
+  },
+  
+  "slack": {
+    "enabled": false,
+    "botToken": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+    "getTokenUrl": "https://api.slack.com/apps"
+  },
+  
+  "databases": {
+    "postgres": {
+      "enabled": true,
+      "connectionString": "postgresql://user:password@host:5432/database"
+    },
+    "mongodb": {
+      "enabled": false,
+      "uri": "mongodb+srv://user:password@cluster.mongodb.net/database"
+    },
+    "redis": {
+      "enabled": false,
+      "url": "redis://default:password@host:6379"
+    },
+    "neo4j": {
+      "enabled": false,
+      "uri": "neo4j+s://xxxxxxxxxxxx.databases.neo4j.io",
+      "user": "neo4j",
+      "password": "xxxxxxxxxxxx"
+    },
+    "supabase": {
+      "enabled": false,
+      "url": "https://xxxxxxxxxxxx.supabase.co",
+      "serviceRoleKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxxxxxxx"
+    }
+  },
+  
+  "projectManagement": {
+    "linear": {
+      "enabled": false,
+      "apiKey": "lin_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "getTokenUrl": "https://linear.app/settings/api"
+    },
+    "jira": {
+      "enabled": false,
+      "apiToken": "ATATT3xFfGF0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "email": "your-email@example.com",
+      "host": "https://your-domain.atlassian.net",
+      "getTokenUrl": "https://id.atlassian.com/manage-profile/security/api-tokens"
+    },
+    "todoist": {
+      "enabled": false,
+      "apiToken": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "getTokenUrl": "https://todoist.com/prefs/integrations"
+    }
+  },
+  
+  "ai": {
+    "openai": {
+      "enabled": false,
+      "apiKey": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "getTokenUrl": "https://platform.openai.com/api-keys"
+    },
+    "anthropic": {
+      "enabled": false,
+      "apiKey": "sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "getTokenUrl": "https://console.anthropic.com/settings/keys"
+    }
+  },
+  
+  "devops": {
+    "azureDevops": {
+      "enabled": false,
+      "pat": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "organization": "your-organization",
+      "getTokenUrl": "https://dev.azure.com/{org}/_usersSettings/tokens"
+    }
+  },
+  
+  "payments": {
+    "stripe": {
+      "enabled": false,
+      "secretKey": "YOUR_STRIPE_SECRET_KEY_HERE",
+      "getTokenUrl": "https://dashboard.stripe.com/apikeys"
+    }
+  },
+  
+  "email": {
+    "smtp": {
+      "enabled": false,
+      "host": "smtp.gmail.com",
+      "port": 587,
+      "user": "your-email@gmail.com",
+      "password": "xxxx-xxxx-xxxx-xxxx"
+    }
+  },
+  
+  "widgetdc": {
+    "cyberstreams": {
+      "enabled": true,
+      "serverPath": "C:\\Users\\claus\\cyberstreams-hybrid\\build\\local\\src\\mcp-server.js"
+    },
+    "cockpit": {
+      "enabled": true,
+      "url": "http://localhost:3456"
+    },
+    "cloudflare": {
+      "enabled": false,
+      "workerUrl": "https://cyberstreams.clak.workers.dev"
+    }
+  }
+}
+

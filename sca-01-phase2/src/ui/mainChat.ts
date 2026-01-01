@@ -5,6 +5,7 @@ import { ConfigStore } from "../config/configStore.js";
 import { HyperLog } from "../logging/hyperlog.js";
 import { bootstrap, startOllama, isOllamaRunning, type BootstrapResult, type CheckResult } from "../startup/bootstrap.js";
 import { MCP_SERVER_CATALOG, getServersByCategory, getPopularServers, searchServers, getServerById, getAllCategories, getCategoryLabel, type McpServerDefinition, type McpCategory } from "../mcp/serverCatalog.js";
+import { getIntegrationManager } from "../config/integrationConfig.js";
 
 // ============================================================================
 // CHAT MAIN PROCESS
@@ -887,6 +888,107 @@ function setupIpcHandlers(): void {
       };
     } catch {
       return null;
+    }
+  });
+
+  // Integration Config
+  ipcMain.handle("chat:getIntegrations", () => {
+    const manager = getIntegrationManager("./config");
+    return manager.getConfig();
+  });
+
+  ipcMain.handle("chat:getIntegrationStatus", () => {
+    const manager = getIntegrationManager("./config");
+    return manager.getStatus();
+  });
+
+  ipcMain.handle("chat:updateIntegration", (_event, data: { integration: string; config: Record<string, unknown> }) => {
+    const manager = getIntegrationManager("./config");
+    const currentConfig = manager.getConfig();
+    
+    // Update specific integration
+    const updates: Record<string, unknown> = {};
+    updates[data.integration] = data.config;
+    
+    manager.updateConfig(updates as Parameters<typeof manager.updateConfig>[0]);
+    log.info("integrations.update", `Updated integration: ${data.integration}`);
+    
+    return { success: true };
+  });
+
+  ipcMain.handle("chat:testIntegration", async (_event, integrationId: string) => {
+    const manager = getIntegrationManager("./config");
+    
+    try {
+      switch (integrationId) {
+        case "github": {
+          const token = manager.getGitHubToken();
+          if (!token) return { success: false, error: "No token configured" };
+          
+          const res = await fetch("https://api.github.com/user", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (res.ok) {
+            const user = await res.json() as { login: string };
+            return { success: true, message: `Connected as ${user.login}` };
+          }
+          return { success: false, error: `GitHub API error: ${res.status}` };
+        }
+        
+        case "notion": {
+          const key = manager.getNotionApiKey();
+          if (!key) return { success: false, error: "No API key configured" };
+          
+          const res = await fetch("https://api.notion.com/v1/users/me", {
+            headers: {
+              Authorization: `Bearer ${key}`,
+              "Notion-Version": "2022-06-28"
+            }
+          });
+          
+          if (res.ok) {
+            const user = await res.json() as { name?: string };
+            return { success: true, message: `Connected as ${user.name ?? "Notion user"}` };
+          }
+          return { success: false, error: `Notion API error: ${res.status}` };
+        }
+        
+        case "huggingface": {
+          const token = manager.getHuggingFaceToken();
+          if (!token) return { success: false, error: "No token configured" };
+          
+          const res = await fetch("https://huggingface.co/api/whoami-v2", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (res.ok) {
+            const user = await res.json() as { name?: string };
+            return { success: true, message: `Connected as ${user.name ?? "HF user"}` };
+          }
+          return { success: false, error: `HuggingFace API error: ${res.status}` };
+        }
+        
+        case "brave-search": {
+          const key = manager.getBraveApiKey();
+          if (!key) return { success: false, error: "No API key configured" };
+          
+          const res = await fetch("https://api.search.brave.com/res/v1/web/search?q=test&count=1", {
+            headers: { "X-Subscription-Token": key }
+          });
+          
+          if (res.ok) {
+            return { success: true, message: "Brave Search API working" };
+          }
+          return { success: false, error: `Brave API error: ${res.status}` };
+        }
+        
+        default:
+          return { success: false, error: "Test not implemented for this integration" };
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      return { success: false, error: msg };
     }
   });
 }

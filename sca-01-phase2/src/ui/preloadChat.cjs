@@ -53,6 +53,12 @@ contextBridge.exposeInMainWorld("chat", {
   // Files
   attachFile: () => ipcRenderer.invoke("chat:attachFile"),
 
+  // Integrations
+  getIntegrations: () => ipcRenderer.invoke("chat:getIntegrations"),
+  getIntegrationStatus: () => ipcRenderer.invoke("chat:getIntegrationStatus"),
+  updateIntegration: (data) => ipcRenderer.invoke("chat:updateIntegration", data),
+  testIntegration: (id) => ipcRenderer.invoke("chat:testIntegration", id),
+
   // Events
   onToolCall: (callback) => {
     ipcRenderer.on("chat:toolCall", (_event, data) => callback(data));
