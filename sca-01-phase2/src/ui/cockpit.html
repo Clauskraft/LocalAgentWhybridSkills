@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+  <title>SCA-01 Configuration Cockpit</title>
+  <style>
+    :root {
+      --bg-dark: #0a0a12;
+      --bg-panel: #12121f;
+      --bg-card: #1a1a2e;
+      --bg-input: #252540;
+      --accent: #00d4ff;
+      --accent-dim: #0099bb;
+      --danger: #ff4757;
+      --warning: #ffa502;
+      --success: #2ed573;
+      --text: #e8e8e8;
+      --text-dim: #8888aa;
+      --border: #333355;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .cockpit {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 0;
+    }
+
+    .sidebar-header {
+      padding: 0 1.5rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+
+    .sidebar-header h1 {
+      font-size: 1.2rem;
+      background: linear-gradient(90deg, var(--accent), #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .sidebar-header span {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.15s;
+      border-left: 3px solid transparent;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-card);
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      background: var(--bg-card);
+      color: var(--accent);
+      border-left-color: var(--accent);
+    }
+
+    .nav-item .icon { font-size: 1.1rem; }
+
+    /* Main Content */
+    .main {
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .page-header {
+      margin-bottom: 2rem;
+    }
+
+    .page-header h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+      color: var(--text-dim);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .card-header h3 {
+      font-size: 1rem;
+      color: var(--accent);
+    }
+
+    /* Table */
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .table th, .table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table th {
+      color: var(--text-dim);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+    }
+
+    .table tr:hover {
+      background: var(--bg-input);
+    }
+
+    /* Forms */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .btn:hover { opacity: 0.9; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      color: #000;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: var(--bg-input);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-sm {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.75rem;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-success { background: var(--success); color: #000; }
+    .badge-warning { background: var(--warning); color: #000; }
+    .badge-danger { background: var(--danger); color: #fff; }
+    .badge-info { background: var(--accent); color: #000; }
+
+    /* Toggle */
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: var(--bg-input);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle.active { background: var(--success); }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .toggle.active::after { transform: translateX(20px); }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      width: 500px;
+      max-width: 90vw;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-header h3 { font-size: 1.1rem; }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Sections (hidden by default) */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* Status indicator */
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+    }
+    .status-dot.connected { background: var(--success); }
+    .status-dot.disconnected { background: var(--danger); }
+    .status-dot.pending { background: var(--warning); }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-dim);
+    }
+
+    /* Quick actions */
+    .quick-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="cockpit">
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <h1>⚙️ Configuration</h1>
+        <span>SCA-01 Cockpit</span>
+      </div>
+      
+      <div class="nav-item active" data-section="overview">
+        <span class="icon">📊</span>
+        <span>Overview</span>
+      </div>
+      <div class="nav-item" data-section="paths">
+        <span class="icon">📁</span>
+        <span>Path Access</span>
+      </div>
+      <div class="nav-item" data-section="repos">
+        <span class="icon">📦</span>
+        <span>Repositories</span>
+      </div>
+      <div class="nav-item" data-section="tools">
+        <span class="icon">🔧</span>
+        <span>Tool Credentials</span>
+      </div>
+      <div class="nav-item" data-section="services">
+        <span class="icon">🔌</span>
+        <span>Services</span>
+      </div>
+      <div class="nav-item" data-section="settings">
+        <span class="icon">⚡</span>
+        <span>Agent Settings</span>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Overview Section -->
+      <section id="overview" class="section active">
+        <div class="page-header">
+          <h2>Configuration Overview</h2>
+          <p>Manage agent access, credentials, and connections</p>
+        </div>
+
+        <div class="form-row">
+          <div class="card">
+            <h3>🛡️ Security Status</h3>
+            <div style="margin-top: 1rem;">
+              <p><span class="status-dot connected"></span>Path Policy: <span id="pathCount">0</span> rules</p>
+              <p><span class="status-dot connected"></span>Repositories: <span id="repoCount">0</span> configured</p>
+              <p><span class="status-dot connected"></span>Credentials: <span id="credCount">0</span> stored</p>
+              <p><span class="status-dot" id="accessStatus"></span>Full Access: <span id="accessText">Disabled</span></p>
+            </div>
+          </div>
+          
+          <div class="card">
+            <h3>⚡ Quick Actions</h3>
+            <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+              <button class="btn btn-secondary" onclick="showSection('paths')">+ Add Path Rule</button>
+              <button class="btn btn-secondary" onclick="showSection('repos')">+ Add Repository</button>
+              <button class="btn btn-secondary" onclick="showSection('tools')">+ Add Credential</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>🔌 Service Status</h3>
+            <button class="btn btn-sm btn-secondary" onclick="checkAllServices()">Check All</button>
+          </div>
+          <table class="table" id="serviceStatusTable">
+            <thead>
+              <tr>
+                <th>Service</th>
+                <th>Endpoint</th>
+                <th>Status</th>
+                <th>Last Check</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Path Access Section -->
+      <section id="paths" class="section">
+        <div class="page-header">
+          <h2>Path Access Control</h2>
+          <p>Configure which paths the agent can access</p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>📁 Safe Paths (Auto-approved)</h3>
+            <button class="btn btn-sm btn-primary" onclick="showAddPathModal('safe')">+ Add Safe Path</button>
+          </div>
+          <div id="safePathsList"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>🚫 Blocked Paths (Always denied)</h3>
+            <button class="btn btn-sm btn-danger" onclick="showAddPathModal('blocked')">+ Add Blocked Path</button>
+          </div>
+          <div id="blockedPathsList"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>📋 Custom Path Rules</h3>
+            <button class="btn btn-sm btn-primary" onclick="showAddPathRuleModal()">+ Add Rule</button>
+          </div>
+          <table class="table" id="pathRulesTable">
+            <thead>
+              <tr>
+                <th>Path</th>
+                <th>Access</th>
+                <th>Description</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Repositories Section -->
+      <section id="repos" class="section">
+        <div class="page-header">
+          <h2>Repository Access</h2>
+          <p>Configure access to GitHub repositories</p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>📦 Configured Repositories</h3>
+            <button class="btn btn-sm btn-primary" onclick="showAddRepoModal()">+ Add Repository</button>
+          </div>
+          <table class="table" id="reposTable">
+            <thead>
+              <tr>
+                <th>Repository</th>
+                <th>Owner</th>
+                <th>Permissions</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <div id="reposEmpty" class="empty-state">
+            <p>No repositories configured</p>
+            <button class="btn btn-primary" onclick="showAddRepoModal()">Add Repository</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tool Credentials Section -->
+      <section id="tools" class="section">
+        <div class="page-header">
+          <h2>Tool Credentials</h2>
+          <p>Manage API keys and credentials for tools</p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>🔐 Stored Credentials</h3>
+            <button class="btn btn-sm btn-primary" onclick="showAddCredentialModal()">+ Add Credential</button>
+          </div>
+          <table class="table" id="credentialsTable">
+            <thead>
+              <tr>
+                <th>Tool</th>
+                <th>Type</th>
+                <th>Keys</th>
+                <th>Expires</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <div id="credentialsEmpty" class="empty-state">
+            <p>No credentials stored</p>
+            <button class="btn btn-primary" onclick="showAddCredentialModal()">Add Credential</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Services Section -->
+      <section id="services" class="section">
+        <div class="page-header">
+          <h2>Service Connections</h2>
+          <p>Configure external service connections</p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>🔌 Configured Services</h3>
+            <button class="btn btn-sm btn-primary" onclick="showAddServiceModal()">+ Add Service</button>
+          </div>
+          <table class="table" id="servicesTable">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Endpoint</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Settings Section -->
+      <section id="settings" class="section">
+        <div class="page-header">
+          <h2>Agent Settings</h2>
+          <p>Configure agent behavior and limits</p>
+        </div>
+
+        <div class="card">
+          <h3>🤖 Agent Configuration</h3>
+          <div class="form-row" style="margin-top: 1rem;">
+            <div class="form-group">
+              <label>Ollama Host</label>
+              <input type="text" id="settingOllamaHost" value="http://localhost:11434">
+            </div>
+            <div class="form-group">
+              <label>Ollama Model</label>
+              <input type="text" id="settingOllamaModel" value="qwen3">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Max Turns</label>
+              <input type="number" id="settingMaxTurns" value="16">
+            </div>
+            <div class="form-group">
+              <label>Shell Timeout (ms)</label>
+              <input type="number" id="settingShellTimeout" value="300000">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Max File Size (bytes)</label>
+              <input type="number" id="settingMaxFileSize" value="10000000">
+            </div>
+            <div class="form-group">
+              <label>Log Level</label>
+              <select id="settingLogLevel">
+                <option value="debug">Debug</option>
+                <option value="info" selected>Info</option>
+                <option value="warn">Warn</option>
+                <option value="error">Error</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>⚠️ Danger Zone</h3>
+          <div style="margin-top: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <div>
+                <strong>Full Access Mode</strong>
+                <p style="color: var(--text-dim); font-size: 0.85rem;">Allow agent to access files outside safe directories</p>
+              </div>
+              <div class="toggle" id="toggleFullAccess" onclick="toggleSetting('fullAccess')"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong>Auto Approve</strong>
+                <p style="color: var(--text-dim); font-size: 0.85rem;">⚠️ DANGEROUS: Skip all approval gates</p>
+              </div>
+              <div class="toggle" id="toggleAutoApprove" onclick="toggleSetting('autoApprove')"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 1rem;">
+          <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal for adding items -->
+  <div class="modal-overlay" id="modalOverlay" style="display: none;">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">Add Item</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div id="modalContent"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="modalSaveBtn" onclick="saveModal()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let config = null;
+    let currentModal = null;
+
+    // Initialize
+    async function init() {
+      config = await window.cockpit.getConfig();
+      renderAll();
+      setupNavigation();
+    }
+
+    // Navigation
+    function setupNavigation() {
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const section = item.dataset.section;
+          showSection(section);
+        });
+      });
+    }
+
+    function showSection(sectionId) {
+      // Update nav
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.section === sectionId);
+      });
+      // Update content
+      document.querySelectorAll('.section').forEach(section => {
+        section.classList.toggle('active', section.id === sectionId);
+      });
+    }
+
+    // Render functions
+    function renderAll() {
+      renderOverview();
+      renderPaths();
+      renderRepos();
+      renderCredentials();
+      renderServices();
+      renderSettings();
+    }
+
+    function renderOverview() {
+      document.getElementById('pathCount').textContent = 
+        (config.safePaths?.length || 0) + (config.blockedPaths?.length || 0) + (config.pathRules?.length || 0);
+      document.getElementById('repoCount').textContent = config.repos?.length || 0;
+      document.getElementById('credCount').textContent = config.toolCredentials?.length || 0;
+      
+      const accessStatus = document.getElementById('accessStatus');
+      const accessText = document.getElementById('accessText');
+      if (config.settings?.fullAccess) {
+        accessStatus.className = 'status-dot pending';
+        accessText.textContent = 'Enabled (⚠️)';
+      } else {
+        accessStatus.className = 'status-dot connected';
+        accessText.textContent = 'Disabled';
+      }
+
+      // Service status table
+      const tbody = document.querySelector('#serviceStatusTable tbody');
+      tbody.innerHTML = (config.services || []).map(s => `
+        <tr>
+          <td>${s.name}</td>
+          <td><code>${s.endpoint}</code></td>
+          <td><span class="status-dot ${s.status || 'pending'}"></span>${s.status || 'unknown'}</td>
+          <td>${s.lastChecked ? new Date(s.lastChecked).toLocaleTimeString() : '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderPaths() {
+      // Safe paths
+      document.getElementById('safePathsList').innerHTML = (config.safePaths || []).map(p => `
+        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: var(--bg-input); border-radius: 4px; margin-bottom: 0.25rem;">
+          <code>${p}</code>
+          <button class="btn btn-sm btn-danger" onclick="removeSafePath('${p}')">Remove</button>
+        </div>
+      `).join('') || '<p style="color: var(--text-dim);">No safe paths configured</p>';
+
+      // Blocked paths
+      document.getElementById('blockedPathsList').innerHTML = (config.blockedPaths || []).map(p => `
+        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: var(--bg-input); border-radius: 4px; margin-bottom: 0.25rem;">
+          <code>${p}</code>
+          <button class="btn btn-sm btn-secondary" onclick="removeBlockedPath('${p}')">Remove</button>
+        </div>
+      `).join('') || '<p style="color: var(--text-dim);">No blocked paths configured</p>';
+
+      // Path rules table
+      const tbody = document.querySelector('#pathRulesTable tbody');
+      tbody.innerHTML = (config.pathRules || []).map(r => `
+        <tr>
+          <td><code>${r.path}</code></td>
+          <td><span class="badge badge-${r.access === 'allow' ? 'success' : r.access === 'deny' ? 'danger' : 'warning'}">${r.access}</span></td>
+          <td>${r.description || '-'}</td>
+          <td>
+            <button class="btn btn-sm btn-danger" onclick="removePathRule('${r.id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderRepos() {
+      const repos = config.repos || [];
+      document.getElementById('reposEmpty').style.display = repos.length ? 'none' : 'block';
+      document.getElementById('reposTable').style.display = repos.length ? 'table' : 'none';
+
+      const tbody = document.querySelector('#reposTable tbody');
+      tbody.innerHTML = repos.map(r => `
+        <tr>
+          <td>${r.name}</td>
+          <td>${r.owner}</td>
+          <td>${(r.permissions || []).map(p => `<span class="badge badge-info">${p}</span>`).join(' ')}</td>
+          <td><span class="badge ${r.enabled ? 'badge-success' : 'badge-danger'}">${r.enabled ? 'Enabled' : 'Disabled'}</span></td>
+          <td>
+            <button class="btn btn-sm btn-secondary" onclick="toggleRepo('${r.id}')">${r.enabled ? 'Disable' : 'Enable'}</button>
+            <button class="btn btn-sm btn-danger" onclick="removeRepo('${r.id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderCredentials() {
+      const creds = config.toolCredentials || [];
+      document.getElementById('credentialsEmpty').style.display = creds.length ? 'none' : 'block';
+      document.getElementById('credentialsTable').style.display = creds.length ? 'table' : 'none';
+
+      const tbody = document.querySelector('#credentialsTable tbody');
+      tbody.innerHTML = creds.map(c => `
+        <tr>
+          <td>${c.toolName}</td>
+          <td><span class="badge badge-info">${c.credentialType}</span></td>
+          <td>${Object.keys(c.credentials || {}).join(', ')}</td>
+          <td>${c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : 'Never'}</td>
+          <td><span class="badge ${c.enabled ? 'badge-success' : 'badge-danger'}">${c.enabled ? 'Active' : 'Inactive'}</span></td>
+          <td>
+            <button class="btn btn-sm btn-secondary" onclick="toggleCredential('${c.id}')">${c.enabled ? 'Disable' : 'Enable'}</button>
+            <button class="btn btn-sm btn-danger" onclick="removeCredential('${c.id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderServices() {
+      const tbody = document.querySelector('#servicesTable tbody');
+      tbody.innerHTML = (config.services || []).map(s => `
+        <tr>
+          <td>${s.name}</td>
+          <td><span class="badge badge-info">${s.type}</span></td>
+          <td><code>${s.endpoint}</code></td>
+          <td><span class="status-dot ${s.status || 'pending'}"></span>${s.status || 'unknown'}</td>
+          <td>
+            <button class="btn btn-sm btn-secondary" onclick="checkService('${s.id}')">Check</button>
+            <button class="btn btn-sm btn-danger" onclick="removeService('${s.id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderSettings() {
+      const settings = config.settings || {};
+      document.getElementById('settingOllamaHost').value = settings.ollamaHost || 'http://localhost:11434';
+      document.getElementById('settingOllamaModel').value = settings.ollamaModel || 'qwen3';
+      document.getElementById('settingMaxTurns').value = settings.maxTurns || 16;
+      document.getElementById('settingShellTimeout').value = settings.shellTimeout || 300000;
+      document.getElementById('settingMaxFileSize').value = settings.maxFileSize || 10000000;
+      document.getElementById('settingLogLevel').value = settings.logLevel || 'info';
+      
+      document.getElementById('toggleFullAccess').classList.toggle('active', settings.fullAccess);
+      document.getElementById('toggleAutoApprove').classList.toggle('active', settings.autoApprove);
+    }
+
+    // Modal functions
+    function showModal(title, content, onSave) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalContent').innerHTML = content;
+      document.getElementById('modalOverlay').style.display = 'flex';
+      currentModal = onSave;
+    }
+
+    function closeModal() {
+      document.getElementById('modalOverlay').style.display = 'none';
+      currentModal = null;
+    }
+
+    function saveModal() {
+      if (currentModal) currentModal();
+      closeModal();
+    }
+
+    // Add modals
+    function showAddPathModal(type) {
+      showModal(`Add ${type === 'safe' ? 'Safe' : 'Blocked'} Path`, `
+        <div class="form-group">
+          <label>Path</label>
+          <input type="text" id="newPath" placeholder="C:\\Path\\To\\Directory or /path/to/directory">
+        </div>
+      `, async () => {
+        const path = document.getElementById('newPath').value;
+        if (path) {
+          if (type === 'safe') {
+            await window.cockpit.addSafePath(path);
+          } else {
+            await window.cockpit.addBlockedPath(path);
+          }
+          config = await window.cockpit.getConfig();
+          renderPaths();
+        }
+      });
+    }
+
+    function showAddPathRuleModal() {
+      showModal('Add Path Rule', `
+        <div class="form-group">
+          <label>Path</label>
+          <input type="text" id="rulePath" placeholder="Path pattern">
+        </div>
+        <div class="form-group">
+          <label>Access</label>
+          <select id="ruleAccess">
+            <option value="allow">Allow</option>
+            <option value="deny">Deny</option>
+            <option value="require_approval">Require Approval</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="ruleDescription" placeholder="Optional description">
+        </div>
+      `, async () => {
+        const rule = {
+          path: document.getElementById('rulePath').value,
+          access: document.getElementById('ruleAccess').value,
+          description: document.getElementById('ruleDescription').value
+        };
+        if (rule.path) {
+          await window.cockpit.addPathRule(rule);
+          config = await window.cockpit.getConfig();
+          renderPaths();
+        }
+      });
+    }
+
+    function showAddRepoModal() {
+      showModal('Add Repository', `
+        <div class="form-row">
+          <div class="form-group">
+            <label>Owner</label>
+            <input type="text" id="repoOwner" placeholder="e.g., Clauskraft">
+          </div>
+          <div class="form-group">
+            <label>Repository Name</label>
+            <input type="text" id="repoName" placeholder="e.g., WidgetDC">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Access Token (optional)</label>
+          <input type="password" id="repoToken" placeholder="ghp_...">
+        </div>
+        <div class="form-group">
+          <label>Permissions</label>
+          <div style="display: flex; gap: 1rem;">
+            <label><input type="checkbox" id="permRead" checked> Read</label>
+            <label><input type="checkbox" id="permWrite"> Write</label>
+            <label><input type="checkbox" id="permAdmin"> Admin</label>
+          </div>
+        </div>
+      `, async () => {
+        const permissions = [];
+        if (document.getElementById('permRead').checked) permissions.push('read');
+        if (document.getElementById('permWrite').checked) permissions.push('write');
+        if (document.getElementById('permAdmin').checked) permissions.push('admin');
+        
+        const repo = {
+          name: document.getElementById('repoName').value,
+          owner: document.getElementById('repoOwner').value,
+          url: `https://github.com/${document.getElementById('repoOwner').value}/${document.getElementById('repoName').value}`,
+          accessToken: document.getElementById('repoToken').value || undefined,
+          permissions,
+          enabled: true
+        };
+        if (repo.name && repo.owner) {
+          await window.cockpit.addRepo(repo);
+          config = await window.cockpit.getConfig();
+          renderRepos();
+          renderOverview();
+        }
+      });
+    }
+
+    function showAddCredentialModal() {
+      showModal('Add Tool Credential', `
+        <div class="form-group">
+          <label>Tool Name</label>
+          <input type="text" id="credToolName" placeholder="e.g., OpenAI, GitHub, Azure">
+        </div>
+        <div class="form-group">
+          <label>Credential Type</label>
+          <select id="credType">
+            <option value="api_key">API Key</option>
+            <option value="bearer">Bearer Token</option>
+            <option value="basic">Basic Auth</option>
+            <option value="oauth">OAuth</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Key Name</label>
+          <input type="text" id="credKeyName" placeholder="e.g., api_key, token">
+        </div>
+        <div class="form-group">
+          <label>Value</label>
+          <input type="password" id="credValue" placeholder="Your secret value">
+        </div>
+      `, async () => {
+        const cred = {
+          toolName: document.getElementById('credToolName').value,
+          credentialType: document.getElementById('credType').value,
+          credentials: {
+            [document.getElementById('credKeyName').value]: document.getElementById('credValue').value
+          },
+          enabled: true
+        };
+        if (cred.toolName && Object.values(cred.credentials)[0]) {
+          await window.cockpit.addCredential(cred);
+          config = await window.cockpit.getConfig();
+          renderCredentials();
+          renderOverview();
+        }
+      });
+    }
+
+    function showAddServiceModal() {
+      showModal('Add Service', `
+        <div class="form-group">
+          <label>Service Name</label>
+          <input type="text" id="svcName" placeholder="e.g., My Ollama">
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="svcType">
+            <option value="ollama">Ollama</option>
+            <option value="github">GitHub</option>
+            <option value="azure">Azure</option>
+            <option value="aws">AWS</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Endpoint URL</label>
+          <input type="text" id="svcEndpoint" placeholder="http://localhost:11434">
+        </div>
+      `, async () => {
+        const svc = {
+          name: document.getElementById('svcName').value,
+          type: document.getElementById('svcType').value,
+          endpoint: document.getElementById('svcEndpoint').value,
+          enabled: true
+        };
+        if (svc.name && svc.endpoint) {
+          await window.cockpit.addService(svc);
+          config = await window.cockpit.getConfig();
+          renderServices();
+          renderOverview();
+        }
+      });
+    }
+
+    // Action functions
+    async function removeSafePath(path) {
+      await window.cockpit.removeSafePath(path);
+      config = await window.cockpit.getConfig();
+      renderPaths();
+    }
+
+    async function removeBlockedPath(path) {
+      await window.cockpit.removeBlockedPath(path);
+      config = await window.cockpit.getConfig();
+      renderPaths();
+    }
+
+    async function removePathRule(id) {
+      await window.cockpit.removePathRule(id);
+      config = await window.cockpit.getConfig();
+      renderPaths();
+    }
+
+    async function removeRepo(id) {
+      await window.cockpit.removeRepo(id);
+      config = await window.cockpit.getConfig();
+      renderRepos();
+    }
+
+    async function toggleRepo(id) {
+      const repo = config.repos.find(r => r.id === id);
+      if (repo) {
+        await window.cockpit.updateRepo(id, { enabled: !repo.enabled });
+        config = await window.cockpit.getConfig();
+        renderRepos();
+      }
+    }
+
+    async function removeCredential(id) {
+      await window.cockpit.removeCredential(id);
+      config = await window.cockpit.getConfig();
+      renderCredentials();
+    }
+
+    async function toggleCredential(id) {
+      const cred = config.toolCredentials.find(c => c.id === id);
+      if (cred) {
+        await window.cockpit.updateCredential(id, { enabled: !cred.enabled });
+        config = await window.cockpit.getConfig();
+        renderCredentials();
+      }
+    }
+
+    async function removeService(id) {
+      await window.cockpit.removeService(id);
+      config = await window.cockpit.getConfig();
+      renderServices();
+    }
+
+    async function checkService(id) {
+      const result = await window.cockpit.checkService(id);
+      config = await window.cockpit.getConfig();
+      renderServices();
+      renderOverview();
+    }
+
+    async function checkAllServices() {
+      for (const svc of config.services || []) {
+        await window.cockpit.checkService(svc.id);
+      }
+      config = await window.cockpit.getConfig();
+      renderServices();
+      renderOverview();
+    }
+
+    function toggleSetting(setting) {
+      const toggle = document.getElementById(setting === 'fullAccess' ? 'toggleFullAccess' : 'toggleAutoApprove');
+      toggle.classList.toggle('active');
+    }
+
+    async function saveSettings() {
+      const settings = {
+        ollamaHost: document.getElementById('settingOllamaHost').value,
+        ollamaModel: document.getElementById('settingOllamaModel').value,
+        maxTurns: parseInt(document.getElementById('settingMaxTurns').value),
+        shellTimeout: parseInt(document.getElementById('settingShellTimeout').value),
+        maxFileSize: parseInt(document.getElementById('settingMaxFileSize').value),
+        logLevel: document.getElementById('settingLogLevel').value,
+        fullAccess: document.getElementById('toggleFullAccess').classList.contains('active'),
+        autoApprove: document.getElementById('toggleAutoApprove').classList.contains('active')
+      };
+      await window.cockpit.updateSettings(settings);
+      config = await window.cockpit.getConfig();
+      renderOverview();
+      alert('Settings saved!');
+    }
+
+    // Initialize on load
+    init();
+  </script>
+</body>
+</html>
+

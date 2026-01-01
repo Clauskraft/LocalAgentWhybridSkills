@@ -11,12 +11,14 @@
   "scripts": {
     "dev": "tsx src/cli.ts",
     "dev:ui": "electron src/ui/main.ts",
+    "dev:cockpit": "electron src/ui/mainCockpit.ts",
     "build": "tsc -p tsconfig.json",
     "build:ui": "tsc -p tsconfig.ui.json && electron-builder",
     "lint": "eslint .",
     "test": "vitest run",
     "sca": "node build/cli.js",
-    "start": "electron build/ui/main.js"
+    "start": "electron build/ui/main.js",
+    "cockpit": "electron build/ui/mainCockpit.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.35.0",
