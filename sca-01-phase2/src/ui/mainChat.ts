@@ -260,7 +260,7 @@ function createWindow(): void {
       preload: path.join(import.meta.dirname, "preloadChat.js"),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: false // Must be false for preload to work correctly
     },
     titleBarStyle: "hiddenInset",
     title: "SCA-01 The Finisher"
