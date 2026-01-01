@@ -1,0 +1,236 @@
+/**
+ * SCA-01 Cloud API Client
+ * Kommunikerer med Railway-hosted backend
+ */
+import * as SecureStore from "expo-secure-store";
+
+const API_BASE_URL = "https://sca-01-phase3-production.up.railway.app";
+
+interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+}
+
+interface Session {
+  id: string;
+  title: string;
+  model: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount?: number;
+}
+
+interface Message {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  createdAt: string;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+class ApiClient {
+  private tokens: AuthTokens | null = null;
+
+  async initialize(): Promise<boolean> {
+    try {
+      const stored = await SecureStore.getItemAsync("auth_tokens");
+      if (stored) {
+        this.tokens = JSON.parse(stored);
+        // Check if token is expired
+        if (this.tokens && this.tokens.expiresAt < Date.now()) {
+          await this.refreshToken();
+        }
+        return true;
+      }
+    } catch (e) {
+      console.error("Failed to initialize auth:", e);
+    }
+    return false;
+  }
+
+  isAuthenticated(): boolean {
+    return this.tokens !== null && this.tokens.expiresAt > Date.now();
+  }
+
+  async login(email: string, password: string): Promise<ApiResponse<{ userId: string }>> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: "Login failed" }));
+        return { success: false, error: err.message || "Login failed" };
+      }
+
+      const data = await res.json();
+      this.tokens = {
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        expiresAt: Date.now() + (data.expiresIn || 900) * 1000,
+      };
+      await SecureStore.setItemAsync("auth_tokens", JSON.stringify(this.tokens));
+
+      return { success: true, data: { userId: data.userId } };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Network error";
+      return { success: false, error: msg };
+    }
+  }
+
+  async register(email: string, password: string): Promise<ApiResponse<{ userId: string }>> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: "Registration failed" }));
+        return { success: false, error: err.message || "Registration failed" };
+      }
+
+      const data = await res.json();
+      return { success: true, data: { userId: data.userId } };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Network error";
+      return { success: false, error: msg };
+    }
+  }
+
+  async logout(): Promise<void> {
+    this.tokens = null;
+    await SecureStore.deleteItemAsync("auth_tokens");
+  }
+
+  private async refreshToken(): Promise<boolean> {
+    if (!this.tokens?.refreshToken) return false;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken: this.tokens.refreshToken }),
+      });
+
+      if (!res.ok) {
+        await this.logout();
+        return false;
+      }
+
+      const data = await res.json();
+      this.tokens = {
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        expiresAt: Date.now() + (data.expiresIn || 900) * 1000,
+      };
+      await SecureStore.setItemAsync("auth_tokens", JSON.stringify(this.tokens));
+      return true;
+    } catch {
+      await this.logout();
+      return false;
+    }
+  }
+
+  private async request<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+    if (!this.tokens) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Check if token needs refresh
+    if (this.tokens.expiresAt < Date.now() + 60000) {
+      const refreshed = await this.refreshToken();
+      if (!refreshed) {
+        return { success: false, error: "Session expired" };
+      }
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.tokens.accessToken}`,
+          ...options.headers,
+        },
+      });
+
+      if (res.status === 401) {
+        const refreshed = await this.refreshToken();
+        if (refreshed) {
+          return this.request(path, options);
+        }
+        return { success: false, error: "Session expired" };
+      }
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: "Request failed" }));
+        return { success: false, error: err.message || `Error ${res.status}` };
+      }
+
+      const data = await res.json();
+      return { success: true, data };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Network error";
+      return { success: false, error: msg };
+    }
+  }
+
+  // ========== Sessions ==========
+
+  async getSessions(): Promise<ApiResponse<{ sessions: Session[] }>> {
+    return this.request("/api/sessions");
+  }
+
+  async createSession(title: string, model: string): Promise<ApiResponse<Session>> {
+    return this.request("/api/sessions", {
+      method: "POST",
+      body: JSON.stringify({ title, model }),
+    });
+  }
+
+  async getSession(sessionId: string): Promise<ApiResponse<Session>> {
+    return this.request(`/api/sessions/${sessionId}`);
+  }
+
+  async deleteSession(sessionId: string): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request(`/api/sessions/${sessionId}`, { method: "DELETE" });
+  }
+
+  // ========== Messages ==========
+
+  async getMessages(sessionId: string): Promise<ApiResponse<{ messages: Message[] }>> {
+    return this.request(`/api/sessions/${sessionId}/messages`);
+  }
+
+  async sendMessage(sessionId: string, content: string): Promise<ApiResponse<Message>> {
+    return this.request(`/api/sessions/${sessionId}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ role: "user", content }),
+    });
+  }
+
+  // ========== Health ==========
+
+  async checkHealth(): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/health`);
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+export const api = new ApiClient();
+export type { Session, Message, ApiResponse };
+

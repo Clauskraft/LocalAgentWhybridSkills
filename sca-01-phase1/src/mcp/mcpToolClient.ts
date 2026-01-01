@@ -9,8 +9,8 @@ export interface McpToolClientOptions {
 
 export interface McpTool {
   name: string;
-  description?: string;
-  inputSchema?: Record<string, unknown>;
+  description: string | undefined;
+  inputSchema: Record<string, unknown> | undefined;
 }
 
 export interface ListToolsResult {
@@ -19,7 +19,7 @@ export interface ListToolsResult {
 
 export interface CallToolResult {
   content: unknown;
-  isError?: boolean;
+  isError: boolean | undefined;
 }
 
 export class McpToolClient {
@@ -67,7 +67,7 @@ export class McpToolClient {
     const result = await this.client.callTool({ name, arguments: args });
     return {
       content: result.content,
-      isError: result.isError
+      isError: typeof result.isError === "boolean" ? result.isError : undefined
     };
   }
 

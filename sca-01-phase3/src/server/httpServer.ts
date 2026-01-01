@@ -8,6 +8,7 @@ import { HyperLog } from "../logging/hyperlog.js";
 import { initializeDatabase } from "../db/database.js";
 import { registerAuthRoutes } from "../routes/authRoutes.js";
 import { registerSessionRoutes } from "../routes/sessionRoutes.js";
+import { notionRoutes } from "../routes/notionRoutes.js";
 
 // ============================================================================
 // HTTP SERVER FOR MCP OVER HTTP
@@ -490,6 +491,10 @@ async function main(): Promise<void> {
     registerSessionRoutes(server, log);
     console.log("✅ User routes registered");
   }
+
+  // Register Notion integration routes
+  await server.register(notionRoutes, { prefix: "/api" });
+  console.log("✅ Notion routes registered");
 
   // Add JWT verify decorator for routes
   server.decorate("verifyJwt", async (request: { headers: { authorization?: string }; user: TokenPayload | null }) => {
