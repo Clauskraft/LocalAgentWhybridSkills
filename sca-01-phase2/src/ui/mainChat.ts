@@ -125,17 +125,27 @@ async function sendToOllama(
   });
   
   if (!response.ok) {
-    throw new Error(`Ollama error: ${response.statusText}`);
+    const errorText = await response.text().catch(() => "");
+    throw new Error(`Ollama error: ${response.status} ${response.statusText} - ${errorText}`);
   }
   
   const data = await response.json() as {
-    message: {
+    message?: {
       content?: string;
       tool_calls?: Array<{
         function: { name: string; arguments: Record<string, unknown> }
       }>;
     };
+    error?: string;
   };
+  
+  if (data.error) {
+    throw new Error(`Ollama: ${data.error}`);
+  }
+  
+  if (!data.message) {
+    throw new Error("Ollama returned empty response");
+  }
   
   return {
     content: data.message.content ?? "",
@@ -238,8 +248,18 @@ function setupIpcHandlers(): void {
     };
   });
 
-  ipcMain.handle("chat:updateSettings", (_event, updates: Partial<ReturnType<typeof configStore.getSettings>>) => {
-    configStore.updateSettings(updates);
+  ipcMain.handle("chat:updateSettings", (_event, updates: Record<string, unknown>) => {
+    // Map frontend names to config names
+    const mapped: Partial<ReturnType<typeof configStore.getSettings>> = {};
+    
+    if ("ollamaModel" in updates) mapped.ollamaModel = updates.ollamaModel as string;
+    if ("ollamaHost" in updates) mapped.ollamaHost = updates.ollamaHost as string;
+    if ("maxTurns" in updates) mapped.maxTurns = updates.maxTurns as number;
+    if ("fullAccess" in updates) mapped.fullAccess = updates.fullAccess as boolean;
+    if ("autoApprove" in updates) mapped.autoApprove = updates.autoApprove as boolean;
+    
+    configStore.updateSettings(mapped);
+    log.info("chat.settingsUpdated", "Settings updated", updates);
     return true;
   });
 

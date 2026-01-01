@@ -190,9 +190,50 @@
     }
 
     .model-selector:hover { background: var(--bg-hover); }
+    .model-selector { position: relative; }
 
     .model-name { font-weight: 600; }
     .model-provider { color: var(--text-muted); font-size: 0.75rem; }
+
+    .model-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 0.5rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      z-index: 100;
+      min-width: 200px;
+    }
+
+    .model-dropdown-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .model-option {
+      padding: 0.6rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .model-option:hover { background: var(--bg-hover); }
+    .model-option.active { background: var(--accent); color: white; }
+
+    .model-dropdown-footer {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .model-dropdown-footer:hover { background: var(--bg-hover); }
 
     .header-actions {
       display: flex;
@@ -733,12 +774,21 @@
     <!-- Main Content -->
     <main class="main">
       <header class="main-header">
-        <div class="model-selector" onclick="openSettings('models')">
+        <div class="model-selector" onclick="toggleModelDropdown()" id="modelSelector">
           <div>
             <div class="model-name" id="currentModel">qwen3</div>
             <div class="model-provider">Ollama</div>
           </div>
           <span>▼</span>
+          <div class="model-dropdown hidden" id="modelDropdown">
+            <div class="model-dropdown-header">Vælg model</div>
+            <div id="modelDropdownList">
+              <div class="model-option" onclick="selectModelQuick('qwen3')">qwen3</div>
+              <div class="model-option" onclick="selectModelQuick('llama3.1')">llama3.1</div>
+              <div class="model-option" onclick="selectModelQuick('mistral')">mistral</div>
+            </div>
+            <div class="model-dropdown-footer" onclick="openSettings('models')">⚙️ Flere modeller...</div>
+          </div>
         </div>
 
         <div class="header-actions">
@@ -1365,6 +1415,54 @@ node_modules
     function toggleTools() {
       openSettings('mcp');
     }
+
+    // ============ MODEL DROPDOWN ============
+    function toggleModelDropdown() {
+      const dropdown = document.getElementById('modelDropdown');
+      dropdown.classList.toggle('hidden');
+      
+      if (!dropdown.classList.contains('hidden')) {
+        // Load models when opening
+        loadModelsForDropdown();
+      }
+    }
+
+    async function loadModelsForDropdown() {
+      try {
+        const models = await window.chat.getModels();
+        const list = document.getElementById('modelDropdownList');
+        
+        if (models && models.length > 0) {
+          list.innerHTML = models.map(m => `
+            <div class="model-option ${m.name === settings.model ? 'active' : ''}" 
+                 onclick="event.stopPropagation(); selectModelQuick('${m.name}')">
+              ${m.name} <span style="color: var(--text-muted); font-size: 0.75rem;">${m.size || ''}</span>
+            </div>
+          `).join('');
+        }
+      } catch (e) {
+        console.error('Failed to load models:', e);
+      }
+    }
+
+    function selectModelQuick(modelName) {
+      settings.model = modelName;
+      document.getElementById('currentModel').textContent = modelName;
+      document.getElementById('modelDropdown').classList.add('hidden');
+      
+      // Save to backend
+      window.chat.updateSettings({ ollamaModel: modelName });
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const selector = document.getElementById('modelSelector');
+      const dropdown = document.getElementById('modelDropdown');
+      
+      if (selector && !selector.contains(e.target)) {
+        dropdown?.classList.add('hidden');
+      }
+    });
 
     // Initialize
     init();
