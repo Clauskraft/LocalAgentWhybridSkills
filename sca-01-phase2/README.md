@@ -1,134 +1,171 @@
 # SCA-01 Phase 2 - Desktop Agent
 
-> **Full PC Access Agent with Approval Gates**
+🖥️ Full-featured desktop application with Electron, providing complete system access with approval gates.
 
-Phase 2 extends SCA-01 with complete desktop capabilities matching what a human operator can do.
+## Features
 
-## 🚀 Capabilities
+### 🛠️ Tools
+- **Shell Execution** - Run any shell command
+- **File System** - Read, write, delete files anywhere
+- **System Info** - CPU, memory, disk, processes
+- **Clipboard** - Read/write system clipboard
+- **Browser Automation** - Puppeteer-based web control
+- **Network Requests** - HTTP client for APIs
 
-### Full System Access
-- **Shell execution**: Run any command (PowerShell, Bash, CMD)
-- **File system**: Read/write anywhere (with approval)
-- **Process management**: List, start, kill processes
-- **Network**: HTTP requests, port scanning, connectivity checks
-- **Clipboard**: Read/write system clipboard
-- **Browser automation**: Navigate, click, type, screenshot
+### 🔒 Security
+- **Approval Queue** - User approval for risky operations
+- **Policy Engine** - Configurable access controls
+- **Audit Logging** - HyperLog JSONL trail
 
-### Approval Gates
-All dangerous operations require explicit approval:
-- File writes outside safe directories
-- Shell commands with side effects
-- Process termination
-- Network connections to external hosts
-- Clipboard modifications
+### ☁️ Cloud Integration
+- **Railway Sync** - Sessions synced to cloud
+- **Notion Integration** - Blackboard sync to Notion
+- **Multi-device** - Access from desktop, mobile, web
 
-### Desktop UI (Electron)
-- Visual blackboard display
-- Pending approval queue
-- Real-time agent activity log
-- Manual override controls
+## Requirements
 
-## ⚠️ Security Model
+- Node.js 18+
+- Ollama running locally (for AI)
+- Windows/macOS/Linux
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    APPROVAL MATRIX                          │
-├─────────────────────┬─────────────┬─────────────────────────┤
-│ Operation           │ Risk Level  │ Approval Required       │
-├─────────────────────┼─────────────┼─────────────────────────┤
-│ Read file (safe)    │ 🟢 Low      │ Auto-approved           │
-│ Read file (system)  │ 🟡 Medium   │ Auto-approved + logged  │
-│ Write file (repo)   │ 🟡 Medium   │ Auto-approved if flag   │
-│ Write file (system) │ 🔴 High     │ MANUAL APPROVAL         │
-│ Shell (read-only)   │ 🟡 Medium   │ Auto-approved           │
-│ Shell (mutating)    │ 🔴 High     │ MANUAL APPROVAL         │
-│ Process kill        │ 🔴 High     │ MANUAL APPROVAL         │
-│ Network (internal)  │ 🟢 Low      │ Auto-approved           │
-│ Network (external)  │ 🟡 Medium   │ Auto-approved + logged  │
-│ Browser automation  │ 🟡 Medium   │ Auto-approved           │
-└─────────────────────┴─────────────┴─────────────────────────┘
-```
-
-## 🛠️ Quick Start
+## Quick Start
 
 ```bash
-cd sca-01-phase2
+# Install dependencies
 npm install
 
-# CLI mode (headless)
-npm run dev -- doctor
-npm run dev -- run
+# Build TypeScript
+npm run build
 
-# Desktop UI mode
-npm run dev:ui
+# Run Chat UI (recommended)
+npm run dev:chat
+
+# Run Configuration Cockpit
+npm run dev:cockpit
+
+# Run CLI
+npm run dev -- doctor
 ```
 
-## 📁 Environment Variables
+## UI Applications
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `OLLAMA_HOST` | `http://localhost:11434` | Ollama server URL |
-| `OLLAMA_MODEL` | `qwen3` | Model with tool calling |
-| `SCA_FULL_ACCESS` | `false` | Enable full PC access mode |
-| `SCA_AUTO_APPROVE` | `false` | Skip approval gates (DANGEROUS) |
-| `SCA_SAFE_DIRS` | `.` | Comma-separated safe directories |
-| `SCA_LOG_DIR` | `./logs` | HyperLog output directory |
+### Chat UI (`npm run dev:chat`)
 
-## 🔧 Tool Categories
+Modern chat interface similar to ChatGPT/Gemini:
+- Model selection dropdown
+- Session management
+- Settings panel (MCP, System Prompt)
+- Ollama model download/delete
 
-### File Operations
-- `read_file_anywhere` - Read any file on the system
-- `write_file_anywhere` - Write to any location (approval required)
-- `list_directory` - List directory contents
-- `file_info` - Get file metadata
-- `search_files` - Search for files by pattern
+### Configuration Cockpit (`npm run dev:cockpit`)
 
-### Shell Execution
-- `run_shell` - Execute shell commands
-- `run_powershell` - Execute PowerShell scripts
-- `run_bash` - Execute Bash commands
+Admin panel for managing:
+- Allowed file paths
+- Repository access
+- Tool permissions
+- API credentials
+- MCP server configuration
 
-### Process Management
-- `list_processes` - List running processes
-- `kill_process` - Terminate a process (approval required)
-- `start_process` - Start a new process
+## Project Structure
 
-### System Information
-- `system_info` - CPU, memory, disk, OS details
-- `network_interfaces` - Network adapter info
-- `environment_vars` - List environment variables
+```
+sca-01-phase2/
+├── src/
+│   ├── agent/
+│   │   └── DesktopAgent.ts     # Main agent logic
+│   ├── approval/
+│   │   └── approvalQueue.ts    # Approval system
+│   ├── config/
+│   │   └── configStore.ts      # Persistent config
+│   ├── logging/
+│   │   └── hyperlog.ts         # JSONL logging
+│   ├── mcp/
+│   │   ├── mcpToolClient.ts    # MCP client
+│   │   └── toolServerFull.ts   # Extended tool server
+│   ├── security/
+│   │   └── policy.ts           # Policy engine
+│   ├── sync/
+│   │   └── cloudSync.ts        # Cloud synchronization
+│   ├── tools/
+│   │   ├── browserTools.ts     # Puppeteer automation
+│   │   ├── clipboardTools.ts   # Clipboard access
+│   │   ├── fileTools.ts        # File operations
+│   │   ├── networkTools.ts     # HTTP requests
+│   │   ├── shellTools.ts       # Shell execution
+│   │   └── systemTools.ts      # System info
+│   ├── ui/
+│   │   ├── chat.html           # Chat interface
+│   │   ├── cockpit.html        # Config cockpit
+│   │   ├── index.html          # Main UI
+│   │   ├── mainChat.ts         # Chat Electron main
+│   │   ├── mainCockpit.ts      # Cockpit Electron main
+│   │   ├── preloadChat.ts      # Chat preload
+│   │   └── preloadCockpit.ts   # Cockpit preload
+│   └── cli.ts                  # CLI entry
+├── docs/
+│   └── CAPABILITY_MATRIX.md    # What agent can/cannot do
+└── package.json
+```
 
-### Browser Automation
-- `browser_navigate` - Open URL in browser
-- `browser_screenshot` - Capture page screenshot
-- `browser_click` - Click element
-- `browser_type` - Type text
+## Environment Variables
 
-### Clipboard
-- `clipboard_read` - Read clipboard contents
-- `clipboard_write` - Write to clipboard (approval required)
+```bash
+# Ollama configuration
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_MODEL=qwen3
 
-## 📋 Phase 2 vs Phase 1
+# Permissions (all default to false)
+SCA_ALLOW_UNRESTRICTED_FILE=true
+SCA_ALLOW_UNRESTRICTED_EXEC=true
+SCA_ALLOW_NETWORK=true
+SCA_ALLOW_CLIPBOARD=true
+SCA_ALLOW_BROWSER=true
 
-| Feature | Phase 1 | Phase 2 |
-|---------|---------|---------|
-| File access | Repo only | Full system |
-| Shell | Make targets only | Any command |
-| UI | CLI only | CLI + Electron |
-| Approval gates | Env flags | Interactive UI |
-| Browser | ❌ | ✅ Puppeteer |
-| Clipboard | ❌ | ✅ |
-| Processes | ❌ | ✅ |
-| System info | ❌ | ✅ |
+# Cloud sync
+CLOUD_API_URL=https://sca-01-phase3-production.up.railway.app
+```
 
-## 🔒 Restrisiko
+## Cloud Sync
 
-- Full system access means potential for damage
-- Approval gates are the primary safety mechanism
-- Use `SCA_AUTO_APPROVE=false` (default) in production
-- All operations are logged to HyperLog for audit
+The desktop app can sync to Railway cloud:
 
----
+```typescript
+import { cloudSync } from "./sync/cloudSync";
 
-*SCA-01 Phase 2 - "The Finisher" with full desktop capabilities*
+// Login
+await cloudSync.login("email@example.com", "password");
 
+// Sync all sessions
+const result = await cloudSync.syncAll();
+console.log(`Synced ${result.syncedSessions} sessions`);
+
+// Sync to Notion
+await cloudSync.syncToNotion(sessionId);
+```
+
+## Building Executable
+
+```bash
+# Build for current platform
+npm run build
+npx electron-builder
+
+# Build for Windows
+npx electron-builder --win
+
+# Build portable .exe
+npx electron-builder --win portable
+```
+
+## Security Notes
+
+⚠️ **This agent has full system access when enabled!**
+
+- Keep `SCA_ALLOW_*` flags disabled in production
+- Use approval gates for all risky operations
+- Review audit logs regularly
+- Don't expose to untrusted networks
+
+## License
+
+Private - SCA-01 Project

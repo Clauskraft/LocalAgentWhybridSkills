@@ -1,175 +1,174 @@
-# SCA-01 "The Finisher" - Local Agent Runtime
+# SCA-01 "The Finisher"
 
-> **Suveræn, local-first AI agent med fuld PC-adgang og Zero Trust sikkerhed**
+🤖 **Local-first agent runtime** with cloud sync and mobile support.
 
-[![Build](https://img.shields.io/badge/build-passing-brightgreen)]()
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)]()
-[![License](https://img.shields.io/badge/license-Private-red)]()
+A completion engine that takes partial implementations and drives them to "Definition of Done" with security-by-design principles.
 
----
-
-## 🎯 Hvad er SCA-01?
-
-SCA-01 ("The Finisher") er en **completion engine** - en AI agent der tager ufærdige opgaver og kører dem til "Definition of Done".
-
-**Nøgleegenskaber:**
-- 🏠 **Local-first**: Kører på din PC med Ollama (ingen cloud dependency)
-- 🔐 **Zero Trust**: Approval gates for farlige operationer
-- 🛠️ **Fuld PC-adgang**: Filer, shell, processer, clipboard, browser
-- 📋 **Blackboard Pattern**: State i Markdown (docs/HANDOVER_LOG.md)
-- 🔌 **MCP Protocol**: Standardiseret tool/agent bus
-
----
-
-## 📁 Struktur
+## 🏗️ Architecture
 
 ```
-Local_Agent/
-├── sca-01-phase1/          # MVP: CLI + Ollama + begrænsede tools
-│   ├── src/
-│   │   ├── cli.ts
-│   │   ├── agent/FinisherAgent.ts
-│   │   ├── mcp/toolServer.ts
-│   │   └── ...
-│   └── docs/HANDOVER_LOG.md
-│
-├── sca-01-phase2/          # Desktop Agent: Fuld PC-adgang
-│   ├── src/
-│   │   ├── cli.ts
-│   │   ├── agent/DesktopAgent.ts
-│   │   ├── mcp/toolServerFull.ts   # 20+ tools
-│   │   ├── ui/                      # Electron UI
-│   │   ├── security/policy.ts       # Zero Trust
-│   │   └── approval/                # Approval gates
-│   └── docs/CAPABILITY_MATRIX.md
-│
-└── docs/
-    └── ARCHITECTURE.md
+┌─────────────────────────────────────────────────────────────────┐
+│                        SCA-01 ECOSYSTEM                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐         │
+│  │   Phase 1   │    │   Phase 2   │    │   Phase 3   │         │
+│  │    CLI      │    │   Desktop   │    │    Cloud    │         │
+│  │   (MVP)     │◄──►│  (Electron) │◄──►│  (Railway)  │         │
+│  └─────────────┘    └─────────────┘    └─────────────┘         │
+│        │                  │                   ▲                 │
+│        │                  │                   │                 │
+│        ▼                  ▼                   │                 │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐         │
+│  │   Ollama    │    │ Cloud Sync  │    │  PostgreSQL │         │
+│  │  (Local AI) │    │   Service   │    │  + Notion   │         │
+│  └─────────────┘    └─────────────┘    └─────────────┘         │
+│                           │                   ▲                 │
+│                           │                   │                 │
+│                     ┌─────────────┐           │                 │
+│                     │   Mobile    │───────────┘                 │
+│                     │    (Expo)   │                             │
+│                     └─────────────┘                             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
----
+## 📦 Components
+
+| Component | Description | Status |
+|-----------|-------------|--------|
+| [sca-01-phase1](./sca-01-phase1/) | CLI MVP with MCP tools | ✅ Complete |
+| [sca-01-phase2](./sca-01-phase2/) | Desktop app with full system access | ✅ Complete |
+| [sca-01-phase3](./sca-01-phase3/) | Cloud API on Railway | ✅ Deployed |
+| [sca-01-mobile](./sca-01-mobile/) | Android/iOS app with Expo | ✅ Complete |
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 20+
-- Ollama med en tool-calling model (qwen3, llama3.1, etc.)
 
-### Phase 1 (Safe/Restricted)
+- Node.js 18+
+- [Ollama](https://ollama.ai) installed and running
+- Git
+
+### Phase 1: CLI (Simplest)
+
 ```bash
 cd sca-01-phase1
 npm install
-npm run dev -- doctor    # Check Ollama
-npm run dev -- run       # Run agent (read-only)
+npm run build
+npm run sca -- doctor  # Check Ollama connection
+npm run sca -- run     # Run agent
 ```
 
-### Phase 2 (Full PC Access)
+### Phase 2: Desktop App
+
 ```bash
 cd sca-01-phase2
 npm install
-npm run dev -- doctor    # Check system
-
-# Safe mode (read-only)
-npm run dev -- run
-
-# Full access med approval gates
-$env:SCA_FULL_ACCESS="true"; npm run dev -- run
-
-# Desktop UI
-npm run dev:ui
+npm run build
+npm run dev:chat       # Launch Chat UI
 ```
 
----
+### Phase 3: Cloud Server
 
-## 🔐 Security Model
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    APPROVAL MATRIX                          │
-├─────────────────────┬─────────────┬─────────────────────────┤
-│ Operation           │ Risk Level  │ Approval Required       │
-├─────────────────────┼─────────────┼─────────────────────────┤
-│ Read file (safe)    │ 🟢 Low      │ Auto-approved           │
-│ Read file (system)  │ 🟡 Medium   │ Logged                  │
-│ Write file (repo)   │ 🟡 Medium   │ Flag-gated              │
-│ Write file (system) │ 🔴 High     │ MANUAL APPROVAL         │
-│ Shell (read-only)   │ 🟢 Low      │ Auto-approved           │
-│ Shell (mutating)    │ 🔴 High     │ MANUAL APPROVAL         │
-│ Process kill        │ 🔴 High     │ MANUAL APPROVAL         │
-└─────────────────────┴─────────────┴─────────────────────────┘
-```
-
-### Blocked Paths (Always)
-- `.git/`, `node_modules/`, `.env*`
-- System directories, secrets, browser profiles
-
-### Blocked Commands (Always)
-- `rm -rf /`, `format c:`, fork bombs, etc.
-
----
-
-## 📊 Phases
-
-| Phase | Status | Description |
-|-------|--------|-------------|
-| **Phase 1** | ✅ Complete | CLI + Ollama + begrænsede tools |
-| **Phase 2** | ✅ Complete | Desktop Agent + Electron UI + Approval Gates |
-| **Phase 3** | 🔜 Planned | Cloud Mode (MCP over HTTP, mTLS) |
-| **Phase 4** | 🔜 Planned | Agent Mesh (multi-agent koordinering) |
-
----
-
-## ⚙️ Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `OLLAMA_HOST` | `http://localhost:11434` | Ollama server |
-| `OLLAMA_MODEL` | `qwen3` | Model name |
-| `SCA_FULL_ACCESS` | `false` | Enable full system access |
-| `SCA_AUTO_APPROVE` | `false` | Skip approval gates (DANGEROUS) |
-| `SCA_SAFE_DIRS` | `.` | Safe directories |
-| `SCA_LOG_DIR` | `./logs` | Log directory |
-
----
-
-## 🛠️ Development
+Already deployed at: https://sca-01-phase3-production.up.railway.app
 
 ```bash
-# Build Phase 1
-cd sca-01-phase1 && npm run build
-
-# Build Phase 2
-cd sca-01-phase2 && npm run build
-
-# Lint
-npm run lint
-
-# Test
-npm run test
-
-# Build Electron .exe
-npm run build:ui
+# Test health
+curl https://sca-01-phase3-production.up.railway.app/health
 ```
 
----
+### Mobile App
 
-## 📋 The CLAK Codex
+```bash
+cd sca-01-mobile
+npm install
+npm start              # Start Expo
+# Scan QR code with Expo Go app
+```
 
-SCA-01 følger "The CLAK Codex" - strenge krav til:
+## 🔐 Security Principles
 
-- **Security by Design**: Zero Trust, least privilege, input validation
-- **Compliance Ready**: GDPR/Schrems II posture, audit trails
-- **ARM64 Native**: Snapdragon X Elite som target platform
-- **Strict TypeScript**: No `any`, ES Modules only
-- **Blackboard Protocol**: State i Markdown, ikke JSON
+- **Zero Trust** - Validate all inputs, least privilege
+- **GDPR Ready** - Treat all data as sensitive
+- **Audit Trail** - HyperLog JSONL for all operations
+- **Approval Gates** - User confirmation for risky actions
+- **No Secrets in Code** - Environment variables only
 
----
+## 🛠️ MCP Tools
+
+### Phase 1 (Safe)
+- `read_handover_log` - Read blackboard
+- `read_file` - Read files (with path restrictions)
+- `write_file` - Write files (requires SCA_ALLOW_WRITE=true)
+- `run_make_target` - Run make commands (requires SCA_ALLOW_EXEC=true)
+
+### Phase 2 (Full Access)
+- `shell_exec` - Execute any shell command
+- `file_*` - Full filesystem access
+- `system_*` - CPU, memory, processes
+- `clipboard_*` - System clipboard
+- `browser_*` - Puppeteer automation
+- `http_request` - Network requests
+
+## ☁️ Cloud Features
+
+- **User Authentication** - Register, login, JWT tokens
+- **Session Storage** - PostgreSQL persistence
+- **Notion Sync** - Blackboard and session sync
+- **Mobile Access** - Same API from any device
+
+## 📱 Mobile App
+
+Native Android/iOS app with:
+- Secure login
+- Session management
+- Chat interface
+- Cloud sync
+
+## 🔧 Environment Variables
+
+```bash
+# Ollama
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_MODEL=qwen3
+
+# Phase 1 Permissions
+SCA_ALLOW_WRITE=false
+SCA_ALLOW_EXEC=false
+
+# Phase 2 Permissions
+SCA_ALLOW_UNRESTRICTED_FILE=false
+SCA_ALLOW_UNRESTRICTED_EXEC=false
+SCA_ALLOW_NETWORK=false
+SCA_ALLOW_CLIPBOARD=false
+SCA_ALLOW_BROWSER=false
+
+# Phase 3 (Cloud)
+DATABASE_URL=postgresql://...
+JWT_SECRET=your-secret-key
+
+# Notion Integration
+NOTION_API_KEY=secret_xxx
+NOTION_DATABASE_ID=xxx
+```
+
+## 📋 Faseplan
+
+- [x] **Phase 1:** CLI + Ollama + MCP Tool Server
+- [x] **Phase 2:** Desktop UI + Approval Gates + Full System Access
+- [x] **Phase 3:** Cloud Mode (Railway + PostgreSQL + Notion)
+- [ ] **Phase 4:** Agent-Mesh (Multi-agent coordination)
+
+## 🔗 Links
+
+- **Cloud API:** https://sca-01-phase3-production.up.railway.app
+- **GitHub:** https://github.com/Clauskraft/LocalAgentWhybridSkills
 
 ## 📄 License
 
-Private / Internal use only.
+Private - SCA-01 Project
 
 ---
 
-*Built by CLAK - Head of Solutions*
-
+Built with ❤️ by CLAK

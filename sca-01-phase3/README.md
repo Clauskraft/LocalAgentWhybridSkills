@@ -1,132 +1,221 @@
-# SCA-01 Phase 3: Cloud Mode
+# SCA-01 Phase 3 - Cloud API
 
-> MCP over HTTP with JWT authentication and Zero Trust security
+☁️ Cloud-hosted API server for SCA-01, deployed on Railway with PostgreSQL.
 
-## 🎯 Features
+**Live URL:** https://sca-01-phase3-production.up.railway.app
 
-- **HTTP Transport**: MCP protocol over RESTful HTTP endpoints
-- **JWT Authentication**: Short-lived tokens with automatic refresh
-- **Zero Trust**: All requests require valid tokens with scope validation
-- **Rate Limiting**: Protection against abuse
-- **Security Headers**: Helmet.js for secure HTTP headers
-- **Audit Logging**: All operations logged with HyperLog
+## Features
 
-## 🚀 Quick Start
+### 🔐 Authentication
+- JWT-based authentication (ES256)
+- User registration and login
+- Token refresh mechanism
+- Secure password hashing (bcrypt)
 
-### Start Server
+### 💬 Sessions & Messages
+- Create/manage chat sessions
+- Store message history
+- Model selection per session
+- System prompt configuration
 
-```bash
-cd sca-01-phase3
-npm install
-npm run dev:server
-```
+### 🔧 MCP over HTTP
+- Tool listing and calling
+- Streamable HTTP transport
+- Bearer token authentication
 
-Server runs at http://localhost:8787
+### 📝 Notion Integration
+- Sync sessions to Notion database
+- Sync blackboard (HANDOVER_LOG)
+- Append messages to Notion pages
 
-### Connect Client
+## Tech Stack
 
-```bash
-# Set credentials
-$env:SCA_CLIENT_ID = "my-agent"
-$env:SCA_CLIENT_SECRET = "secure-password-here"
+- **Runtime:** Node.js 20+
+- **Framework:** Fastify
+- **Database:** PostgreSQL
+- **Hosting:** Railway
+- **Auth:** JWT (jose library)
+- **Integrations:** Notion API
 
-# Check health
-npm run dev -- health
-
-# List tools
-npm run dev -- tools
-
-# Call a tool
-npm run dev -- call read_file '{"path": "README.md"}'
-```
-
-## 📋 API Endpoints
+## API Endpoints
 
 ### Public
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/health` | GET | Health check |
-| `/mcp/info` | GET | Server info |
+| `/mcp/info` | GET | MCP server info |
 
 ### Authentication
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/auth/token` | POST | Get access token |
+| `/auth/register` | POST | Register new user |
+| `/auth/login` | POST | Login and get tokens |
+| `/auth/refresh` | POST | Refresh access token |
+| `/auth/token` | POST | OAuth2 token endpoint |
 
-```json
-{
-  "grant_type": "client_credentials",
-  "client_id": "your-client-id",
-  "client_secret": "your-secret"
-}
-```
+### Sessions (requires auth)
 
-### Protected (requires Bearer token)
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/sessions` | GET | List user's sessions |
+| `/api/sessions` | POST | Create new session |
+| `/api/sessions/:id` | GET | Get session details |
+| `/api/sessions/:id` | PUT | Update session |
+| `/api/sessions/:id` | DELETE | Delete session |
+| `/api/sessions/:id/messages` | GET | Get messages |
+| `/api/sessions/:id/messages` | POST | Add message |
+
+### MCP (requires auth)
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/mcp/tools` | GET | List available tools |
-| `/mcp/tools/call` | POST | Execute a tool |
-| `/mcp` | POST | MCP JSON-RPC endpoint |
+| `/mcp/tools/call` | POST | Call a tool |
 
-## 🔐 Security
+### Notion (requires auth + config)
 
-### Token Lifecycle
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/notion/status` | GET | Check Notion connection |
+| `/api/notion/sync/session` | POST | Sync session to Notion |
+| `/api/notion/sync/message` | POST | Append message to Notion |
+| `/api/notion/sync/blackboard` | POST | Sync HANDOVER_LOG |
+| `/api/notion/sessions` | GET | List sessions from Notion |
 
+## Deployment
+
+### Railway (Recommended)
+
+1. Connect GitHub repo to Railway
+2. Add PostgreSQL plugin
+3. Set environment variables
+4. Deploy automatically
+
+### Environment Variables
+
+```bash
+# Required
+DATABASE_URL=postgresql://...
+JWT_SECRET=your-secret-key-min-32-chars
+
+# Notion (optional)
+NOTION_API_KEY=secret_xxx
+NOTION_DATABASE_ID=xxx
+NOTION_BLACKBOARD_PAGE_ID=xxx
+
+# Server
+PORT=8787
+HOST=0.0.0.0
 ```
-1. Client authenticates with client_credentials
-2. Server issues short-lived access token (15 min)
-3. Client includes token in Authorization header
-4. On expiry, client uses refresh_token to get new access token
-5. Keys rotate every hour
+
+### Manual Deploy
+
+```bash
+# Install
+npm install
+
+# Build
+npm run build
+
+# Start
+npm start
 ```
 
-### Scopes
+## Development
 
-- `tools:read` - List tools
-- `tools:call` - Execute tools
+```bash
+# Install dependencies
+npm install
 
-### Rate Limiting
+# Build TypeScript
+npm run build
 
-- 100 requests per minute per IP
+# Run locally
+npm start
 
-## ⚙️ Environment Variables
+# Test health
+curl http://localhost:8787/health
+```
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SCA_PORT` | `8787` | Server port |
-| `SCA_HOST` | `0.0.0.0` | Server host |
-| `SCA_SERVER_URL` | `http://localhost:8787` | Server URL (client) |
-| `SCA_CLIENT_ID` | - | Client ID |
-| `SCA_CLIENT_SECRET` | - | Client secret |
+## Database Schema
 
-## 📁 Files
+### Users
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Sessions
+```sql
+CREATE TABLE sessions (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES users(id),
+  title VARCHAR(255) NOT NULL,
+  model VARCHAR(100) NOT NULL,
+  system_prompt TEXT,
+  notion_page_id VARCHAR(255),
+  is_archived BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Messages
+```sql
+CREATE TABLE messages (
+  id UUID PRIMARY KEY,
+  session_id UUID REFERENCES sessions(id),
+  role VARCHAR(50) NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+## Security
+
+- All passwords hashed with bcrypt
+- JWT tokens with short expiry (15 min access, 7 day refresh)
+- Rate limiting (100 req/min)
+- CORS configured
+- Helmet security headers
+- SQL injection protection (parameterized queries)
+
+## Project Structure
 
 ```
 sca-01-phase3/
 ├── src/
-│   ├── cli.ts                 # CLI interface
 │   ├── auth/
-│   │   └── jwtAuth.ts         # JWT token service
-│   ├── client/
-│   │   └── httpClient.ts      # HTTP client for MCP
+│   │   └── jwtAuth.ts          # JWT service
+│   ├── db/
+│   │   ├── database.ts         # PostgreSQL connection
+│   │   ├── userRepository.ts   # User CRUD
+│   │   └── sessionRepository.ts # Session/Message CRUD
+│   ├── logging/
+│   │   └── hyperlog.ts         # JSONL logging
+│   ├── notion/
+│   │   └── notionClient.ts     # Notion API client
+│   ├── routes/
+│   │   ├── authRoutes.ts       # Auth endpoints
+│   │   ├── sessionRoutes.ts    # Session endpoints
+│   │   └── notionRoutes.ts     # Notion endpoints
 │   ├── server/
-│   │   └── httpServer.ts      # Fastify HTTP server
-│   └── logging/
-│       └── hyperlog.ts        # Audit logging
-├── config/
-│   └── keys/                  # JWT signing keys (auto-generated)
-└── logs/
-    ├── http-server.jsonl      # Server logs
-    └── security.jsonl         # Security audit logs
+│   │   └── httpServer.ts       # Fastify server
+│   ├── types/
+│   │   └── fastify.d.ts        # Type extensions
+│   └── cli.ts                  # CLI client
+├── railway.json                # Railway config
+├── nixpacks.toml              # Build config
+└── package.json
 ```
 
-## 🔮 Next: Phase 4 (Agent Mesh)
+## License
 
-- Agent registry
-- Multi-agent coordination
-- Parallel tool calling
-- Discovery protocol
-
+Private - SCA-01 Project
