@@ -13,6 +13,7 @@ import type {
 
 const REGISTRY_FILE = "docs/AGENTS.md";
 const REGISTRY_JSON = ".agent-registry.json";
+const REGISTRY_DIR = "docs";
 
 interface RegistryStorage {
   version: string;
@@ -59,6 +60,39 @@ export class AgentRegistry {
     
     // Also update Markdown blackboard
     await this.updateMarkdownRegistry();
+  }
+
+  async syncFromMarkdown(): Promise<void> {
+    const mdPath = path.join(this.repoRoot, REGISTRY_FILE);
+    try {
+      const content = await fs.readFile(mdPath, "utf8");
+      const lines = content.split("\n");
+      let inTable = false;
+      for (const line of lines) {
+        if (line.startsWith("| ID |")) { inTable = true; continue; }
+        if (inTable && line.startsWith("|") && line.includes("|")) {
+          const cols = line.split("|").map((c) => c.trim()).filter(Boolean);
+          if (cols.length >= 5) {
+            const [id, name, transport, status, trust] = cols;
+            const trustLevel = (trust.split(" ").pop() ?? "untrusted") as AgentManifest["trustLevel"];
+            const statusVal = (status.split(" ").pop() ?? "offline") as AgentStatus;
+            this.register({
+              id,
+              name,
+              version: "unknown",
+              description: "Imported from AGENTS.md",
+              transport: transport as AgentManifest["transport"],
+              endpoint: "",
+              trustLevel,
+              capabilities: [],
+            });
+            this.updateStatus(id, statusVal);
+          }
+        }
+      }
+    } catch {
+      // ignore if no markdown yet
+    }
   }
 
   private async updateMarkdownRegistry(): Promise<void> {

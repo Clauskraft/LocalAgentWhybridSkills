@@ -15,6 +15,7 @@ function printHelp(): void {
 Commands:
   registry list              List all registered agents
   registry add <file.json>   Register agent from manifest file
+  registry sync              Sync registry from docs/AGENTS.md into JSON
   registry remove <id>       Unregister an agent
   
   mesh start                 Start the mesh orchestrator
@@ -70,6 +71,13 @@ async function cmdRegistryAdd(manifestPath: string): Promise<void> {
   await registry.save();
   
   console.log(`✅ Registered agent: ${manifest.name} (${manifest.id})`);
+}
+
+async function cmdRegistrySync(): Promise<void> {
+  await registry.load();
+  await registry.syncFromMarkdown();
+  await registry.save();
+  console.log(`✅ Synced registry from docs/AGENTS.md`);
 }
 
 async function cmdRegistryRemove(agentId: string): Promise<void> {
@@ -212,6 +220,8 @@ async function main(): Promise<void> {
       await cmdRegistryList();
     } else if (cmd === "registry" && subcmd === "add" && args[2]) {
       await cmdRegistryAdd(args[2]);
+    } else if (cmd === "registry" && subcmd === "sync") {
+      await cmdRegistrySync();
     } else if (cmd === "registry" && subcmd === "remove" && args[2]) {
       await cmdRegistryRemove(args[2]);
     } else if (cmd === "mesh" && subcmd === "status") {
