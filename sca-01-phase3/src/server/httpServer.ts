@@ -111,10 +111,14 @@ const ToolCallSchema = z.object({
 
 export async function createServer(config: Partial<ServerConfig> = {}): Promise<ReturnType<typeof Fastify>> {
   const envCfg = loadEnvConfig();
+  // CRITICAL: Railway edge requires binding to 0.0.0.0, never 127.0.0.1
+  // Override any HOST env var that might be set to localhost
+  const safeHost = config.host === "0.0.0.0" || config.host === "::" ? config.host : "0.0.0.0";
   const cfg: ServerConfig = {
     ...DEFAULT_CONFIG,
     ...envCfg,
     ...config,
+    host: safeHost,
     rateLimit: {
       max: (config.rateLimit?.max ?? envCfg.rateLimit?.max ?? DEFAULT_CONFIG.rateLimit.max),
       timeWindow: (config.rateLimit?.timeWindow ?? envCfg.rateLimit?.timeWindow ?? DEFAULT_CONFIG.rateLimit.timeWindow)
