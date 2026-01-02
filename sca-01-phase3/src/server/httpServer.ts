@@ -562,6 +562,27 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  // Some Railway stacks route/healthcheck on port 3000 regardless of the injected PORT.
+  // To avoid "service unavailable" healthcheck failures, expose a tiny health listener on 3000 as well.
+  if (port !== 3000) {
+    const health = Fastify({ logger: false });
+    health.get("/health", async () => ({ status: "ok", timestamp: new Date().toISOString(), version: "0.3.0" }));
+    health.get("/ready", async (_req, reply) => {
+      try {
+        await initializeDatabase();
+        return { status: "ready", timestamp: new Date().toISOString() };
+      } catch (err) {
+        reply.code(503);
+        return { status: "degraded", error: (err as Error).message };
+      }
+    });
+    health.listen({ port: 3000, host }).then(() => {
+      console.log(`✅ Health sidecar listening at http://${host}:3000`);
+    }).catch(() => {
+      // Best-effort only; don't crash if 3000 is unavailable.
+    });
+  }
+
   // Run DB migrations AFTER the server is listening so Railway healthchecks can pass quickly.
   // /ready will reflect DB connectivity (and can be extended to validate schema).
   if (process.env.DATABASE_URL) {
