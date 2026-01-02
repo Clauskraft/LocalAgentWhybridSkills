@@ -12,8 +12,8 @@
     "dev": "tsx src/cli.ts",
     "build": "tsc -p tsconfig.json",
     "lint": "eslint .",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "tsx --test src/**/*.test.ts",
+    "test:watch": "tsx --test --watch src/**/*.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.10.2",
@@ -25,8 +25,7 @@
     "eslint": "^9.0.0",
     "tsx": "^4.0.0",
     "typescript": "^5.8.0",
-    "typescript-eslint": "^8.0.0",
-    "vitest": "^2.0.0"
+    "typescript-eslint": "^8.0.0"
   }
 }
 

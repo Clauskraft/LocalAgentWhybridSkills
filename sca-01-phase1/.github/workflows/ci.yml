@@ -2,11 +2,16 @@ name: ci
 
 on:
   push:
+    branches: [main, develop]
   pull_request:
+    branches: [main, develop]
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sca-01-phase1
 
     steps:
       - name: Checkout
@@ -17,24 +22,28 @@ jobs:
         with:
           node-version: "20"
           cache: npm
+          cache-dependency-path: sca-01-phase1/package-lock.json
 
       - name: Install
         run: npm ci
-        working-directory: sca-01-phase1
-
-      - name: Lint
-        run: make lint
-        working-directory: sca-01-phase1
-
-      - name: Test
-        run: make test
-        working-directory: sca-01-phase1
-
-      - name: Build
-        run: make mvp
-        working-directory: sca-01-phase1
 
       - name: Audit (high)
         run: make audit
-        working-directory: sca-01-phase1
+
+      - name: Lint
+        run: make lint
+
+      - name: Test
+        run: make test
+
+      - name: Build
+        run: make mvp
+
+      - name: Upload Build Artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: sca-01-phase1/dist
+          retention-days: 7
 

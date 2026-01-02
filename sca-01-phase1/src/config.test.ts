@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, beforeEach, afterEach } from "node:test";
+import assert from "node:assert/strict";
 import { loadConfig } from "./config.js";
 
-describe("loadConfig", () => {
+void describe("loadConfig", () => {
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
@@ -13,7 +14,7 @@ describe("loadConfig", () => {
     process.env = originalEnv;
   });
 
-  it("uses defaults when no env vars are set", () => {
+  void it("uses defaults when no env vars are set", () => {
     delete process.env["OLLAMA_HOST"];
     delete process.env["OLLAMA_MODEL"];
     delete process.env["SCA_ALLOW_WRITE"];
@@ -21,41 +22,40 @@ describe("loadConfig", () => {
 
     const cfg = loadConfig();
 
-    expect(cfg.ollamaHost).toBe("http://localhost:11434");
-    expect(cfg.ollamaModel).toBe("qwen3");
-    expect(cfg.allowWrite).toBe(false);
-    expect(cfg.allowExec).toBe(false);
-    expect(cfg.maxTurns).toBe(8);
+    assert.equal(cfg.ollamaHost, "http://localhost:11434");
+    assert.equal(cfg.ollamaModel, "qwen3");
+    assert.equal(cfg.allowWrite, false);
+    assert.equal(cfg.allowExec, false);
+    assert.equal(cfg.maxTurns, 8);
   });
 
-  it("respects OLLAMA_HOST env var", () => {
+  void it("respects OLLAMA_HOST env var", () => {
     process.env["OLLAMA_HOST"] = "http://custom:1234";
     const cfg = loadConfig();
-    expect(cfg.ollamaHost).toBe("http://custom:1234");
+    assert.equal(cfg.ollamaHost, "http://custom:1234");
   });
 
-  it("parses SCA_ALLOW_WRITE=true", () => {
+  void it("parses SCA_ALLOW_WRITE=true", () => {
     process.env["SCA_ALLOW_WRITE"] = "true";
     const cfg = loadConfig();
-    expect(cfg.allowWrite).toBe(true);
+    assert.equal(cfg.allowWrite, true);
   });
 
-  it("parses SCA_ALLOW_EXEC=1", () => {
+  void it("parses SCA_ALLOW_EXEC=1", () => {
     process.env["SCA_ALLOW_EXEC"] = "1";
     const cfg = loadConfig();
-    expect(cfg.allowExec).toBe(true);
+    assert.equal(cfg.allowExec, true);
   });
 
-  it("parses SCA_MAX_TURNS", () => {
+  void it("parses SCA_MAX_TURNS", () => {
     process.env["SCA_MAX_TURNS"] = "15";
     const cfg = loadConfig();
-    expect(cfg.maxTurns).toBe(15);
+    assert.equal(cfg.maxTurns, 15);
   });
 
-  it("falls back to default on invalid SCA_MAX_TURNS", () => {
+  void it("falls back to default on invalid SCA_MAX_TURNS", () => {
     process.env["SCA_MAX_TURNS"] = "not-a-number";
     const cfg = loadConfig();
-    expect(cfg.maxTurns).toBe(8);
+    assert.equal(cfg.maxTurns, 8);
   });
 });
-
