@@ -30,13 +30,39 @@ interface ServerConfig {
 const DEFAULT_CONFIG: ServerConfig = {
   host: "0.0.0.0",
   port: 8787,
-  corsOrigins: ["http://localhost:3000", "http://localhost:5173"],
+  corsOrigins: [],
   rateLimit: {
-    max: 100,
+    max: 60,
     timeWindow: "1 minute"
   },
   trustProxy: false
 };
+
+function loadEnvConfig(): Partial<ServerConfig> {
+  const corsEnv = process.env.CORS_ORIGINS;
+  const corsOrigins = corsEnv
+    ? corsEnv.split(",").map((v) => v.trim()).filter(Boolean)
+    : [];
+
+  const rateMax = Number.parseInt(process.env.RATE_LIMIT_MAX ?? "", 10);
+  const rateWindow = process.env.RATE_LIMIT_WINDOW;
+
+  const host = process.env.HOST;
+  const port = Number.parseInt(process.env.PORT ?? "", 10);
+
+  const trustProxy = (process.env.TRUST_PROXY ?? "").toLowerCase() === "true";
+
+  return {
+    host: host || undefined,
+    port: Number.isFinite(port) ? port : undefined,
+    corsOrigins,
+    rateLimit: {
+      max: Number.isFinite(rateMax) ? rateMax : undefined as unknown as number,
+      timeWindow: rateWindow || undefined as unknown as string
+    },
+    trustProxy
+  };
+}
 
 // MCP Message schemas
 const McpRequestSchema = z.object({
@@ -52,7 +78,19 @@ const ToolCallSchema = z.object({
 });
 
 export async function createServer(config: Partial<ServerConfig> = {}): Promise<ReturnType<typeof Fastify>> {
-  const cfg: ServerConfig = { ...DEFAULT_CONFIG, ...config };
+  const envCfg = loadEnvConfig();
+  const cfg: ServerConfig = {
+    ...DEFAULT_CONFIG,
+    ...envCfg,
+    ...config,
+    rateLimit: {
+      max: (config.rateLimit?.max ?? envCfg.rateLimit?.max ?? DEFAULT_CONFIG.rateLimit.max),
+      timeWindow: (config.rateLimit?.timeWindow ?? envCfg.rateLimit?.timeWindow ?? DEFAULT_CONFIG.rateLimit.timeWindow)
+    },
+    corsOrigins: (config.corsOrigins?.length
+      ? config.corsOrigins
+      : (envCfg.corsOrigins?.length ? envCfg.corsOrigins : DEFAULT_CONFIG.corsOrigins))
+  };
   const log = new HyperLog("./logs", "http-server.jsonl");
   const auth = getAuthService();
   await auth.initialize();
@@ -75,16 +113,20 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
     }
   });
 
-  await app.register(cors, {
-    origin: cfg.corsOrigins,
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
-    credentials: true
-  });
+  if (cfg.corsOrigins.length > 0) {
+    await app.register(cors, {
+      origin: cfg.corsOrigins,
+      methods: ["GET", "POST", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
+      credentials: true
+    });
+  }
 
   await app.register(rateLimit, {
     max: cfg.rateLimit.max,
-    timeWindow: cfg.rateLimit.timeWindow
+    timeWindow: cfg.rateLimit.timeWindow,
+    keyGenerator: (req) => (req.headers["x-real-ip"] as string) || (req.ip ?? "unknown"),
+    allowList: (req) => (req.headers["x-rate-limit-allow"] as string) === "true"
   });
 
   // Request ID decorator - store in custom property
