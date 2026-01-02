@@ -120,7 +120,6 @@ cp env.example .env
 ```bash
 # Required
 DATABASE_URL=postgresql://...
-JWT_SECRET=your-secret-key-min-32-chars
 
 # Security / Networking
 # Comma-separated origins; if empty, CORS disabled (deny by default)

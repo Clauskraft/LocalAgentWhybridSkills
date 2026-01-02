@@ -144,7 +144,6 @@ SCA_ALLOW_BROWSER=false
 
 # Phase 3 (Cloud)
 DATABASE_URL=postgresql://...
-JWT_SECRET=your-secret-key
 
 # Notion Integration
 NOTION_API_KEY=secret_xxx
