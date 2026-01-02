@@ -528,23 +528,6 @@ async function main(): Promise<void> {
   // Railway healthchecks must be able to reach the process; bind to all IPv4 interfaces.
   const host = "0.0.0.0";
   const log = new HyperLog("./logs", "startup.jsonl");
-
-  // Initialize database if DATABASE_URL is set
-  if (process.env.DATABASE_URL) {
-    console.log("📦 Applying database migrations...");
-    try {
-      await migrate();
-      console.log("✅ Database migrations applied");
-    } catch (err) {
-      console.error("❌ Database migrations failed:", err);
-      // Continue without database in dev mode
-      if (process.env.NODE_ENV === "production") {
-        process.exit(1);
-      }
-    }
-  } else {
-    console.log("⚠️ DATABASE_URL not set - running without persistence");
-  }
   
   const server = await createServer({ port, host });
 
@@ -577,6 +560,25 @@ async function main(): Promise<void> {
   } catch (err) {
     server.log.error(err);
     process.exit(1);
+  }
+
+  // Run DB migrations AFTER the server is listening so Railway healthchecks can pass quickly.
+  // /ready will reflect DB connectivity (and can be extended to validate schema).
+  if (process.env.DATABASE_URL) {
+    console.log("📦 Applying database migrations...");
+    void migrate()
+      .then(() => {
+        console.log("✅ Database migrations applied");
+      })
+      .catch((err) => {
+        console.error("❌ Database migrations failed:", err);
+        // Fail fast in production so the platform restarts the container.
+        if (process.env.NODE_ENV === "production") {
+          process.exit(1);
+        }
+      });
+  } else {
+    console.log("⚠️ DATABASE_URL not set - running without persistence");
   }
 }
 
