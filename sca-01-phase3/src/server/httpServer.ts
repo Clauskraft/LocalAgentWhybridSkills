@@ -146,6 +146,8 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
     const reqId = (request.headers["x-request-id"] as string) || crypto.randomUUID();
     (request as unknown as { requestId: string }).requestId = reqId;
     reply.header("x-request-id", reqId);
+    // Debug: log every incoming request
+    console.log(`📥 ${request.method} ${request.url} from ${request.ip}`);
   });
 
   // Auth decorator
@@ -532,8 +534,8 @@ async function handleMcpMethod(
 // Main entry point
 async function main(): Promise<void> {
   const port = parseInt(process.env.PORT ?? process.env.SCA_PORT ?? "8787", 10);
-  // Railway edge uses IPv6; bind dual-stack which accepts both IPv4 and IPv6
-  const host = "::";
+  // Railway requires 0.0.0.0 for their edge proxy
+  const host = "0.0.0.0";
   const log = new HyperLog("./logs", "startup.jsonl");
   
   const server = await createServer({ port, host });
