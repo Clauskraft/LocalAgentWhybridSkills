@@ -559,6 +559,7 @@ async function main(): Promise<void> {
   console.log("✅ GitHub routes registered");
   
   try {
+    console.log(`🔧 Binding to port=${port} host=${host}`);
     await server.listen({ port, host });
     console.log(`🚀 SCA-01 Cloud Server running at http://${host}:${port}`);
     console.log(`📋 MCP endpoint: http://${host}:${port}/mcp`);
