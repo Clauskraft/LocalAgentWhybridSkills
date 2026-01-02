@@ -1,0 +1,15 @@
+{
+  "name": "@local-agent/health",
+  "version": "1.0.0",
+  "description": "Shared health check types and utilities for Local Agent services",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "files": [
+    "index.ts"
+  ]
+}
+

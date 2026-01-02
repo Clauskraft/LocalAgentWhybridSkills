@@ -16,7 +16,8 @@
     "types": ["node"],
     "paths": {
       "@local-agent/hyperlog": ["../shared/hyperlog/index.ts"],
-      "@local-agent/config-utils": ["../shared/config-utils/index.ts"]
+      "@local-agent/config-utils": ["../shared/config-utils/index.ts"],
+      "@local-agent/health": ["../shared/health/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

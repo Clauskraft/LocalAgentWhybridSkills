@@ -5,6 +5,7 @@ import { z } from "zod";
 import { loadConfig } from "./config.js";
 import { HyperLog } from "@local-agent/hyperlog";
 import { FinisherAgent } from "./agent/FinisherAgent.js";
+import { createHealthResponse } from "@local-agent/health";
 
 const RunSchema = z.object({
   goal: z.string().optional(),
@@ -23,11 +24,9 @@ export async function createServer() {
 
   await app.register(rateLimit, { max: cfg.rateLimitMax, timeWindow: cfg.rateLimitWindow });
 
-  app.get("/health", async () => ({
-    status: "ok",
-    ts: new Date().toISOString(),
-    service: "mcp-backend",
-  }));
+  app.get("/health", async () => {
+    return createHealthResponse("mcp-backend");
+  });
 
   app.get("/api/agents/diagram", async () => ({
     mermaid: agent.diagram(),

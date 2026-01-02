@@ -5,6 +5,7 @@ import rateLimit from "@fastify/rate-limit";
 import { z } from "zod";
 import { getAuthService, TokenPayload } from "../auth/jwtAuth.js";
 import { HyperLog } from "@local-agent/hyperlog";
+import { createHealthResponse, createReadyResponse, type HealthStatus } from "@local-agent/health";
 import { initializeDatabase } from "../db/database.js";
 import { migrate } from "../db/migrate.js";
 import { registerAuthRoutes } from "../routes/authRoutes.js";
@@ -176,36 +177,43 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
 
   // Health check
   app.get("/health", async () => {
-    return { status: "ok", timestamp: new Date().toISOString(), version: "0.3.0" };
+    return createHealthResponse("sca-01-phase3", { version: "0.3.0" });
   });
 
   // Readiness probe (checks DB)
   app.get("/ready", async (_req, reply) => {
     // In production, require DB to be ready if DATABASE_URL is expected.
     const dbRequired = process.env.NODE_ENV === "production";
+    const checks: Record<string, { status: HealthStatus; message?: string }> = {};
+
     if (dbRequired && !process.env.DATABASE_URL) {
+      checks.database = { status: "unhealthy", message: "DATABASE_URL not set" };
       reply.code(503);
-      return { status: "degraded", error: "DATABASE_URL not set" };
+      return createReadyResponse("sca-01-phase3", checks);
     }
 
     if (dbRequired && migrationsStatus === "running") {
+      checks.migrations = { status: "degraded", message: "migrations in progress" };
       reply.code(503);
-      return { status: "degraded", error: "migrations in progress" };
+      return createReadyResponse("sca-01-phase3", checks);
     }
 
     if (dbRequired && migrationsStatus === "error") {
+      checks.migrations = { status: "unhealthy", message: `migrations failed: ${migrationsError ?? "unknown"}` };
       reply.code(503);
-      return { status: "degraded", error: `migrations failed: ${migrationsError ?? "unknown"}` };
+      return createReadyResponse("sca-01-phase3", checks);
     }
 
     try {
       if (process.env.DATABASE_URL) {
         await initializeDatabase(); // connectivity check
+        checks.database = { status: "ok" };
       }
-      return { status: "ready", timestamp: new Date().toISOString(), db: !!process.env.DATABASE_URL };
+      return createReadyResponse("sca-01-phase3", checks);
     } catch (err) {
+      checks.database = { status: "unhealthy", message: (err as Error).message };
       reply.code(503);
-      return { status: "degraded", error: (err as Error).message };
+      return createReadyResponse("sca-01-phase3", checks);
     }
   });
 
