@@ -50,7 +50,7 @@ export default defineConfig({
 
   /* Run local dev server before tests */
   webServer: {
-    command: 'npm run dev:server',
+    command: 'npm run dev:renderer -- --host --port 3000',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

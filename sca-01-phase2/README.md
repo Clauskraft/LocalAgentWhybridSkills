@@ -49,22 +49,10 @@ npm run dev -- doctor
 
 ## UI Applications
 
-### Chat UI (`npm run dev:chat`)
-
-Modern chat interface similar to ChatGPT/Gemini:
-- Model selection dropdown
-- Session management
-- Settings panel (MCP, System Prompt)
-- Ollama model download/delete
-
-### Configuration Cockpit (`npm run dev:cockpit`)
-
-Admin panel for managing:
-- Allowed file paths
-- Repository access
-- Tool permissions
-- API credentials
-- MCP server configuration
+### React Renderer (nyt flow)
+- React 19 + Tailwind v4 via Vite (`npm run dev:renderer`)
+- Electron loader peger på Vite dev-server eller `dist/renderer`
+- Temaer (dark/light/tdc-blue/tdc-purple) kan vælges i Settings
 
 ## Project Structure
 
@@ -93,19 +81,20 @@ sca-01-phase2/
 │   │   ├── networkTools.ts     # HTTP requests
 │   │   ├── shellTools.ts       # Shell execution
 │   │   └── systemTools.ts      # System info
-│   ├── ui/
-│   │   ├── chat.html           # Chat interface
-│   │   ├── cockpit.html        # Config cockpit
-│   │   ├── index.html          # Main UI
-│   │   ├── mainChat.ts         # Chat Electron main
-│   │   ├── mainCockpit.ts      # Cockpit Electron main
-│   │   ├── preloadChat.ts      # Chat preload
-│   │   └── preloadCockpit.ts   # Cockpit preload
+│   ├── ui/                      # Electron main/preload (loader React renderer)
+│   ├── renderer/                # React + Tailwind renderer (ny UI)
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── styles/
+│   │   └── main.tsx
 │   └── cli.ts                  # CLI entry
 ├── docs/
 │   └── CAPABILITY_MATRIX.md    # What agent can/cannot do
 └── package.json
 ```
+
+## Deprecated
+- Python FastAPI backend til Phase 2 er deprecated; TS/Electron + React renderer er kilden fremadrettet.
 
 ## Environment Variables
 
