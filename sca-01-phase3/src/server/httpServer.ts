@@ -13,35 +13,8 @@ import { notionRoutes } from "../routes/notionRoutes.js";
 import { executionRoutes } from "../routes/executionRoutes.js";
 import { registerGitHubRoutes } from "../routes/githubRoutes.js";
 import { registerRepoRoutes } from "../routes/repoRoutes.js";
-import fs from "node:fs";
-import path from "node:path";
+import fs from "node:fs/promises";
 
-// #region agent log helper
-const DEBUG_ENDPOINT = "http://127.0.0.1:7243/ingest/7aad558b-bd0d-48ca-ad5e-fe8ef75c0c7d";
-const DEBUG_SESSION = "debug-session";
-const DEBUG_LOG_PATH = path.resolve("./.cursor/debug.log");
-function dbg(hypothesisId: string, location: string, message: string, data: Record<string, unknown> = {}): void {
-  const payload = {
-    sessionId: DEBUG_SESSION,
-    runId: "run1",
-    hypothesisId,
-    location,
-    message,
-    data,
-    timestamp: Date.now()
-  };
-  try {
-    fs.appendFileSync(DEBUG_LOG_PATH, JSON.stringify(payload) + "\n", { encoding: "utf8" });
-  } catch {
-    // ignore file logging errors
-  }
-  fetch(DEBUG_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  }).catch(() => {});
-}
-// #endregion
 
 // ============================================================================
 // HTTP SERVER FOR MCP OVER HTTP
@@ -561,12 +534,6 @@ async function main(): Promise<void> {
   // Railway edge expects an IPv4-reachable listener. Bind to all IPv4 interfaces.
   const host = "0.0.0.0";
   const log = new HyperLog("./logs", "startup.jsonl");
-  dbg("H1", "httpServer.ts:main", "main_start", {
-    envPort: process.env.PORT,
-    scaPort: process.env.SCA_PORT,
-    chosenPort: port,
-    host
-  });
   
   const server = await createServer({ port, host });
 
@@ -592,7 +559,6 @@ async function main(): Promise<void> {
   
   try {
     await server.listen({ port, host });
-    dbg("H1", "httpServer.ts:main", "main_listen_ok", { port, host });
     console.log(`🚀 SCA-01 Cloud Server running at http://${host}:${port}`);
     console.log(`📋 MCP endpoint: http://${host}:${port}/mcp`);
     console.log(`🔐 Auth: POST http://${host}:${port}/auth/login`);
@@ -607,22 +573,18 @@ async function main(): Promise<void> {
   if (port !== 3000) {
     const health = Fastify({ logger: false });
     health.get("/health", async () => {
-      dbg("H2", "httpServer.ts:health-sidecar", "health_hit", { port: 3000 });
       return { status: "ok", timestamp: new Date().toISOString(), version: "0.3.0" };
     });
     health.get("/ready", async (_req, reply) => {
       try {
         await initializeDatabase();
-        dbg("H2", "httpServer.ts:health-sidecar", "ready_ok", {});
         return { status: "ready", timestamp: new Date().toISOString() };
       } catch (err) {
-        dbg("H2", "httpServer.ts:health-sidecar", "ready_err", { error: (err as Error).message });
         reply.code(503);
         return { status: "degraded", error: (err as Error).message };
       }
     });
     health.listen({ port: 3000, host }).then(() => {
-      dbg("H2", "httpServer.ts:health-sidecar", "sidecar_listen_ok", { port: 3000, host });
       console.log(`✅ Health sidecar listening at http://${host}:3000`);
     }).catch(() => {
       // Best-effort only; don't crash if 3000 is unavailable.
