@@ -1,8 +1,23 @@
 # SCA-01 Phase 3 - Cloud API
 
-☁️ Cloud-hosted API server for SCA-01, deployed on Railway with PostgreSQL.
+Cloud-hosted API server for SCA-01, deployed on Railway with PostgreSQL.
 
-**Live URL:** https://sca-01-phase3-production.up.railway.app
+**Live URL:** `https://sca-01-phase3-production.up.railway.app`
+
+## Quick Start
+
+```bash
+cd sca-01-phase3
+npm install
+npm run build
+npm start
+```
+
+Health check:
+
+```bash
+curl http://127.0.0.1:3000/health
+```
 
 ## Features
 
@@ -96,6 +111,12 @@
 
 ### Environment Variables
 
+Copy `env.example` to your own env file and edit values:
+
+```bash
+cp env.example .env
+```
+
 ```bash
 # Required
 DATABASE_URL=postgresql://...
@@ -116,9 +137,16 @@ NOTION_DATABASE_ID=xxx
 NOTION_BLACKBOARD_PAGE_ID=xxx
 
 # Server
-PORT=8787
-HOST=0.0.0.0
+PORT=3000
+HOST=::
 ```
+
+## Health Check
+
+- `GET /health`: always returns 200 once the server is listening.
+- `GET /ready`:
+  - In `NODE_ENV=production`, returns **503** until `DATABASE_URL` is set and migrations have completed successfully.
+  - Otherwise returns 200 and includes whether DB is configured.
 
 ### Database Migrations
 ```bash

@@ -1,7 +1,5 @@
 # SCA-01 "The Finisher"
 
-🤖 **Local-first agent runtime** with cloud sync and mobile support.
-
 A completion engine that takes partial implementations and drives them to "Definition of Done" with security-by-design principles.
 
 ## 🏗️ Architecture
@@ -46,7 +44,7 @@ A completion engine that takes partial implementations and drives them to "Defin
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - [Ollama](https://ollama.ai) installed and running
 - Git
 
@@ -71,7 +69,7 @@ npm run dev:chat       # Launch Chat UI
 
 ### Phase 3: Cloud Server
 
-Already deployed at: https://sca-01-phase3-production.up.railway.app
+Already deployed at: `https://sca-01-phase3-production.up.railway.app`
 
 ```bash
 # Test health
@@ -162,8 +160,8 @@ NOTION_DATABASE_ID=xxx
 
 ## 🔗 Links
 
-- **Cloud API:** https://sca-01-phase3-production.up.railway.app
-- **GitHub:** https://github.com/Clauskraft/LocalAgentWhybridSkills
+- **Cloud API:** `https://sca-01-phase3-production.up.railway.app`
+- **GitHub:** `https://github.com/Clauskraft/LocalAgentWhybridSkills`
 
 ## 📄 License
 

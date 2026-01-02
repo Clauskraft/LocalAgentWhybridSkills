@@ -17,6 +17,9 @@ logs/
 .env
 .env.*
 
+# Local key material (generated at runtime; never commit)
+sca-01-phase3/config/keys/jwt-key.json
+
 # IDE
 .vscode/
 .idea/

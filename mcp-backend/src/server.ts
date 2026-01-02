@@ -38,8 +38,14 @@ export async function createServer() {
     if (!parsed.success) return reply.status(400).send({ error: "invalid_request" });
 
     log.info("api.agents.run", "Starting agent run", { hasGoal: typeof parsed.data.goal === "string" });
-    const result = await agent.run(parsed.data.goal);
-    return result;
+    try {
+      const result = await agent.run(parsed.data.goal);
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      log.error("api.agents.run", "Agent run failed", { error: message });
+      return reply.status(500).send({ error: "agent_run_failed", message });
+    }
   });
 
   return { app, cfg };
@@ -57,5 +63,4 @@ if (import.meta.url === new URL(process.argv[1] ?? "", "file:").href) {
     process.exit(1);
   });
 }
-
 

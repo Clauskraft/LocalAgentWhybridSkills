@@ -52,7 +52,8 @@ export async function migrate(): Promise<void> {
   }
 }
 
-if (import.meta.url === new URL(import.meta.url).href) {
+// Only run as a CLI when invoked directly, never on import.
+if (import.meta.url === new URL(process.argv[1] ?? "", "file:").href) {
   migrate().then(() => {
     console.log("All migrations applied");
     process.exit(0);

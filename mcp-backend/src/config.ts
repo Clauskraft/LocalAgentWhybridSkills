@@ -1,4 +1,5 @@
 import path from "node:path";
+import fs from "node:fs";
 
 export interface McpBackendConfig {
   host: string;
@@ -41,7 +42,7 @@ function parseList(v: string | undefined): string[] {
 }
 
 export function loadConfig(): McpBackendConfig {
-  const repoRoot = path.resolve(process.env["SCA_REPO_ROOT"] ?? process.cwd());
+  const repoRoot = detectRepoRoot();
 
   const port = parseIntSafe(process.env["PORT"] ?? process.env["SCA_PORT"], 8787);
   const host = process.env["HOST"] ?? process.env["SCA_HOST"] ?? "0.0.0.0";
@@ -85,6 +86,22 @@ export function loadConfig(): McpBackendConfig {
     allowWrite,
     allowExec,
   };
+}
+
+function detectRepoRoot(): string {
+  const fromEnv = process.env["SCA_REPO_ROOT"];
+  if (fromEnv && fromEnv.trim().length > 0) return path.resolve(fromEnv);
+
+  // Heuristic for monorepo: prefer the nearest directory that contains sca-01-phase1 + mcp-backend.
+  const cwd = process.cwd();
+  const candidates = [cwd, path.resolve(cwd, ".."), path.resolve(cwd, "../..")];
+  for (const c of candidates) {
+    const hasPhase1 = fs.existsSync(path.join(c, "sca-01-phase1"));
+    const hasMcpBackend = fs.existsSync(path.join(c, "mcp-backend"));
+    if (hasPhase1 && hasMcpBackend) return c;
+  }
+
+  return cwd;
 }
 
 

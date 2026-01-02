@@ -15,6 +15,10 @@ import { registerGitHubRoutes } from "../routes/githubRoutes.js";
 import { registerRepoRoutes } from "../routes/repoRoutes.js";
 import fs from "node:fs/promises";
 
+type MigrationsStatus = "not_started" | "running" | "ok" | "error";
+let migrationsStatus: MigrationsStatus = "not_started";
+let migrationsError: string | null = null;
+
 
 // ============================================================================
 // HTTP SERVER FOR MCP OVER HTTP
@@ -85,14 +89,10 @@ const ToolCallSchema = z.object({
 
 export async function createServer(config: Partial<ServerConfig> = {}): Promise<ReturnType<typeof Fastify>> {
   const envCfg = loadEnvConfig();
-  // CRITICAL: Railway edge requires binding to 0.0.0.0, never 127.0.0.1
-  // Override any HOST env var that might be set to localhost
-  const safeHost = config.host === "0.0.0.0" || config.host === "::" ? config.host : "0.0.0.0";
   const cfg: ServerConfig = {
     ...DEFAULT_CONFIG,
     ...envCfg,
     ...config,
-    host: safeHost,
     rateLimit: {
       max: (config.rateLimit?.max ?? envCfg.rateLimit?.max ?? DEFAULT_CONFIG.rateLimit.max),
       timeWindow: (config.rateLimit?.timeWindow ?? envCfg.rateLimit?.timeWindow ?? DEFAULT_CONFIG.rateLimit.timeWindow)
@@ -181,9 +181,28 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
 
   // Readiness probe (checks DB)
   app.get("/ready", async (_req, reply) => {
+    // In production, require DB to be ready if DATABASE_URL is expected.
+    const dbRequired = process.env.NODE_ENV === "production";
+    if (dbRequired && !process.env.DATABASE_URL) {
+      reply.code(503);
+      return { status: "degraded", error: "DATABASE_URL not set" };
+    }
+
+    if (dbRequired && migrationsStatus === "running") {
+      reply.code(503);
+      return { status: "degraded", error: "migrations in progress" };
+    }
+
+    if (dbRequired && migrationsStatus === "error") {
+      reply.code(503);
+      return { status: "degraded", error: `migrations failed: ${migrationsError ?? "unknown"}` };
+    }
+
     try {
-      await initializeDatabase(); // connectivity check
-      return { status: "ready", timestamp: new Date().toISOString() };
+      if (process.env.DATABASE_URL) {
+        await initializeDatabase(); // connectivity check
+      }
+      return { status: "ready", timestamp: new Date().toISOString(), db: !!process.env.DATABASE_URL };
     } catch (err) {
       reply.code(503);
       return { status: "degraded", error: (err as Error).message };
@@ -533,9 +552,8 @@ async function handleMcpMethod(
 
 // Main entry point
 async function main(): Promise<void> {
-  const port = parseInt(process.env.PORT ?? process.env.SCA_PORT ?? "8787", 10);
-  // Railway requires 0.0.0.0 for their edge proxy
-  const host = "0.0.0.0";
+  const port = Number.parseInt(process.env.PORT ?? "3000", 10);
+  const host = sanitizeHost(process.env.HOST) ?? "::";
   const log = new HyperLog("./logs", "startup.jsonl");
   
   const server = await createServer({ port, host });
@@ -561,7 +579,6 @@ async function main(): Promise<void> {
   console.log("✅ GitHub routes registered");
   
   try {
-    console.log(`🔧 Binding to port=${port} host=${host}`);
     await server.listen({ port, host });
     console.log(`🚀 SCA-01 Cloud Server running at http://${host}:${port}`);
     console.log(`📋 MCP endpoint: http://${host}:${port}/mcp`);
@@ -572,38 +589,19 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // Some Railway stacks route/healthcheck on port 3000 regardless of the injected PORT.
-  // To avoid "service unavailable" healthcheck failures, expose a tiny health listener on 3000 as well.
-  if (port !== 3000) {
-    const health = Fastify({ logger: false });
-    health.get("/health", async () => {
-      return { status: "ok", timestamp: new Date().toISOString(), version: "0.3.0" };
-    });
-    health.get("/ready", async (_req, reply) => {
-      try {
-        await initializeDatabase();
-        return { status: "ready", timestamp: new Date().toISOString() };
-      } catch (err) {
-        reply.code(503);
-        return { status: "degraded", error: (err as Error).message };
-      }
-    });
-    health.listen({ port: 3000, host }).then(() => {
-      console.log(`✅ Health sidecar listening at http://${host}:3000`);
-    }).catch(() => {
-      // Best-effort only; don't crash if 3000 is unavailable.
-    });
-  }
-
   // Run DB migrations AFTER the server is listening so Railway healthchecks can pass quickly.
   // /ready will reflect DB connectivity (and can be extended to validate schema).
   if (process.env.DATABASE_URL) {
     console.log("📦 Applying database migrations...");
+    migrationsStatus = "running";
     void migrate()
       .then(() => {
+        migrationsStatus = "ok";
         console.log("✅ Database migrations applied");
       })
       .catch((err) => {
+        migrationsStatus = "error";
+        migrationsError = err instanceof Error ? err.message : String(err);
         console.error("❌ Database migrations failed:", err);
         // Fail fast in production so the platform restarts the container.
         if (process.env.NODE_ENV === "production") {
@@ -615,5 +613,17 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch(console.error);
+if (import.meta.url === new URL(process.argv[1] ?? "", "file:").href) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+
+function sanitizeHost(host: string | undefined): string | null {
+  if (!host) return null;
+  const h = host.trim().toLowerCase();
+  if (h === "localhost" || h === "127.0.0.1" || h === "::1") return null;
+  return host;
+}
 

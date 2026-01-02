@@ -4,9 +4,6 @@
 [phases.setup]
 nixPkgs = ["nodejs_20", "npm-9_x"]
 
-# Explicitly set Node.js provider
-providers = ["node"]
-
 [phases.install]
 # IMPORTANT: Railway/Nixpacks often runs with NODE_ENV=production during build,
 # which omits devDependencies. We need devDependencies for the TypeScript build (tsc).
