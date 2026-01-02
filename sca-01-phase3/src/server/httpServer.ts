@@ -40,7 +40,8 @@ const DEFAULT_CONFIG: ServerConfig = {
     max: 60,
     timeWindow: "1 minute"
   },
-  trustProxy: false
+  // Railway (and most cloud platforms) require trustProxy for proper request handling
+  trustProxy: true
 };
 
 function loadEnvConfig(): Partial<ServerConfig> {
