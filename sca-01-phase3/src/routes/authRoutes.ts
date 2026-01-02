@@ -154,19 +154,10 @@ export function registerAuthRoutes(app: FastifyInstance, log: HyperLog): void {
   });
 
   // Get current user (protected)
-  app.get("/auth/me", async (request, reply) => {
-    const authHeader = request.headers.authorization;
-    if (!authHeader?.startsWith("Bearer ")) {
-      return reply.status(401).send({ error: "unauthorized" });
-    }
+  app.get("/auth/me", { preHandler: [app.verifyJwt] }, async (request, reply) => {
+    const payload = request.user;
+    if (!payload) return reply.status(401).send({ error: "unauthorized" });
 
-    const token = authHeader.slice(7);
-    const payload = await auth.verifyToken(token);
-    
-    if (!payload) {
-      return reply.status(401).send({ error: "invalid_token" });
-    }
-    
     return {
       id: payload.sub,
       email: payload.agentId

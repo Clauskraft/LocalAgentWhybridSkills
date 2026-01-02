@@ -12,7 +12,10 @@
     "build": "tsc -p tsconfig.json",
     "start": "node build/cli.js",
     "registry": "tsx src/registry/agentRegistry.ts",
-    "orchestrator": "tsx src/orchestrator/meshOrchestrator.ts"
+    "orchestrator": "tsx src/orchestrator/meshOrchestrator.ts",
+    "test": "vitest run",
+    "test:smoke": "vitest run -t \"\\(smoke\\)\"",
+    "test:node": "npm run build && node --test build/**/*.node.test.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.10.2",
@@ -21,7 +24,8 @@
   "devDependencies": {
     "@types/node": "^20.0.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.8.0"
+    "typescript": "^5.8.0",
+    "vitest": "^2.0.0"
   }
 }
 

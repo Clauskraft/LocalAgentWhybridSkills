@@ -26,6 +26,20 @@ export interface SCA01API {
     updateSettings: (partial: Record<string, unknown>) => void;
     setTheme: (theme: string) => void;
   };
+  cloud: {
+    status: () => Promise<{ backendUrl: string; encryptionAvailable: boolean; loggedIn: boolean }>;
+    login: (payload: { email: string; password: string }) => Promise<{ success: boolean }>;
+    logout: () => Promise<{ success: boolean }>;
+    listRepos: (payload?: { includeArchived?: boolean }) => Promise<{ repos: unknown[] }>;
+    createRepo: (payload: {
+      name: string;
+      localPath?: string | null;
+      remoteUrl?: string | null;
+      defaultBranch?: string | null;
+      policy?: Record<string, unknown>;
+    }) => Promise<{ repo: unknown }>;
+    archiveRepo: (payload: { id: string }) => Promise<{ success: boolean }>;
+  };
   getPendingApprovals: () => Promise<ApprovalRequest[]>;
   getApprovalHistory: (limit: number) => Promise<ApprovalRequest[]>;
   approveRequest: (id: string) => Promise<boolean>;
@@ -71,6 +85,14 @@ const api: SCA01API = {
     setTheme: (theme: string) => {
       ipcRenderer.invoke("chat-set-theme", theme);
     }
+  },
+  cloud: {
+    status: () => ipcRenderer.invoke("cloud-status"),
+    login: (payload) => ipcRenderer.invoke("cloud-login", payload),
+    logout: () => ipcRenderer.invoke("cloud-logout"),
+    listRepos: (payload) => ipcRenderer.invoke("cloud-list-repos", payload),
+    createRepo: (payload) => ipcRenderer.invoke("cloud-create-repo", payload),
+    archiveRepo: (payload) => ipcRenderer.invoke("cloud-archive-repo", payload),
   },
   getPendingApprovals: () => ipcRenderer.invoke("get-pending-approvals"),
   getApprovalHistory: (limit: number) => ipcRenderer.invoke("get-approval-history", limit),

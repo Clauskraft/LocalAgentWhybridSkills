@@ -4,7 +4,6 @@
  */
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { getNotionClient } from "../notion/notionClient.js";
-import type { TokenPayload } from "../auth/jwtAuth.js";
 
 interface SyncSessionBody {
   sessionId: string;

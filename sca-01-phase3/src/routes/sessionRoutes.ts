@@ -10,7 +10,7 @@ import {
   findMessagesBySessionId
 } from "../db/sessionRepository.js";
 import { HyperLog } from "../logging/hyperlog.js";
-import { getAuthService, TokenPayload } from "../auth/jwtAuth.js";
+import type { TokenPayload } from "../auth/jwtAuth.js";
 
 // ============================================================================
 // SESSION & MESSAGE ROUTES
@@ -36,20 +36,13 @@ const CreateMessageSchema = z.object({
   toolName: z.string().optional()
 });
 
-async function verifyAuth(request: FastifyRequest, reply: FastifyReply): Promise<TokenPayload | null> {
-  const authHeader = request.headers.authorization;
-  if (!authHeader?.startsWith("Bearer ")) {
+function requireUser(request: FastifyRequest, reply: FastifyReply): TokenPayload | null {
+  const user = (request as unknown as { user: TokenPayload | null }).user;
+  if (!user) {
     reply.status(401).send({ error: "unauthorized" });
     return null;
   }
-  const token = authHeader.slice(7);
-  const auth = getAuthService();
-  const payload = await auth.verifyToken(token);
-  if (!payload) {
-    reply.status(401).send({ error: "invalid_token" });
-    return null;
-  }
-  return payload;
+  return user;
 }
 
 export function registerSessionRoutes(app: FastifyInstance, log: HyperLog): void {
@@ -57,8 +50,8 @@ export function registerSessionRoutes(app: FastifyInstance, log: HyperLog): void
   // ========== SESSIONS ==========
 
   // List sessions
-  app.get("/api/sessions", async (request, reply) => {
-    const user = await verifyAuth(request, reply);
+  app.get("/api/sessions", { preHandler: [app.verifyJwt] }, async (request, reply) => {
+    const user = requireUser(request, reply);
     if (!user) return;
     
     const q = request.query as { archived?: string };
@@ -66,14 +59,14 @@ export function registerSessionRoutes(app: FastifyInstance, log: HyperLog): void
 
     const sessions = await findSessionsByUserId(user.sub, includeArchived);
     
-    log.info("sessions.list", "Sessions listed", { userId: user.sub, count: sessions.length });
+    log.info("sessions.list", "Sessions listed", { userId: user.sub, count: sessions.length, requestId: request.requestId });
 
     return { sessions };
   });
 
   // Get session
-  app.get("/api/sessions/:id", async (request, reply) => {
-    const user = await verifyAuth(request, reply);
+  app.get("/api/sessions/:id", { preHandler: [app.verifyJwt] }, async (request, reply) => {
+    const user = requireUser(request, reply);
     if (!user) return;
     
     const { id } = request.params as { id: string };
@@ -86,8 +79,8 @@ export function registerSessionRoutes(app: FastifyInstance, log: HyperLog): void
   });
 
   // Create session
-  app.post("/api/sessions", async (request, reply) => {
-    const user = await verifyAuth(request, reply);
+  app.post("/api/sessions", { preHandler: [app.verifyJwt] }, async (request, reply) => {
+    const user = requireUser(request, reply);
     if (!user) return;
     
     const parseResult = CreateSessionSchema.safeParse(request.body);
@@ -96,14 +89,14 @@ export function registerSessionRoutes(app: FastifyInstance, log: HyperLog): void
     const { title, model, systemPrompt } = parseResult.data;
     const session = await createSession(user.sub, title, model, systemPrompt);
     
-    log.info("sessions.create", "Session created", { userId: user.sub, sessionId: session.id });
+    log.info("sessions.create", "Session created", { userId: user.sub, sessionId: session.id, requestId: request.requestId });
 
     return { session };
   });
 
   // Update session
-  app.patch("/api/sessions/:id", async (request, reply) => {
-    const user = await verifyAuth(request, reply);
+  app.patch("/api/sessions/:id", { preHandler: [app.verifyJwt] }, async (request, reply) => {
+    const user = requireUser(request, reply);
     if (!user) return;
     
     const { id } = request.params as { id: string };
@@ -116,14 +109,14 @@ export function registerSessionRoutes(app: FastifyInstance, log: HyperLog): void
     if (!parseResult.success) return reply.status(400).send({ error: "Invalid request body" });
 
     const session = await updateSession(id, parseResult.data);
-    log.info("sessions.update", "Session updated", { sessionId: id });
+    log.info("sessions.update", "Session updated", { sessionId: id, requestId: request.requestId });
 
     return { session };
   });
 
   // Delete session
-  app.delete("/api/sessions/:id", async (request, reply) => {
-    const user = await verifyAuth(request, reply);
+  app.delete("/api/sessions/:id", { preHandler: [app.verifyJwt] }, async (request, reply) => {
+    const user = requireUser(request, reply);
     if (!user) return;
     
     const { id } = request.params as { id: string };
@@ -133,7 +126,7 @@ export function registerSessionRoutes(app: FastifyInstance, log: HyperLog): void
     if (existing.userId !== user.sub) return reply.status(403).send({ error: "forbidden" });
 
     await deleteSession(id);
-    log.info("sessions.delete", "Session deleted", { sessionId: id });
+    log.info("sessions.delete", "Session deleted", { sessionId: id, requestId: request.requestId });
 
     return { success: true };
   });
@@ -141,8 +134,8 @@ export function registerSessionRoutes(app: FastifyInstance, log: HyperLog): void
   // ========== MESSAGES ==========
 
   // Get messages for session
-  app.get("/api/sessions/:id/messages", async (request, reply) => {
-    const user = await verifyAuth(request, reply);
+  app.get("/api/sessions/:id/messages", { preHandler: [app.verifyJwt] }, async (request, reply) => {
+    const user = requireUser(request, reply);
     if (!user) return;
     
     const { id } = request.params as { id: string };
@@ -156,8 +149,8 @@ export function registerSessionRoutes(app: FastifyInstance, log: HyperLog): void
   });
 
   // Add message to session
-  app.post("/api/sessions/:id/messages", async (request, reply) => {
-    const user = await verifyAuth(request, reply);
+  app.post("/api/sessions/:id/messages", { preHandler: [app.verifyJwt] }, async (request, reply) => {
+    const user = requireUser(request, reply);
     if (!user) return;
     
     const { id } = request.params as { id: string };
@@ -172,15 +165,15 @@ export function registerSessionRoutes(app: FastifyInstance, log: HyperLog): void
     const { role, content, toolCalls, toolName } = parseResult.data;
     const message = await createMessage(id, role, content, toolCalls, toolName);
     
-    log.info("messages.create", "Message created", { sessionId: id, role });
+    log.info("messages.create", "Message created", { sessionId: id, role, requestId: request.requestId });
     return { message };
   });
 
   // ========== SYNC ==========
 
   // Get changes since timestamp (for sync)
-  app.get("/api/sync", async (request, reply) => {
-    const user = await verifyAuth(request, reply);
+  app.get("/api/sync", { preHandler: [app.verifyJwt] }, async (request, reply) => {
+    const user = requireUser(request, reply);
     if (!user) return;
     
     const q = request.query as { since?: string };

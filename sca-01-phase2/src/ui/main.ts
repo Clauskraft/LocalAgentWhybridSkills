@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { app, BrowserWindow, ipcMain, dialog, Notification } from "electron";
+import { app, BrowserWindow, ipcMain, dialog, Notification, safeStorage } from "electron";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs/promises";
@@ -19,6 +19,168 @@ let agent: DesktopAgent | null = null;
 let log: HyperLog | null = null;
 let runtimeCfg = loadConfig();
 let settingsFilePath: string | null = null;
+let cloudAccessToken: string | null = null;
+let cloudRefreshTokenEncrypted: string | null = null;
+
+type CloudTokenPair = {
+  access_token: string;
+  refresh_token: string;
+  token_type?: string;
+  expires_in?: number;
+};
+
+function getBackendBaseUrl(): string {
+  const raw = (runtimeCfg.backendUrl ?? "").trim();
+  if (!raw) throw new Error("Cloud backendUrl is not configured");
+  return raw.replace(/\/+$/, "");
+}
+
+function encryptForStorage(value: string): string {
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error("OS encryption is not available (safeStorage)");
+  }
+  return safeStorage.encryptString(value).toString("base64");
+}
+
+function decryptFromStorage(valueB64: string): string {
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error("OS encryption is not available (safeStorage)");
+  }
+  const buf = Buffer.from(valueB64, "base64");
+  return safeStorage.decryptString(buf);
+}
+
+async function persistSettingsToDisk(): Promise<void> {
+  if (!settingsFilePath) return;
+  await fs.mkdir(path.dirname(settingsFilePath), { recursive: true });
+  await fs.writeFile(
+    settingsFilePath,
+    JSON.stringify(
+      {
+        ollamaHost: runtimeCfg.ollamaHost,
+        ollamaModel: runtimeCfg.ollamaModel,
+        maxTurns: runtimeCfg.maxTurns,
+        fullAccess: runtimeCfg.fullAccess,
+        autoApprove: runtimeCfg.autoApprove,
+        backendUrl: runtimeCfg.backendUrl,
+        useCloud: runtimeCfg.useCloud,
+        theme: runtimeCfg.theme,
+        safeDirs: runtimeCfg.safeDirs,
+
+        // Encrypted secrets (never expose to renderer)
+        cloudRefreshTokenEncrypted,
+      },
+      null,
+      2
+    ),
+    { encoding: "utf8" }
+  );
+}
+
+async function cloudLogin(email: string, password: string): Promise<void> {
+  const base = getBackendBaseUrl();
+  const res = await fetch(`${base}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Cloud login failed: ${res.status} ${res.statusText} ${txt}`);
+  }
+  const data = (await res.json()) as Partial<CloudTokenPair>;
+  if (typeof data.access_token !== "string" || typeof data.refresh_token !== "string") {
+    throw new Error("Cloud login did not return a token pair");
+  }
+  cloudAccessToken = data.access_token;
+  cloudRefreshTokenEncrypted = encryptForStorage(data.refresh_token);
+  await persistSettingsToDisk();
+}
+
+async function cloudRefresh(): Promise<void> {
+  if (!cloudRefreshTokenEncrypted) throw new Error("No refresh token stored");
+  const base = getBackendBaseUrl();
+  const refreshToken = decryptFromStorage(cloudRefreshTokenEncrypted);
+  const res = await fetch(`${base}/auth/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Cloud refresh failed: ${res.status} ${res.statusText} ${txt}`);
+  }
+  const data = (await res.json()) as Partial<CloudTokenPair>;
+  if (typeof data.access_token !== "string" || typeof data.refresh_token !== "string") {
+    throw new Error("Cloud refresh did not return a token pair");
+  }
+  cloudAccessToken = data.access_token;
+  cloudRefreshTokenEncrypted = encryptForStorage(data.refresh_token);
+  await persistSettingsToDisk();
+}
+
+async function cloudRequest<T>(method: string, pathSuffix: string, body?: unknown): Promise<T> {
+  const base = getBackendBaseUrl();
+  if (!cloudAccessToken) {
+    await cloudRefresh();
+  }
+
+  const doReq = async (): Promise<Response> => {
+    return fetch(`${base}${pathSuffix}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${cloudAccessToken ?? ""}`,
+        "Content-Type": "application/json",
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  };
+
+  let res = await doReq();
+  if (res.status === 401) {
+    await cloudRefresh();
+    res = await doReq();
+  }
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Cloud request failed: ${method} ${pathSuffix} -> ${res.status} ${res.statusText} ${txt}`);
+  }
+  return (await res.json()) as T;
+}
+
+type CloudRepo = {
+  id: string;
+  name: string;
+  localPath: string | null;
+  remoteUrl: string | null;
+  defaultBranch: string | null;
+  policy: Record<string, unknown>;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+async function cloudListRepos(includeArchived = false): Promise<CloudRepo[]> {
+  const q = includeArchived ? "?archived=true" : "";
+  const res = await cloudRequest<{ repos: CloudRepo[] }>("GET", `/api/repos${q}`);
+  return Array.isArray(res.repos) ? res.repos : [];
+}
+
+async function cloudCreateRepo(input: {
+  name: string;
+  localPath?: string | null;
+  remoteUrl?: string | null;
+  defaultBranch?: string | null;
+  policy?: Record<string, unknown>;
+}): Promise<CloudRepo> {
+  const res = await cloudRequest<{ repo: CloudRepo }>("POST", "/api/repos", input);
+  return res.repo;
+}
+
+async function cloudArchiveRepo(id: string): Promise<boolean> {
+  const res = await cloudRequest<{ success: boolean }>("DELETE", `/api/repos/${encodeURIComponent(id)}`);
+  return !!res.success;
+}
 
 function resolveRendererEntry(): { type: "url" | "file"; value: string } {
   const devUrl = process.env.VITE_DEV_SERVER_URL;
@@ -150,20 +312,7 @@ function setupChatIpc(): void {
 
     runtimeCfg = next;
 
-    if (settingsFilePath) {
-      await fs.mkdir(path.dirname(settingsFilePath), { recursive: true });
-      await fs.writeFile(settingsFilePath, JSON.stringify({
-        ollamaHost: runtimeCfg.ollamaHost,
-        ollamaModel: runtimeCfg.ollamaModel,
-        maxTurns: runtimeCfg.maxTurns,
-        fullAccess: runtimeCfg.fullAccess,
-        autoApprove: runtimeCfg.autoApprove,
-        backendUrl: runtimeCfg.backendUrl,
-        useCloud: runtimeCfg.useCloud,
-        theme: runtimeCfg.theme,
-        safeDirs: runtimeCfg.safeDirs,
-      }, null, 2), { encoding: "utf8" });
-    }
+    await persistSettingsToDisk();
 
     return true;
   });
@@ -171,6 +320,44 @@ function setupChatIpc(): void {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send("chat-theme", theme);
     }
+  });
+}
+
+function setupCloudIpc(): void {
+  ipcMain.handle("cloud-status", async () => {
+    const backendUrl = (runtimeCfg.backendUrl ?? "").trim();
+    return {
+      backendUrl,
+      encryptionAvailable: safeStorage.isEncryptionAvailable(),
+      loggedIn: typeof cloudRefreshTokenEncrypted === "string" && cloudRefreshTokenEncrypted.length > 0,
+    };
+  });
+
+  ipcMain.handle("cloud-login", async (_event: unknown, payload: { email: string; password: string }) => {
+    await cloudLogin(payload.email, payload.password);
+    return { success: true };
+  });
+
+  ipcMain.handle("cloud-logout", async () => {
+    cloudAccessToken = null;
+    cloudRefreshTokenEncrypted = null;
+    await persistSettingsToDisk();
+    return { success: true };
+  });
+
+  ipcMain.handle("cloud-list-repos", async (_event: unknown, payload?: { includeArchived?: boolean }) => {
+    const repos = await cloudListRepos(!!payload?.includeArchived);
+    return { repos };
+  });
+
+  ipcMain.handle("cloud-create-repo", async (_event: unknown, payload: Parameters<typeof cloudCreateRepo>[0]) => {
+    const repo = await cloudCreateRepo(payload);
+    return { repo };
+  });
+
+  ipcMain.handle("cloud-archive-repo", async (_event: unknown, payload: { id: string }) => {
+    const success = await cloudArchiveRepo(payload.id);
+    return { success };
   });
 }
 
@@ -199,6 +386,9 @@ async function setupIpc(): Promise<void> {
         if (Array.isArray(p.safeDirs) && p.safeDirs.every((x) => typeof x === "string")) {
           next.safeDirs = p.safeDirs.map((x) => x.trim()).filter(Boolean);
         }
+        if (typeof p.cloudRefreshTokenEncrypted === "string" && p.cloudRefreshTokenEncrypted.trim().length > 0) {
+          cloudRefreshTokenEncrypted = p.cloudRefreshTokenEncrypted.trim();
+        }
 
         runtimeCfg = next;
       }
@@ -209,6 +399,17 @@ async function setupIpc(): Promise<void> {
 
   log = new HyperLog(runtimeCfg.logDir, "ui.hyperlog.jsonl");
   agent = new DesktopAgent(runtimeCfg);
+
+  // Best-effort: refresh cloud token on startup if configured
+  if ((runtimeCfg.backendUrl ?? "").trim() && cloudRefreshTokenEncrypted) {
+    try {
+      await cloudRefresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "unknown";
+      log?.warn("cloud.refresh.startup_failed", msg);
+      cloudAccessToken = null;
+    }
+  }
 
   // Get configuration
   ipcMain.handle("get-config", () => {
@@ -297,6 +498,7 @@ async function setupIpc(): Promise<void> {
   });
 
   setupChatIpc();
+  setupCloudIpc();
 }
 
 app.whenReady().then(async () => {

@@ -5,7 +5,6 @@
 import { Client } from "@notionhq/client";
 import type {
   CreatePageResponse,
-  UpdatePageResponse,
   PageObjectResponse,
   BlockObjectRequest,
 } from "@notionhq/client/build/src/api-endpoints.js";
@@ -116,7 +115,7 @@ export class NotionClient {
     session: SessionPage
   ): Promise<NotionSyncResult> {
     try {
-      const _response: UpdatePageResponse = await this.client.pages.update({
+      await this.client.pages.update({
         page_id: notionPageId,
         properties: {
           Name: {

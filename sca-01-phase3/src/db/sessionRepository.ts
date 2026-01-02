@@ -43,7 +43,9 @@ export async function createSession(
     [userId, title, model, systemPrompt ?? null]
   );
 
-  return result.rows[0]!;
+  const row = result.rows[0];
+  if (!row) throw new Error("Failed to create session");
+  return row;
 }
 
 export async function findSessionById(id: string): Promise<Session | null> {
@@ -147,7 +149,9 @@ export async function createMessage(
     [sessionId, role, content, toolCalls ? JSON.stringify(toolCalls) : null, toolName ?? null]
   );
 
-  return result.rows[0]!;
+  const row = result.rows[0];
+  if (!row) throw new Error("Failed to create message");
+  return row;
 }
 
 export async function findMessagesBySessionId(sessionId: string): Promise<Message[]> {

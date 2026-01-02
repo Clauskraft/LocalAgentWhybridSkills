@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getAuthService, TokenPayload } from "../auth/jwtAuth.js";
 import { HyperLog } from "../logging/hyperlog.js";
 import { initializeDatabase } from "../db/database.js";
+import { migrate } from "../db/migrate.js";
 import { registerAuthRoutes } from "../routes/authRoutes.js";
 import { registerSessionRoutes } from "../routes/sessionRoutes.js";
 import { notionRoutes } from "../routes/notionRoutes.js";
@@ -170,7 +171,7 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
   // Readiness probe (checks DB)
   app.get("/ready", async (_req, reply) => {
     try {
-      await initializeDatabase(); // idempotent, ensures connection OK
+      await initializeDatabase(); // connectivity check
       return { status: "ready", timestamp: new Date().toISOString() };
     } catch (err) {
       reply.code(503);
@@ -410,7 +411,7 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
 async function executeToolCall(
   name: string, 
   args: Record<string, unknown>,
-  log: HyperLog
+  _log: HyperLog
 ): Promise<unknown> {
   switch (name) {
     case "read_file": {
@@ -527,12 +528,12 @@ async function main(): Promise<void> {
 
   // Initialize database if DATABASE_URL is set
   if (process.env.DATABASE_URL) {
-    console.log("📦 Initializing database...");
+    console.log("📦 Applying database migrations...");
     try {
-      await initializeDatabase();
-      console.log("✅ Database ready");
+      await migrate();
+      console.log("✅ Database migrations applied");
     } catch (err) {
-      console.error("❌ Database initialization failed:", err);
+      console.error("❌ Database migrations failed:", err);
       // Continue without database in dev mode
       if (process.env.NODE_ENV === "production") {
         process.exit(1);
@@ -561,7 +562,7 @@ async function main(): Promise<void> {
   console.log("✅ Execution routes registered");
 
   // Register GitHub sync routes (JWT-protected)
-  registerGitHubRoutes(server, log);
+  await registerGitHubRoutes(server, log);
   console.log("✅ GitHub routes registered");
   
   try {

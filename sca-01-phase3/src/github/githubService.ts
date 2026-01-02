@@ -52,7 +52,18 @@ export class GitHubService {
 
   public async listRepos(): Promise<GitHubRepo[]> {
     this.log.info("github.list_repos", "Listing repos for authenticated user");
-    return this.request<GitHubRepo[]>("/user/repos?per_page=100&sort=updated");
+
+    const perPage = 100;
+    const repos: GitHubRepo[] = [];
+
+    // Safety cap: avoid infinite loops if GitHub returns unexpected results
+    for (let page = 1; page <= 50; page += 1) {
+      const chunk = await this.request<GitHubRepo[]>(`/user/repos?per_page=${perPage}&sort=updated&page=${page}`);
+      repos.push(...chunk);
+      if (chunk.length < perPage) break;
+    }
+
+    return repos;
   }
 }
 

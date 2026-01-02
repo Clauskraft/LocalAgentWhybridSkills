@@ -128,6 +128,7 @@ function GeneralSettings({
             type="text"
             value={settings.ollamaHost}
             onChange={(e) => onUpdate({ ollamaHost: e.target.value })}
+            aria-label="Ollama Host"
             className="form-input"
           />
         </FormGroup>
@@ -137,6 +138,7 @@ function GeneralSettings({
             value={settings.model}
             onChange={(e) => onUpdate({ model: e.target.value })}
             placeholder="fx qwen3"
+            aria-label="Standard Model"
             className="form-input"
           />
         </FormGroup>
@@ -148,6 +150,7 @@ function GeneralSettings({
             type="number"
             value={settings.maxTurns}
             onChange={(e) => onUpdate({ maxTurns: parseInt(e.target.value) })}
+            aria-label="Max samtale-ture"
             className="form-input"
           />
         </FormGroup>
@@ -188,6 +191,25 @@ function ReposSettings({
 }) {
   const [pathInput, setPathInput] = useState('');
   const safeDirs = settings.safeDirs ?? [];
+  const [cloudEmail, setCloudEmail] = useState("");
+  const [cloudPassword, setCloudPassword] = useState("");
+  const [cloudStatus, setCloudStatus] = useState<{
+    backendUrl: string;
+    encryptionAvailable: boolean;
+    loggedIn: boolean;
+  } | null>(null);
+  const [cloudRepos, setCloudRepos] = useState<Array<{
+    id: string;
+    name: string;
+    remoteUrl?: string | null;
+    defaultBranch?: string | null;
+    isArchived?: boolean;
+  }>>([]);
+  const [cloudLoading, setCloudLoading] = useState(false);
+  const [cloudError, setCloudError] = useState<string | null>(null);
+  const [newCloudRepoName, setNewCloudRepoName] = useState("");
+  const [newCloudRepoRemoteUrl, setNewCloudRepoRemoteUrl] = useState("");
+  const [newCloudRepoBranch, setNewCloudRepoBranch] = useState("main");
 
   const add = () => {
     const next = pathInput.trim();
@@ -200,6 +222,124 @@ function ReposSettings({
   const remove = (p: string) => {
     onUpdate({ safeDirs: safeDirs.filter((x) => x !== p) });
   };
+
+  const refreshCloud = async () => {
+    setCloudError(null);
+    setCloudLoading(true);
+    try {
+      const api = (window as any).sca01?.cloud;
+      if (!api?.status) throw new Error("Cloud IPC not available");
+      const st = await api.status();
+      setCloudStatus(st);
+      if (!st.backendUrl?.trim()) {
+        setCloudRepos([]);
+        return;
+      }
+      if (st.loggedIn) {
+        const res = await api.listRepos?.({ includeArchived: false });
+        const repos = Array.isArray(res?.repos) ? res.repos : [];
+        setCloudRepos(
+          repos
+            .filter((r: any) => r && typeof r.id === "string" && typeof r.name === "string")
+            .map((r: any) => ({
+              id: r.id as string,
+              name: r.name as string,
+              remoteUrl: (r.remoteUrl as string) ?? null,
+              defaultBranch: (r.defaultBranch as string) ?? null,
+              isArchived: (r.isArchived as boolean) ?? false,
+            }))
+        );
+      } else {
+        setCloudRepos([]);
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      setCloudError(msg);
+    } finally {
+      setCloudLoading(false);
+    }
+  };
+
+  const loginCloud = async () => {
+    setCloudError(null);
+    setCloudLoading(true);
+    try {
+      const api = (window as any).sca01?.cloud;
+      if (!api?.login) throw new Error("Cloud IPC not available");
+      await api.login({ email: cloudEmail.trim(), password: cloudPassword });
+      setCloudPassword("");
+      await refreshCloud();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      setCloudError(msg);
+    } finally {
+      setCloudLoading(false);
+    }
+  };
+
+  const logoutCloud = async () => {
+    setCloudError(null);
+    setCloudLoading(true);
+    try {
+      const api = (window as any).sca01?.cloud;
+      await api.logout?.();
+      setCloudRepos([]);
+      await refreshCloud();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      setCloudError(msg);
+    } finally {
+      setCloudLoading(false);
+    }
+  };
+
+  const createCloudRepo = async () => {
+    setCloudError(null);
+    setCloudLoading(true);
+    try {
+      const api = (window as any).sca01?.cloud;
+      if (!api?.createRepo) throw new Error("Cloud IPC not available");
+      const name = newCloudRepoName.trim();
+      if (!name) throw new Error("Repo name is required");
+      const remoteUrl = newCloudRepoRemoteUrl.trim();
+      const defaultBranch = newCloudRepoBranch.trim();
+      await api.createRepo({
+        name,
+        remoteUrl: remoteUrl ? remoteUrl : null,
+        defaultBranch: defaultBranch ? defaultBranch : null,
+        policy: { allowRead: true, allowWrite: false, allowExec: false, allowNetwork: true },
+      });
+      setNewCloudRepoName("");
+      setNewCloudRepoRemoteUrl("");
+      setNewCloudRepoBranch("main");
+      await refreshCloud();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      setCloudError(msg);
+    } finally {
+      setCloudLoading(false);
+    }
+  };
+
+  const archiveCloudRepo = async (id: string) => {
+    setCloudError(null);
+    setCloudLoading(true);
+    try {
+      const api = (window as any).sca01?.cloud;
+      await api.archiveRepo?.({ id });
+      await refreshCloud();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      setCloudError(msg);
+    } finally {
+      setCloudLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshCloud();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.backendUrl]);
 
   return (
     <div className="space-y-6">
@@ -244,6 +384,144 @@ function ReposSettings({
             ))
           )}
         </div>
+      </Section>
+
+      <Section title="☁️ Cloud Repo Catalog (Railway)">
+        <p className="text-sm text-text-secondary">
+          Bruger din Phase 3 backend til at gemme repos og policy per bruger/device. Tokens bliver gemt krypteret i OS-keychain via Electron.
+        </p>
+
+        {cloudError ? (
+          <div className="p-3 rounded border border-border-primary bg-bg-tertiary text-sm text-warning">
+            {cloudError}
+          </div>
+        ) : null}
+
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-sm text-text-muted">
+            Backend: <span className="font-mono">{(cloudStatus?.backendUrl ?? settings.backendUrl ?? "").trim() || "(ikke sat)"}</span>
+          </div>
+          <button
+            onClick={refreshCloud}
+            className="px-3 py-1 text-sm bg-bg-secondary border border-border-primary rounded hover:bg-bg-hover"
+            disabled={cloudLoading}
+          >
+            Opdatér
+          </button>
+        </div>
+
+        {!cloudStatus?.encryptionAvailable ? (
+          <div className="p-3 rounded border border-border-primary bg-bg-tertiary text-sm text-warning">
+            OS encryption er ikke tilgængelig. Cloud login er deaktiveret.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {!cloudStatus?.loggedIn ? (
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="email"
+                  value={cloudEmail}
+                  onChange={(e) => setCloudEmail(e.target.value)}
+                  placeholder="email"
+                  className="form-input"
+                />
+                <input
+                  type="password"
+                  value={cloudPassword}
+                  onChange={(e) => setCloudPassword(e.target.value)}
+                  placeholder="password"
+                  className="form-input"
+                />
+                <div className="col-span-2 flex justify-end gap-2">
+                  <button
+                    onClick={loginCloud}
+                    className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors"
+                    disabled={cloudLoading}
+                  >
+                    Log ind
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-success">Logget ind</div>
+                <button
+                  onClick={logoutCloud}
+                  className="px-3 py-1 text-sm bg-bg-secondary border border-border-primary rounded hover:bg-bg-hover"
+                  disabled={cloudLoading}
+                >
+                  Log ud
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {cloudStatus?.loggedIn ? (
+          <div className="space-y-3 mt-4">
+            <div className="grid grid-cols-3 gap-2">
+              <input
+                type="text"
+                value={newCloudRepoName}
+                onChange={(e) => setNewCloudRepoName(e.target.value)}
+                placeholder="Repo name"
+                className="form-input"
+              />
+              <input
+                type="text"
+                value={newCloudRepoRemoteUrl}
+                onChange={(e) => setNewCloudRepoRemoteUrl(e.target.value)}
+                placeholder="Remote URL (valgfri)"
+                className="form-input"
+              />
+              <input
+                type="text"
+                value={newCloudRepoBranch}
+                onChange={(e) => setNewCloudRepoBranch(e.target.value)}
+                placeholder="Default branch"
+                className="form-input"
+              />
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={createCloudRepo}
+                className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors"
+                disabled={cloudLoading}
+              >
+                + Opret repo i cloud
+              </button>
+            </div>
+
+            {cloudLoading ? (
+              <div className="text-sm text-text-muted">Henter...</div>
+            ) : cloudRepos.length === 0 ? (
+              <div className="text-sm text-text-muted">Ingen cloud repos endnu.</div>
+            ) : (
+              <div className="space-y-2">
+                {cloudRepos.map((r) => (
+                  <div
+                    key={r.id}
+                    className="flex items-center justify-between p-3 bg-bg-tertiary border border-border-primary rounded-lg"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm truncate">{r.name}</div>
+                      <div className="text-xs text-text-muted truncate font-mono">
+                        {(r.remoteUrl ?? "").trim() || "(no remote url)"} • {(r.defaultBranch ?? "").trim() || "(no branch)"}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => archiveCloudRepo(r.id)}
+                      className="px-3 py-1 text-sm bg-bg-secondary border border-border-primary rounded hover:bg-bg-hover"
+                      disabled={cloudLoading}
+                    >
+                      Arkivér
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
       </Section>
     </div>
   );
@@ -378,7 +656,7 @@ function PromptsSettings({
     <div className="space-y-6">
       <Section title="Aktiv System Prompt">
         <FormGroup label="Vælg Prompt">
-          <select className="form-input">
+          <select className="form-input" aria-label="Vælg Prompt">
             <option value="default">Standard (The Finisher)</option>
             <option value="coder">Koder-fokus</option>
             <option value="security">Sikkerhedsrevisor</option>
@@ -442,6 +720,7 @@ function SecuritySettings({
           defaultValue={`.git\nnode_modules\n.env`}
           rows={4}
           className="form-input font-mono text-sm"
+          aria-label="Blokerede stier"
         />
       </Section>
 

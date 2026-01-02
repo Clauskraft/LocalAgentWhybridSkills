@@ -292,14 +292,6 @@ async function executeLocalFunction(request: ExecutionRequest): Promise<Executio
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
-interface GitHubWorkflowRun {
-  id: number;
-  status: string;
-  conclusion: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 async function executeGitHub(request: ExecutionRequest): Promise<ExecutionResult> {
   const startedAt = new Date().toISOString();
   const start = Date.now();

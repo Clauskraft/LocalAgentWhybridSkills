@@ -109,6 +109,10 @@ export class JwtAuthService {
     if (!this.currentKey) {
       await this.initialize();
     }
+    const signingKey = this.currentKey;
+    if (!signingKey) {
+      throw new Error("JWT signing key not available");
+    }
 
     const now = Math.floor(Date.now() / 1000);
     const jti = crypto.randomUUID();
@@ -126,7 +130,7 @@ export class JwtAuthService {
 
     const accessToken = await new jose.SignJWT(accessPayload as unknown as jose.JWTPayload)
       .setProtectedHeader({ alg: "ES256", kid: this.keyId })
-      .sign(this.currentKey!);
+      .sign(signingKey);
 
     const refreshPayload = {
       sub: subject,
@@ -141,7 +145,7 @@ export class JwtAuthService {
 
     const refreshToken = await new jose.SignJWT(refreshPayload)
       .setProtectedHeader({ alg: "ES256", kid: this.keyId })
-      .sign(this.currentKey!);
+      .sign(signingKey);
 
     return {
       accessToken,
@@ -156,7 +160,11 @@ export class JwtAuthService {
       await this.initialize();
     }
 
-    const keys = [this.currentKey!, this.previousKey].filter(Boolean) as jose.KeyLike[];
+    const current = this.currentKey;
+    if (!current) {
+      return null;
+    }
+    const keys = [current, ...(this.previousKey ? [this.previousKey] : [])];
 
     for (const key of keys) {
       try {
