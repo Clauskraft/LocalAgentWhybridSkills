@@ -189,7 +189,8 @@ function resolveRendererEntry(): { type: "url" | "file"; value: string } {
   }
   return {
     type: "file",
-    value: path.resolve(__dirname, "../../dist/renderer/index.html")
+    // Vite build outputs to build/ui (see vite.config.ts)
+    value: path.resolve(__dirname, "../../../ui/index.html")
   };
 }
 

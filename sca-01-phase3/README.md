@@ -61,6 +61,8 @@ curl http://127.0.0.1:3000/health
 | `/health` | GET | Health check |
 | `/ready` | GET | Readiness (DB ping) |
 | `/mcp/info` | GET | MCP server info |
+| `/api/models` | GET | List models from configured Ollama upstream |
+| `/api/chat` | POST | Proxy chat requests to configured Ollama upstream |
 
 ### Authentication
 
@@ -130,6 +132,11 @@ RATE_LIMIT_WINDOW=1 minute
 # Trust proxy for Railway/ingress
 TRUST_PROXY=true
 
+# LLM upstream (optional)
+# Used by /api/models and /api/chat to proxy to an Ollama instance.
+# Must be reachable from Railway and must NOT be localhost/127.0.0.1.
+OLLAMA_HOST=
+
 # Notion (optional)
 NOTION_API_KEY=secret_xxx
 NOTION_DATABASE_ID=xxx
@@ -146,6 +153,7 @@ HOST=::
 - `GET /ready`:
   - In `NODE_ENV=production`, returns **503** until `DATABASE_URL` is set and migrations have completed successfully.
   - Otherwise returns 200 and includes whether DB is configured.
+- `GET /api/models` and `POST /api/chat`: return **503** unless `OLLAMA_HOST` is configured.
 
 ### Database Migrations
 ```bash

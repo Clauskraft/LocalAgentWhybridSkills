@@ -4,7 +4,7 @@
   "description": "SCA-01 'The Finisher' Phase 2 - Desktop Agent with full PC access",
   "private": true,
   "type": "module",
-  "main": "build/main/index.js",
+  "main": "build/sca-01-phase2/src/ui/main.js",
   "engines": {
     "node": ">=20"
   },
@@ -14,6 +14,7 @@
     "build": "tsc -p tsconfig.json && npm run build:renderer",
     "build:renderer": "vite build --config vite.config.ts",
     "build:ui": "npm run build && electron-builder",
+    "build:ui:dir": "npm run build && electron-builder --win --dir",
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "playwright test",
@@ -59,6 +60,11 @@
   "build": {
     "appId": "com.clak.sca-01",
     "productName": "SCA-01 The Finisher",
+    "files": [
+      "build/**",
+      "package.json",
+      "node_modules/**"
+    ],
     "directories": {
       "output": "dist"
     },

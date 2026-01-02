@@ -1,6 +1,6 @@
 # SCA-01 Phase 2 - Desktop Agent
 
-🖥️ Full-featured desktop application with Electron, providing complete system access with approval gates.
+Electron desktop application for SCA-01 (Phase 2).
 
 ## Features
 
@@ -24,8 +24,7 @@
 
 ## Requirements
 
-- Node.js 18+
-- Ollama running locally (for AI)
+- Node.js 20+
 - Windows/macOS/Linux
 
 ## Quick Start
@@ -46,6 +45,16 @@ npm run dev:cockpit
 # Run CLI
 npm run dev -- doctor
 ```
+
+## Cloud Mode (multi-device, no localhost)
+
+For multi-device usage, run the UI in cloud mode and point it at the Railway backend:
+
+- Set `SCA_USE_CLOUD=true`
+- Set `SCA_BACKEND_URL=https://sca-01-phase3-production.up.railway.app`
+- Ensure the Railway backend has `OLLAMA_HOST` configured to a non-local Ollama instance (reachable from Railway)
+
+In cloud mode, chat requests are made from the Electron **main process** to the cloud backend (`/api/chat`) via IPC, to avoid browser CORS issues.
 
 ## UI Applications
 
@@ -99,20 +108,24 @@ sca-01-phase2/
 ## Environment Variables
 
 ```bash
-# Ollama configuration
-OLLAMA_HOST=http://localhost:11434
+# Cloud mode (recommended for multi-device)
+SCA_USE_CLOUD=true
+SCA_BACKEND_URL=https://sca-01-phase3-production.up.railway.app
+
+# Local/remote Ollama (used only when SCA_USE_CLOUD=false)
+OLLAMA_HOST=
 OLLAMA_MODEL=qwen3
 
-# Permissions (all default to false)
-SCA_ALLOW_UNRESTRICTED_FILE=true
-SCA_ALLOW_UNRESTRICTED_EXEC=true
-SCA_ALLOW_NETWORK=true
-SCA_ALLOW_CLIPBOARD=true
-SCA_ALLOW_BROWSER=true
-
-# Cloud sync
-CLOUD_API_URL=https://sca-01-phase3-production.up.railway.app
+# Permissions (defaults are false)
+SCA_ALLOW_WRITE=false
+SCA_ALLOW_EXEC=false
+SCA_FULL_ACCESS=false
+SCA_AUTO_APPROVE=false
 ```
+
+## Health Check
+
+- Cloud backend: `GET https://sca-01-phase3-production.up.railway.app/health`
 
 ## Cloud Sync
 
@@ -135,9 +148,11 @@ await cloudSync.syncToNotion(sessionId);
 ## Building Executable
 
 ```bash
-# Build for current platform
-npm run build
-npx electron-builder
+# Build unpacked folder (recommended on Windows ARM64)
+npm run build:ui:dir
+
+# Full installer builds (may require 7zip tooling on Windows ARM64)
+npm run build:ui
 
 # Build for Windows
 npx electron-builder --win
