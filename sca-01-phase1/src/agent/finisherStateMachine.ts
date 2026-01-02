@@ -11,7 +11,7 @@
  * into your CLI or server to inspect or render the agent flow.
  */
 
-import { StateMachine, StateName } from './stateMachine';
+import { StateMachine, type StateName } from "./stateMachine.js";
 
 // Define distinct state names as branded strings. The branding with
 // `as StateName` prevents accidental mixing of arbitrary strings with
@@ -48,6 +48,21 @@ export interface FinisherContext {
    * Set this to true to abort the run due to an unrecoverable error.
    */
   abort?: boolean;
+
+  /**
+   * Has the current PLAN step produced tool calls? If false, we can report and finish.
+   */
+  hasToolCalls: boolean;
+
+  /**
+   * Which turn are we on in the PLAN→ACT cycle?
+   */
+  turn: number;
+
+  /**
+   * Maximum turns allowed (maps to cfg.maxTurns).
+   */
+  maxTurns: number;
 }
 
 /**
@@ -71,16 +86,19 @@ export function createFinisherStateMachine(): StateMachine<FinisherContext> {
         transitions: [
           // If the plan requires approval, branch to WAIT_FOR_APPROVAL
           { to: WAIT_FOR_APPROVAL, condition: (ctx) => ctx.requiresApproval === true },
+          // If no tool calls, we can report (final answer)
+          { to: REPORT, condition: (ctx) => ctx.requiresApproval === false && ctx.hasToolCalls === false },
           // Otherwise proceed directly to ACT
-          { to: ACT, condition: (ctx) => ctx.requiresApproval === false }
+          { to: ACT, condition: (ctx) => ctx.requiresApproval === false && ctx.hasToolCalls === true }
         ]
       },
       {
         name: WAIT_FOR_APPROVAL,
         transitions: [
-          // In this simplified example we always proceed to ACT once approval is obtained.
-          // Real logic would update context upon human approval.
-          { to: ACT, condition: () => true }
+          // This state is intended to block until external approval updates context.
+          // If your runtime can collect approval, set requiresApproval=false (or abort=true) to proceed.
+          { to: ACT, condition: (ctx) => ctx.requiresApproval === false },
+          { to: DONE, condition: (ctx) => ctx.abort === true }
         ]
       },
       {
@@ -88,8 +106,7 @@ export function createFinisherStateMachine(): StateMachine<FinisherContext> {
         transitions: [
           // If the agent has acted (e.g. executed tool calls), move to TEST
           { to: TEST, condition: (ctx) => ctx.acted === true },
-          // Otherwise stay in ACT until action completes
-          { to: ACT, condition: (ctx) => ctx.acted === false }
+          // Otherwise remain in ACT (runner should call step again after updating context)
         ]
       },
       {
@@ -104,7 +121,10 @@ export function createFinisherStateMachine(): StateMachine<FinisherContext> {
       {
         name: REPORT,
         transitions: [
-          { to: DONE, condition: () => true }
+          // Stop after final response (no tools) or if we've hit max turns
+          { to: DONE, condition: (ctx) => ctx.hasToolCalls === false || ctx.turn >= ctx.maxTurns },
+          // Otherwise loop back to PLAN for another LLM turn
+          { to: PLAN, condition: (ctx) => ctx.hasToolCalls === true && ctx.turn < ctx.maxTurns }
         ]
       },
       {
@@ -132,9 +152,4 @@ export function createFinisherStateMachine(): StateMachine<FinisherContext> {
 export function generateFinisherMermaid(): string {
   const sm = createFinisherStateMachine();
   return sm.toMermaid();
-}
-
-// If this file is run directly via `node` or `tsx`, print the diagram.
-if (typeof require !== 'undefined' && require.main === module) {
-  console.log(generateFinisherMermaid());
 }

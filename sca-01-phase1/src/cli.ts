@@ -2,6 +2,7 @@
 
 import { loadConfig } from "./config.js";
 import { FinisherAgent } from "./agent/FinisherAgent.js";
+import { generateFinisherMermaid } from "./agent/finisherStateMachine.js";
 import { OllamaChatClient } from "./ollama/ollamaChatClient.js";
 
 function printHelp(): void {
@@ -12,6 +13,7 @@ Commands:
   doctor              Check Ollama connectivity (GET /api/version)
   run [--goal "..."]  Run autonomous agent loop (reads HANDOVER_LOG etc.)
   chat                Interactive mode (single run per prompt)
+  diagram             Print Finisher state machine as Mermaid (stateDiagram-v2)
   help
 
 Environment:
@@ -50,6 +52,10 @@ async function cmdChat(argv: string[]): Promise<void> {
   console.log(out);
 }
 
+async function cmdDiagram(): Promise<void> {
+  console.log(generateFinisherMermaid());
+}
+
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const cmd = argv[0] ?? "help";
@@ -69,6 +75,10 @@ async function main(): Promise<void> {
     }
     if (cmd === "chat") {
       await cmdChat(argv);
+      return;
+    }
+    if (cmd === "diagram") {
+      await cmdDiagram();
       return;
     }
 

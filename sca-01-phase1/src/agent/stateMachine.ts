@@ -27,7 +27,7 @@ export interface StateMachineConfig<TContext> {
   states: Array<StateDefinition<TContext>>;
 }
 
-export class StateMachine<TContext extends Record<string, unknown>> {
+export class StateMachine<TContext extends object> {
   private current: StateName;
   private readonly stateMap: Map<StateName, StateDefinition<TContext>>;
   private readonly initial: StateName;
@@ -53,7 +53,7 @@ export class StateMachine<TContext extends Record<string, unknown>> {
     this.current = this.initial;
   }
 
-  public async run(context: TContext): Promise<void> {
+  public async start(context: TContext): Promise<void> {
     await this.enterState(this.initial, context);
   }
 
@@ -64,7 +64,6 @@ export class StateMachine<TContext extends Record<string, unknown>> {
     if (stateDef.onEnter) {
       await stateDef.onEnter(context);
     }
-    await this.evaluateTransitions(context);
   }
 
   private async exitState(name: StateName, context: TContext): Promise<void> {
@@ -79,12 +78,32 @@ export class StateMachine<TContext extends Record<string, unknown>> {
     if (!stateDef) return;
     for (const transition of stateDef.transitions) {
       if (transition.condition(context)) {
-        await this.exitState(this.current, context);
+        // Prevent accidental recursive self-loop; treat as "no transition"
+        if (transition.to === this.current) return;
+
+        const from = this.current;
+        await this.exitState(from, context);
         await this.enterState(transition.to, context);
         return;
       }
     }
     // remain in current state
+  }
+
+  public async step(context: TContext): Promise<boolean> {
+    const before = this.current;
+    await this.evaluateTransitions(context);
+    return this.current !== before;
+  }
+
+  public async run(context: TContext, options?: { maxSteps?: number }): Promise<void> {
+    const maxSteps = options?.maxSteps ?? 10_000;
+    await this.start(context);
+    for (let i = 0; i < maxSteps; i += 1) {
+      const moved = await this.step(context);
+      if (!moved) return;
+    }
+    throw new Error(`StateMachine: exceeded maxSteps=${maxSteps}`);
   }
 
   public toMermaid(): string {
