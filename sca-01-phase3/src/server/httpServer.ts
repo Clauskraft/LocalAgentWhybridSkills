@@ -129,10 +129,11 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
     allowList: (req) => (req.headers["x-rate-limit-allow"] as string) === "true"
   });
 
-  // Request ID decorator - store in custom property
-  app.addHook("onRequest", async (request) => {
-    (request as unknown as { reqId: string }).reqId = 
-      (request.headers["x-request-id"] as string) || crypto.randomUUID();
+  // Request ID decorator - store in custom property, propagate to response header
+  app.addHook("onRequest", async (request, reply) => {
+    const reqId = (request.headers["x-request-id"] as string) || crypto.randomUUID();
+    (request as unknown as { reqId: string }).reqId = reqId;
+    reply.header("x-request-id", reqId);
   });
 
   // Auth decorator
@@ -160,6 +161,17 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
   // Health check
   app.get("/health", async () => {
     return { status: "ok", timestamp: new Date().toISOString(), version: "0.3.0" };
+  });
+
+  // Readiness probe (checks DB)
+  app.get("/ready", async (_req, reply) => {
+    try {
+      await initializeDatabase(); // idempotent, ensures connection OK
+      return { status: "ready", timestamp: new Date().toISOString() };
+    } catch (err) {
+      reply.code(503);
+      return { status: "degraded", error: (err as Error).message };
+    }
   });
 
   // MCP Server Info (public)
