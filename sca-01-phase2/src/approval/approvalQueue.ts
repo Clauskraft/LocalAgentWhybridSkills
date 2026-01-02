@@ -1,4 +1,4 @@
-import { EventEmitter } from "node:events";
+import { EventEmitter } from "events";
 import type { RiskLevel, PolicyDecision } from "../security/policy.js";
 
 export interface ApprovalRequest {

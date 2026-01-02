@@ -6,6 +6,11 @@ export interface Phase2Config {
   ollamaHost: string;
   ollamaModel: string;
 
+  // UI / Cloud preference
+  theme?: string;
+  backendUrl?: string;
+  useCloud?: boolean;
+
   // Paths
   repoRoot: string;
   logDir: string;
@@ -54,6 +59,11 @@ export function loadConfig(): Phase2Config {
     // LLM
     ollamaHost: process.env["OLLAMA_HOST"] ?? "http://localhost:11434",
     ollamaModel: process.env["OLLAMA_MODEL"] ?? "qwen3",
+
+    // UI / Cloud preference
+    theme: process.env["SCA_THEME"] ?? "dark",
+    backendUrl: process.env["SCA_BACKEND_URL"] ?? "",
+    useCloud: parseBool(process.env["SCA_USE_CLOUD"], false),
 
     // Paths
     repoRoot,

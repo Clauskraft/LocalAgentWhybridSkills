@@ -1,4 +1,5 @@
-import { memo, useState, useEffect } from 'react';
+import React, { memo, useEffect, useId, useState } from 'react';
+import type { ReactNode } from 'react';
 
 interface Settings {
   ollamaHost: string;
@@ -10,6 +11,7 @@ interface Settings {
   theme?: string;
   backendUrl?: string;
   useCloud?: boolean;
+  safeDirs?: string[];
 }
 
 interface SettingsModalProps {
@@ -22,6 +24,7 @@ interface SettingsModalProps {
 
 const TABS = [
   { id: 'general', icon: '⚙️', label: 'Generelt' },
+  { id: 'repos', icon: '🗂️', label: 'Repos' },
   { id: 'models', icon: '🤖', label: 'Modeller' },
   { id: 'mcp', icon: '🔌', label: 'MCP Servere' },
   { id: 'prompts', icon: '📝', label: 'System Prompts' },
@@ -85,6 +88,9 @@ export const SettingsModal = memo(function SettingsModal({
             {activeTab === 'general' && (
               <GeneralSettings settings={settings} onUpdate={onUpdateSettings} />
             )}
+            {activeTab === 'repos' && (
+              <ReposSettings settings={settings} onUpdate={onUpdateSettings} />
+            )}
             {activeTab === 'models' && (
               <ModelsSettings settings={settings} onUpdate={onUpdateSettings} />
             )}
@@ -125,17 +131,14 @@ function GeneralSettings({
             className="form-input"
           />
         </FormGroup>
-        <FormGroup label="Standard Model">
-          <select
+        <FormGroup label="Standard Model (indtast navn)">
+          <input
+            type="text"
             value={settings.model}
             onChange={(e) => onUpdate({ model: e.target.value })}
+            placeholder="fx qwen3"
             className="form-input"
-          >
-            <option value="qwen3">qwen3</option>
-            <option value="llama3.1">llama3.1</option>
-            <option value="mistral">mistral</option>
-            <option value="codellama">codellama</option>
-          </select>
+          />
         </FormGroup>
       </Section>
 
@@ -176,6 +179,76 @@ function GeneralSettings({
   );
 }
 
+function ReposSettings({
+  settings,
+  onUpdate
+}: {
+  settings: Settings;
+  onUpdate: (s: Partial<Settings>) => void;
+}) {
+  const [pathInput, setPathInput] = useState('');
+  const safeDirs = settings.safeDirs ?? [];
+
+  const add = () => {
+    const next = pathInput.trim();
+    if (!next) return;
+    const merged = Array.from(new Set([...safeDirs, next]));
+    onUpdate({ safeDirs: merged });
+    setPathInput('');
+  };
+
+  const remove = (p: string) => {
+    onUpdate({ safeDirs: safeDirs.filter((x) => x !== p) });
+  };
+
+  return (
+    <div className="space-y-6">
+      <Section title="🗂️ Repos (Safe Dirs)">
+        <p className="text-sm text-text-secondary">
+          Tilføj repo-roots som agenten må arbejde i, når den kører i “safe mode”.
+        </p>
+
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={pathInput}
+            onChange={(e) => setPathInput(e.target.value)}
+            placeholder="C:\\Users\\claus\\Projects\\WidgetDC"
+            className="form-input flex-1"
+          />
+          <button
+            onClick={add}
+            className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors"
+          >
+            + Tilføj
+          </button>
+        </div>
+
+        <div className="space-y-2 mt-4">
+          {safeDirs.length === 0 ? (
+            <div className="text-sm text-text-muted">Ingen repos tilføjet endnu.</div>
+          ) : (
+            safeDirs.map((p) => (
+              <div
+                key={p}
+                className="flex items-center justify-between p-3 bg-bg-tertiary border border-border-primary rounded-lg"
+              >
+                <div className="font-mono text-xs break-all">{p}</div>
+                <button
+                  onClick={() => remove(p)}
+                  className="px-3 py-1 text-sm bg-bg-secondary border border-border-primary rounded hover:bg-bg-hover"
+                >
+                  Fjern
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </Section>
+    </div>
+  );
+}
+
 function ModelsSettings({ 
   settings, 
   onUpdate 
@@ -187,12 +260,22 @@ function ModelsSettings({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Load from Electron IPC
-    setModels([
-      { name: 'qwen3', size: '4.7 GB' },
-      { name: 'llama3.1', size: '4.1 GB' },
-    ]);
-    setLoading(false);
+    (async () => {
+      try {
+        const api = (window as any).sca01?.chat;
+        const list = await api?.getModels?.();
+        const parsed = Array.isArray(list)
+          ? list
+              .filter((m) => m && typeof m.name === 'string')
+              .map((m) => ({ name: m.name as string, size: (m.size as string) ?? '' }))
+          : [];
+        setModels(parsed);
+      } catch {
+        setModels([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   return (
@@ -402,7 +485,7 @@ function ThemeSettings({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="mb-6">
       <h3 className="text-sm font-semibold text-accent mb-4">{title}</h3>
@@ -411,11 +494,34 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function FormGroup({ label, children }: { label: string; children: React.ReactNode }) {
+function FormGroup({ label, children }: { label: string; children: ReactNode }) {
+  const fallbackId = useId();
+
+  const enhancedChild = (() => {
+    if (!React.isValidElement(children)) return children;
+
+    const props = children.props as Record<string, unknown>;
+    const existingId = typeof props.id === "string" ? props.id : undefined;
+
+    const nextProps: Record<string, unknown> = {
+      ...props,
+      id: existingId ?? fallbackId,
+      "aria-label": typeof props["aria-label"] === "string" ? props["aria-label"] : label,
+    };
+
+    return React.cloneElement(children, nextProps);
+  })();
+
+  const childId = React.isValidElement(enhancedChild)
+    ? (enhancedChild.props as Record<string, unknown>).id
+    : undefined;
+
   return (
     <div className="mb-4">
-      <label className="block text-sm text-text-secondary mb-2">{label}</label>
-      {children}
+      <label htmlFor={typeof childId === "string" ? childId : fallbackId} className="block text-sm text-text-secondary mb-2">
+        {label}
+      </label>
+      {enhancedChild}
     </div>
   );
 }

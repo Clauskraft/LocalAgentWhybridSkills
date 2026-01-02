@@ -10,6 +10,8 @@ import { registerAuthRoutes } from "../routes/authRoutes.js";
 import { registerSessionRoutes } from "../routes/sessionRoutes.js";
 import { notionRoutes } from "../routes/notionRoutes.js";
 import { executionRoutes } from "../routes/executionRoutes.js";
+import { registerGitHubRoutes } from "../routes/githubRoutes.js";
+import { registerRepoRoutes } from "../routes/repoRoutes.js";
 
 // ============================================================================
 // HTTP SERVER FOR MCP OVER HTTP
@@ -132,7 +134,7 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
   // Request ID decorator - store in custom property, propagate to response header
   app.addHook("onRequest", async (request, reply) => {
     const reqId = (request.headers["x-request-id"] as string) || crypto.randomUUID();
-    (request as unknown as { reqId: string }).reqId = reqId;
+    (request as unknown as { requestId: string }).requestId = reqId;
     reply.header("x-request-id", reqId);
   });
 
@@ -155,6 +157,8 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
 
     request.user = payload;
   };
+  // Make verifyJwt available for plugin routes (Notion/Execution/etc.)
+  app.decorate("verifyJwt", verifyJwt);
 
   // ========== PUBLIC ROUTES ==========
 
@@ -544,6 +548,7 @@ async function main(): Promise<void> {
   if (process.env.DATABASE_URL) {
     registerAuthRoutes(server, log);
     registerSessionRoutes(server, log);
+    registerRepoRoutes(server, log);
     console.log("✅ User routes registered");
   }
 
@@ -555,20 +560,9 @@ async function main(): Promise<void> {
   await server.register(executionRoutes, { prefix: "/api" });
   console.log("✅ Execution routes registered");
 
-  // Add JWT verify decorator for routes
-  server.decorate("verifyJwt", async (request: { headers: { authorization?: string }; user: TokenPayload | null }) => {
-    const authHeader = request.headers.authorization;
-    if (!authHeader?.startsWith("Bearer ")) {
-      throw { statusCode: 401, message: "Missing authorization header" };
-    }
-    const token = authHeader.slice(7);
-    const auth = getAuthService();
-    const payload = await auth.verifyToken(token);
-    if (!payload) {
-      throw { statusCode: 401, message: "Invalid token" };
-    }
-    request.user = payload;
-  });
+  // Register GitHub sync routes (JWT-protected)
+  registerGitHubRoutes(server, log);
+  console.log("✅ GitHub routes registered");
   
   try {
     await server.listen({ port, host });

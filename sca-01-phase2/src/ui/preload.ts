@@ -13,7 +13,7 @@ export interface SCA01API {
   getConfig: () => Promise<Record<string, unknown>>;
   runAgent: (goal: string) => Promise<{ result?: string; error?: string }>;
   chat: {
-    getConfig: () => Promise<{ ollamaHost: string; model: string; theme?: string; backendUrl?: string; useCloud?: boolean }>;
+    getConfig: () => Promise<{ ollamaHost: string; model: string; theme?: string; backendUrl?: string; useCloud?: boolean; safeDirs?: string[] }>;
     checkOllama: () => Promise<boolean>;
     sendMessage: (payload: {
       messages: Array<{ role: string; content: string }>;
@@ -23,7 +23,6 @@ export interface SCA01API {
       useCloud?: boolean;
     }) => Promise<{ content: string; toolCalls?: unknown[] }>;
     getModels: () => Promise<Array<{ name: string; size?: string }>>;
-    getAvailableModels: () => Promise<Array<{ name: string; description?: string; size?: string; recommended?: boolean }>>;
     updateSettings: (partial: Record<string, unknown>) => void;
     setTheme: (theme: string) => void;
   };
@@ -49,6 +48,7 @@ const api: SCA01API = {
         theme: (cfg as { theme?: string })?.theme ?? "dark",
         backendUrl: (cfg as { backendUrl?: string })?.backendUrl ?? "",
         useCloud: (cfg as { useCloud?: boolean })?.useCloud ?? false,
+        safeDirs: (cfg as { safeDirs?: string[] })?.safeDirs ?? [],
       };
     },
     checkOllama: async () => {
@@ -65,7 +65,6 @@ const api: SCA01API = {
       return ipcRenderer.invoke("chat-send-message", payload);
     },
     getModels: () => ipcRenderer.invoke("chat-get-models"),
-    getAvailableModels: () => ipcRenderer.invoke("chat-get-available-models"),
     updateSettings: (partial: Record<string, unknown>) => {
       ipcRenderer.invoke("chat-update-settings", partial);
     },

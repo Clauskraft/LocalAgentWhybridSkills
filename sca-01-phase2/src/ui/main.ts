@@ -1,11 +1,14 @@
+/// <reference types="node" />
 import { app, BrowserWindow, ipcMain, dialog, Notification } from "electron";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs/promises";
 import { globalApprovalQueue } from "../approval/approvalQueue.js";
 import { loadConfig } from "../config.js";
 import { DesktopAgent } from "../agent/DesktopAgent.js";
 import { HyperLog } from "../logging/hyperlog.js";
-import fetch from "node-fetch";
+
+import type { ApprovalRequest } from "../approval/approvalQueue.js";
 
 // ES Module __dirname polyfill
 const __filename = fileURLToPath(import.meta.url);
@@ -14,6 +17,8 @@ const __dirname = path.dirname(__filename);
 let mainWindow: BrowserWindow | null = null;
 let agent: DesktopAgent | null = null;
 let log: HyperLog | null = null;
+let runtimeCfg = loadConfig();
+let settingsFilePath: string | null = null;
 
 function resolveRendererEntry(): { type: "url" | "file"; value: string } {
   const devUrl = process.env.VITE_DEV_SERVER_URL;
@@ -43,14 +48,16 @@ function createWindow(): void {
 
   const renderer = resolveRendererEntry();
   if (renderer.type === "url") {
-    mainWindow.loadURL(renderer.value).catch((err) => {
+    mainWindow.loadURL(renderer.value).catch((err: unknown) => {
       console.error("Failed to load renderer dev server:", err);
-      dialog.showErrorBox("Renderer load error", `Dev server failed: ${err.message}`);
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      dialog.showErrorBox("Renderer load error", `Dev server failed: ${msg}`);
     });
   } else {
-    mainWindow.loadFile(renderer.value).catch((err) => {
+    mainWindow.loadFile(renderer.value).catch((err: unknown) => {
       console.error("Failed to load renderer file:", err);
-      dialog.showErrorBox("Renderer load error", `File load failed: ${err.message}`);
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      dialog.showErrorBox("Renderer load error", `File load failed: ${msg}`);
     });
   }
 
@@ -66,12 +73,11 @@ async function chatSendMessage(payload: {
   backendUrl?: string;
   useCloud?: boolean;
 }) {
-  const cfg = loadConfig();
-  const model = payload.model ?? cfg.ollamaModel;
+  const model = payload.model ?? runtimeCfg.ollamaModel;
 
   // Prefer cloud backend if configured
   const backend = payload.backendUrl?.trim();
-  if (backend) {
+  if (backend && payload.useCloud) {
     const body = {
       model,
       messages: payload.messages,
@@ -94,7 +100,7 @@ async function chatSendMessage(payload: {
   }
 
   // Fallback to local Ollama
-  const host = (payload.host ?? cfg.ollamaHost).replace(/\/+$/, "");
+  const host = (payload.host ?? runtimeCfg.ollamaHost).replace(/\/+$/, "");
   const body = {
     model,
     messages: payload.messages,
@@ -116,33 +122,52 @@ async function chatSendMessage(payload: {
 }
 
 async function chatGetModels() {
-  const cfg = loadConfig();
-  const host = cfg.ollamaHost.replace(/\/+$/, "");
+  const host = runtimeCfg.ollamaHost.replace(/\/+$/, "");
   const res = await fetch(`${host}/api/tags`);
   if (!res.ok) return [];
-  const data = await res.json();
-  return (data?.models ?? []).map((m: any) => ({ name: m.name, size: m.size }));
-}
-
-async function chatGetAvailableModels() {
-  // Ollama does not expose a full catalog; provide curated list
-  return [
-    { name: "qwen3", description: "General model with tool calling", size: "4.7 GB", recommended: true },
-    { name: "llama3.1", description: "Meta Llama 3.1", size: "4.1 GB", recommended: true },
-    { name: "mistral", description: "Mistral 7B", size: "4.1 GB" },
-    { name: "codellama", description: "Code-focused model", size: "7B+" }
-  ];
+  const data = (await res.json()) as { models?: Array<{ name: string; size?: number | string }> };
+  return (data.models ?? []).map((m) => ({ name: m.name, size: String(m.size ?? "") }));
 }
 
 function setupChatIpc(): void {
-  ipcMain.handle("chat-send-message", (_event, payload) => chatSendMessage(payload));
+  ipcMain.handle("chat-send-message", (_event: unknown, payload: Parameters<typeof chatSendMessage>[0]) => chatSendMessage(payload));
   ipcMain.handle("chat-get-models", () => chatGetModels());
-  ipcMain.handle("chat-get-available-models", () => chatGetAvailableModels());
-  ipcMain.handle("chat-update-settings", (_event, partial: Record<string, unknown>) => {
-    // persist in memory for now; can be extended to disk
-    // this keeps compatibility with existing cfg load
+  ipcMain.handle("chat-update-settings", async (_event: unknown, partial: Record<string, unknown>) => {
+    const next = { ...runtimeCfg };
+
+    if (typeof partial.ollamaHost === "string") next.ollamaHost = partial.ollamaHost;
+    if (typeof partial.model === "string") next.ollamaModel = partial.model;
+    if (typeof partial.ollamaModel === "string") next.ollamaModel = partial.ollamaModel;
+    if (typeof partial.maxTurns === "number" && Number.isFinite(partial.maxTurns)) next.maxTurns = partial.maxTurns;
+    if (typeof partial.fullAccess === "boolean") next.fullAccess = partial.fullAccess;
+    if (typeof partial.autoApprove === "boolean") next.autoApprove = partial.autoApprove;
+    if (typeof partial.backendUrl === "string") next.backendUrl = partial.backendUrl;
+    if (typeof partial.useCloud === "boolean") next.useCloud = partial.useCloud;
+    if (typeof partial.theme === "string") next.theme = partial.theme;
+    if (Array.isArray(partial.safeDirs) && partial.safeDirs.every((p) => typeof p === "string")) {
+      next.safeDirs = partial.safeDirs.map((p) => p.trim()).filter(Boolean);
+    }
+
+    runtimeCfg = next;
+
+    if (settingsFilePath) {
+      await fs.mkdir(path.dirname(settingsFilePath), { recursive: true });
+      await fs.writeFile(settingsFilePath, JSON.stringify({
+        ollamaHost: runtimeCfg.ollamaHost,
+        ollamaModel: runtimeCfg.ollamaModel,
+        maxTurns: runtimeCfg.maxTurns,
+        fullAccess: runtimeCfg.fullAccess,
+        autoApprove: runtimeCfg.autoApprove,
+        backendUrl: runtimeCfg.backendUrl,
+        useCloud: runtimeCfg.useCloud,
+        theme: runtimeCfg.theme,
+        safeDirs: runtimeCfg.safeDirs,
+      }, null, 2), { encoding: "utf8" });
+    }
+
+    return true;
   });
-  ipcMain.handle("chat-set-theme", (_event, theme: string) => {
+  ipcMain.handle("chat-set-theme", (_event: unknown, theme: string) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send("chat-theme", theme);
     }
@@ -151,16 +176,31 @@ function setupChatIpc(): void {
 
 function setupIpc(): void {
   const cfg = loadConfig();
-  log = new HyperLog(cfg.logDir, "ui.hyperlog.jsonl");
-  agent = new DesktopAgent(cfg);
+  runtimeCfg = cfg;
+  settingsFilePath = path.join(app.getPath("userData"), "settings.json");
+
+  // Load persisted overrides (best-effort)
+  (async () => {
+    if (!settingsFilePath) return;
+    try {
+      const raw = await fs.readFile(settingsFilePath, { encoding: "utf8" });
+      const persisted = JSON.parse(raw) as Partial<typeof runtimeCfg>;
+      runtimeCfg = { ...runtimeCfg, ...persisted };
+    } catch {
+      // ignore
+    }
+  })().catch(() => undefined);
+
+  log = new HyperLog(runtimeCfg.logDir, "ui.hyperlog.jsonl");
+  agent = new DesktopAgent(runtimeCfg);
 
   // Get configuration
   ipcMain.handle("get-config", () => {
-    return cfg;
+    return runtimeCfg;
   });
 
   // Run agent with goal
-  ipcMain.handle("run-agent", async (_event, goal: string) => {
+  ipcMain.handle("run-agent", async (_event: unknown, goal: string) => {
     if (!agent) return { error: "Agent not initialized" };
 
     try {
@@ -181,12 +221,12 @@ function setupIpc(): void {
   });
 
   // Get approval history
-  ipcMain.handle("get-approval-history", (_event, limit: number) => {
+  ipcMain.handle("get-approval-history", (_event: unknown, limit: number) => {
     return globalApprovalQueue.getHistory(limit);
   });
 
   // Approve request
-  ipcMain.handle("approve-request", (_event, requestId: string) => {
+  ipcMain.handle("approve-request", (_event: unknown, requestId: string) => {
     const success = globalApprovalQueue.approve(requestId, "ui-user");
     if (success) {
       log?.security("ui.approval.approve", "Request approved via UI", { requestId });
@@ -195,7 +235,7 @@ function setupIpc(): void {
   });
 
   // Reject request
-  ipcMain.handle("reject-request", (_event, requestId: string) => {
+  ipcMain.handle("reject-request", (_event: unknown, requestId: string) => {
     const success = globalApprovalQueue.reject(requestId, "ui-user");
     if (success) {
       log?.security("ui.approval.reject", "Request rejected via UI", { requestId });
@@ -218,7 +258,7 @@ function setupIpc(): void {
   });
 
   // Listen for new approval requests
-  globalApprovalQueue.on("request", (request) => {
+  globalApprovalQueue.on("request", (request: ApprovalRequest) => {
     if (mainWindow) {
       mainWindow.webContents.send("approval-request", request);
 
@@ -234,7 +274,7 @@ function setupIpc(): void {
   });
 
   // Listen for resolved approvals
-  globalApprovalQueue.on("resolved", (request) => {
+  globalApprovalQueue.on("resolved", (request: ApprovalRequest) => {
     if (mainWindow) {
       mainWindow.webContents.send("approval-resolved", request);
     }
