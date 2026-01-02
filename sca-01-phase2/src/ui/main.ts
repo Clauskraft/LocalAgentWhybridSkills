@@ -239,7 +239,10 @@ async function chatSendMessage(payload: {
 
   // Prefer cloud backend if configured
   const backend = payload.backendUrl?.trim();
-  if (backend && payload.useCloud) {
+  if (payload.useCloud) {
+    if (!backend) {
+      throw new Error("Cloud mode kræver backendUrl (SCA_BACKEND_URL). Ingen localhost fallback er tilladt.");
+    }
     const body = {
       model,
       messages: payload.messages,
@@ -284,6 +287,15 @@ async function chatSendMessage(payload: {
 }
 
 async function chatGetModels() {
+  if (runtimeCfg.useCloud) {
+    const backend = (runtimeCfg.backendUrl ?? "").trim();
+    if (!backend) return [];
+    const res = await fetch(`${backend.replace(/\/+$/, "")}/api/models`);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { models?: Array<{ name: string; size?: string }> };
+    return data.models ?? [];
+  }
+
   const host = runtimeCfg.ollamaHost.replace(/\/+$/, "");
   const res = await fetch(`${host}/api/tags`);
   if (!res.ok) return [];

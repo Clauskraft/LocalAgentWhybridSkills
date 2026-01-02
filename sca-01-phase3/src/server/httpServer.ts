@@ -184,6 +184,72 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
     };
   });
 
+  // Chat proxy (Ollama upstream)
+  // NOTE: Intended for Electron cloud-mode (requests are made from Electron main process via IPC).
+  // Configure a non-local upstream via OLLAMA_HOST (e.g. https://your-ollama-host:11434).
+  app.post("/api/chat", async (request, reply) => {
+    const body = request.body as unknown;
+    const parsed = z
+      .object({
+        model: z.string().min(1),
+        messages: z.array(z.object({ role: z.string(), content: z.string() })),
+        stream: z.boolean().optional(),
+      })
+      .safeParse(body);
+
+    if (!parsed.success) {
+      return reply.status(400).send({ error: "invalid_request" });
+    }
+
+    const upstreamRaw = (process.env.OLLAMA_HOST ?? "").trim();
+    if (!upstreamRaw) {
+      return reply.status(503).send({ error: "ollama_not_configured" });
+    }
+
+    const upstream = upstreamRaw.replace(/\/+$/, "");
+    const res = await fetch(`${upstream}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: parsed.data.model,
+        messages: parsed.data.messages,
+        stream: false,
+      }),
+    });
+
+    const text = await res.text().catch(() => "");
+    if (!res.ok) {
+      return reply.status(502).send({ error: "ollama_upstream_error", status: res.status, body: text });
+    }
+
+    try {
+      return reply.send(JSON.parse(text));
+    } catch {
+      return reply.status(502).send({ error: "ollama_invalid_response", body: text });
+    }
+  });
+
+  // List available models (Ollama upstream)
+  app.get("/api/models", async (_request, reply) => {
+    const upstreamRaw = (process.env.OLLAMA_HOST ?? "").trim();
+    if (!upstreamRaw) {
+      return reply.status(503).send({ error: "ollama_not_configured" });
+    }
+    const upstream = upstreamRaw.replace(/\/+$/, "");
+    const res = await fetch(`${upstream}/api/tags`);
+    const text = await res.text().catch(() => "");
+    if (!res.ok) {
+      return reply.status(502).send({ error: "ollama_upstream_error", status: res.status, body: text });
+    }
+    try {
+      const data = JSON.parse(text) as { models?: Array<{ name: string; size?: number | string }> };
+      const models = (data.models ?? []).map((m) => ({ name: m.name, size: String(m.size ?? "") }));
+      return reply.send({ models });
+    } catch {
+      return reply.status(502).send({ error: "ollama_invalid_response", body: text });
+    }
+  });
+
   // Readiness probe (checks DB)
   app.get("/ready", async (_req, reply) => {
     // In production, require DB to be ready if DATABASE_URL is expected.

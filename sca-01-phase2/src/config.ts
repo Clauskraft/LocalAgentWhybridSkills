@@ -38,15 +38,18 @@ export function loadConfig(): Phase2Config {
   const safeDirsRaw = parseStringList(process.env["SCA_SAFE_DIRS"], [repoRoot]);
   const safeDirs = safeDirsRaw.map((d) => path.resolve(d));
 
+  const useCloud = parseBool(process.env["SCA_USE_CLOUD"], false);
+  const ollamaHost = process.env["OLLAMA_HOST"] ?? (useCloud ? "" : "http://localhost:11434");
+
   return {
     // LLM
-    ollamaHost: process.env["OLLAMA_HOST"] ?? "http://localhost:11434",
+    ollamaHost,
     ollamaModel: process.env["OLLAMA_MODEL"] ?? "qwen3",
 
     // UI / Cloud preference
     theme: process.env["SCA_THEME"] ?? "dark",
     backendUrl: process.env["SCA_BACKEND_URL"] ?? "",
-    useCloud: parseBool(process.env["SCA_USE_CLOUD"], false),
+    useCloud,
 
     // Paths
     repoRoot,

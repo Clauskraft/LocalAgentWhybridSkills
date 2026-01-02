@@ -68,7 +68,19 @@ const api: SCA01API = {
     checkOllama: async () => {
       try {
         const cfg = await ipcRenderer.invoke("get-config");
+        const useCloud = (cfg as { useCloud?: boolean })?.useCloud ?? false;
+        const backendUrl = (cfg as { backendUrl?: string })?.backendUrl ?? "";
+
+        // In cloud mode, validate the configured cloud backend instead of a local Ollama instance.
+        if (useCloud) {
+          const backend = backendUrl.trim();
+          if (!backend) return false;
+          const res = await fetch(`${backend.replace(/\/+$/, "")}/health`);
+          return res.ok;
+        }
+
         const host = (cfg as { ollamaHost?: string })?.ollamaHost ?? "http://localhost:11434";
+        if (!host || host.includes("localhost") || host.includes("127.0.0.1")) return false;
         const res = await fetch(`${host.replace(/\/+$/, "")}/api/version`);
         return res.ok;
       } catch {
