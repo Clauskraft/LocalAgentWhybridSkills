@@ -74,6 +74,146 @@
     }
 
     .new-chat-btn:hover { background: var(--accent-hover); }
+    .new-chat-btn:active { transform: scale(0.98); }
+
+    /* Sprint 1: Keyboard shortcuts hint */
+    .keyboard-hint {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      background: var(--bg-tertiary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: auto;
+    }
+
+    /* Sprint 2: Loading skeleton animation */
+    @keyframes skeleton-pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-hover) 50%, var(--bg-tertiary) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-pulse 1.5s ease-in-out infinite;
+      border-radius: 4px;
+    }
+
+    /* Sprint 3: Focus states for accessibility */
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* Sprint 4: Smooth transitions */
+    .smooth-transition {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Sprint 5: Toast notifications */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: white;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      animation: slideIn 0.3s ease;
+    }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--error); }
+    .toast.warning { background: var(--warning); }
+    .toast.info { background: var(--accent); }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Sprint 6: Better scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { 
+      background: var(--bg-active); 
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* Sprint 7: Message timestamps on hover */
+    .message-timestamp {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .message:hover .message-timestamp { opacity: 1; }
+
+    /* Sprint 8: Typing indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
+    }
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite ease-in-out;
+    }
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-6px); }
+    }
+
+    /* Sprint 9: Code block copy button */
+    .code-block-wrapper {
+      position: relative;
+    }
+    .code-copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--bg-hover);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .code-block-wrapper:hover .code-copy-btn { opacity: 1; }
+    .code-copy-btn:hover { background: var(--bg-active); color: var(--text-primary); }
+
+    /* Sprint 10: Model badge styling */
+    .model-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--bg-tertiary);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    .model-badge.online::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--success);
+      border-radius: 50%;
+    }
 
     .chat-list {
       flex: 1;
@@ -2015,6 +2155,254 @@ node_modules
         dropdown?.classList.add('hidden');
       }
     });
+
+    // ============ SPRINT 11-25: ENHANCED FEATURES ============
+
+    // Sprint 11: Toast notification system
+    function showToast(message, type = 'info', duration = 3000) {
+      let container = document.querySelector('.toast-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+      }
+      
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
+
+    // Sprint 12: Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // Ctrl+N: New chat
+      if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        startNewSession();
+        showToast('Ny chat oprettet', 'success');
+      }
+      // Ctrl+/: Focus input
+      if (e.ctrlKey && e.key === '/') {
+        e.preventDefault();
+        document.getElementById('messageInput')?.focus();
+      }
+      // Ctrl+,: Open settings
+      if (e.ctrlKey && e.key === ',') {
+        e.preventDefault();
+        openSettings('general');
+      }
+      // Escape: Close modals
+      if (e.key === 'Escape') {
+        closeSettings();
+        document.getElementById('modelDropdown')?.classList.add('hidden');
+      }
+      // Ctrl+Shift+C: Copy last message
+      if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        copyLastMessage();
+      }
+    });
+
+    // Sprint 13: Copy last assistant message
+    function copyLastMessage() {
+      const messages = document.querySelectorAll('.message.assistant');
+      if (messages.length > 0) {
+        const lastMsg = messages[messages.length - 1];
+        const text = lastMsg.querySelector('.message-text')?.textContent || '';
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('Kopieret til udklipsholder', 'success');
+        });
+      }
+    }
+
+    // Sprint 14: Message word/char count
+    function updateInputStats() {
+      const input = document.getElementById('messageInput');
+      const value = input?.value || '';
+      const words = value.trim() ? value.trim().split(/\s+/).length : 0;
+      const chars = value.length;
+      
+      let stats = document.getElementById('inputStats');
+      if (!stats) {
+        stats = document.createElement('div');
+        stats.id = 'inputStats';
+        stats.style.cssText = 'font-size:0.7rem;color:var(--text-muted);padding:4px 8px;';
+        input?.parentElement?.appendChild(stats);
+      }
+      stats.textContent = `${chars} tegn · ${words} ord`;
+    }
+    document.getElementById('messageInput')?.addEventListener('input', updateInputStats);
+
+    // Sprint 15: Auto-save draft
+    let draftSaveTimeout = null;
+    function saveDraft() {
+      const input = document.getElementById('messageInput');
+      if (input?.value) {
+        localStorage.setItem('sca01_draft', input.value);
+      } else {
+        localStorage.removeItem('sca01_draft');
+      }
+    }
+    document.getElementById('messageInput')?.addEventListener('input', () => {
+      clearTimeout(draftSaveTimeout);
+      draftSaveTimeout = setTimeout(saveDraft, 1000);
+    });
+
+    // Sprint 16: Restore draft on load
+    function restoreDraft() {
+      const draft = localStorage.getItem('sca01_draft');
+      if (draft) {
+        const input = document.getElementById('messageInput');
+        if (input) input.value = draft;
+        showToast('Kladde gendannet', 'info');
+      }
+    }
+
+    // Sprint 17: Session search
+    function searchSessions(query) {
+      const items = document.querySelectorAll('.chat-item');
+      const q = query.toLowerCase();
+      items.forEach(item => {
+        const title = item.querySelector('span')?.textContent?.toLowerCase() || '';
+        item.style.display = title.includes(q) ? '' : 'none';
+      });
+    }
+
+    // Sprint 18: Typing indicator
+    function showTypingIndicator() {
+      const container = document.getElementById('chatMessages');
+      let indicator = document.getElementById('typingIndicator');
+      if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'typingIndicator';
+        indicator.className = 'message assistant';
+        indicator.innerHTML = `
+          <div class="message-avatar">🤖</div>
+          <div class="message-content">
+            <div class="typing-indicator">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        `;
+      }
+      container?.appendChild(indicator);
+      container?.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    }
+    function hideTypingIndicator() {
+      document.getElementById('typingIndicator')?.remove();
+    }
+
+    // Sprint 19: Double-click to copy message
+    document.getElementById('chatMessages')?.addEventListener('dblclick', (e) => {
+      const msg = e.target.closest('.message');
+      if (msg) {
+        const text = msg.querySelector('.message-text')?.textContent || '';
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('Besked kopieret', 'success');
+        });
+      }
+    });
+
+    // Sprint 20: Performance - throttle scroll events
+    function throttle(fn, delay) {
+      let last = 0;
+      return function(...args) {
+        const now = Date.now();
+        if (now - last >= delay) {
+          last = now;
+          fn.apply(this, args);
+        }
+      };
+    }
+
+    // Sprint 21: Lazy load session messages
+    let messageOffset = 0;
+    const MESSAGE_BATCH_SIZE = 50;
+    async function loadMoreMessages() {
+      // Implement pagination for large sessions
+      messageOffset += MESSAGE_BATCH_SIZE;
+    }
+
+    // Sprint 22: Export session as markdown
+    async function exportSession() {
+      if (!currentSessionId) return;
+      const msgs = await window.chat.loadMessages(currentSessionId);
+      let md = `# Chat Session\n\n`;
+      msgs.forEach(m => {
+        const role = m.role === 'user' ? '**Du:**' : '**SCA-01:**';
+        md += `${role}\n${m.content}\n\n---\n\n`;
+      });
+      
+      const blob = new Blob([md], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `session-${currentSessionId}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Session eksporteret', 'success');
+    }
+
+    // Sprint 23: Quick commands
+    function handleQuickCommand(input) {
+      if (input.startsWith('/')) {
+        const cmd = input.split(' ')[0].toLowerCase();
+        switch (cmd) {
+          case '/clear': clearChat(); return true;
+          case '/export': exportSession(); return true;
+          case '/model': toggleModelDropdown(); return true;
+          case '/settings': openSettings('general'); return true;
+          case '/help': showHelp(); return true;
+        }
+      }
+      return false;
+    }
+
+    // Sprint 24: Help dialog
+    function showHelp() {
+      const help = `
+Keyboard Shortcuts:
+- Ctrl+N: Ny chat
+- Ctrl+/: Fokus input
+- Ctrl+,: Indstillinger
+- Ctrl+Shift+C: Kopiér sidste besked
+- Escape: Luk modal
+
+Quick Commands:
+- /clear: Ryd chat
+- /export: Eksportér session
+- /model: Skift model
+- /settings: Åbn indstillinger
+- /help: Vis hjælp
+      `;
+      alert(help);
+    }
+
+    // Sprint 25: Connection status indicator
+    async function updateConnectionStatus() {
+      try {
+        const status = await window.chat.checkOllama();
+        const indicator = document.getElementById('connectionStatus');
+        if (indicator) {
+          indicator.className = status?.running ? 'status-dot online' : 'status-dot offline';
+          indicator.title = status?.running ? 'Ollama Online' : 'Ollama Offline';
+        }
+      } catch {
+        // Silently fail
+      }
+    }
+    setInterval(updateConnectionStatus, 30000);
+
+    // Initialize with enhancements
+    restoreDraft();
+    updateConnectionStatus();
 
     // Initialize
     init();

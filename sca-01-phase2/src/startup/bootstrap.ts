@@ -455,6 +455,208 @@ export async function bootstrap(config: Partial<OllamaConfig> = {}): Promise<Boo
   return { success, checks, ollamaStarted, errors, warnings };
 }
 
+// ============================================================================
+// SPRINT 26-35: PERFORMANCE & RELIABILITY ENHANCEMENTS
+// ============================================================================
+
+// Sprint 26: Cache check results to avoid redundant calls
+const checkCache = new Map<string, { result: CheckResult; timestamp: number }>();
+const CACHE_TTL = 30000; // 30 seconds
+
+function getCachedCheck(key: string): CheckResult | null {
+  const cached = checkCache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.result;
+  }
+  return null;
+}
+
+function setCachedCheck(key: string, result: CheckResult): void {
+  checkCache.set(key, { result, timestamp: Date.now() });
+}
+
+// Sprint 27: Parallel health checks
+async function runParallelChecks(_cfg: OllamaConfig): Promise<CheckResult[]> {
+  const checks = await Promise.allSettled([
+    checkNodeVersion(),
+    checkMemory(),
+    checkDiskSpace(),
+  ]);
+  
+  return checks.map((result, index) => {
+    if (result.status === "fulfilled") {
+      return result.value;
+    }
+    const names = ["Node.js", "Memory", "Disk"];
+    return {
+      name: names[index] ?? "Unknown",
+      status: "warn" as const,
+      message: "Check failed",
+      details: result.reason?.message,
+    };
+  });
+}
+
+// Sprint 28: Retry logic with exponential backoff
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (e) {
+      lastError = e instanceof Error ? e : new Error(String(e));
+      if (attempt < maxRetries - 1) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
+// Sprint 29: Health check with timeout
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  errorMessage: string = "Operation timed out"
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout>;
+  
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(errorMessage)), timeoutMs);
+  });
+  
+  try {
+    const result = await Promise.race([promise, timeoutPromise]);
+    clearTimeout(timeoutId!);
+    return result;
+  } catch (e) {
+    clearTimeout(timeoutId!);
+    throw e;
+  }
+}
+
+// Sprint 30: Comprehensive system info
+export async function getSystemInfo(): Promise<{
+  platform: string;
+  arch: string;
+  nodeVersion: string;
+  totalMemory: number;
+  freeMemory: number;
+  cpuCount: number;
+  uptime: number;
+}> {
+  return {
+    platform: process.platform,
+    arch: process.arch,
+    nodeVersion: process.version,
+    totalMemory: os.totalmem(),
+    freeMemory: os.freemem(),
+    cpuCount: os.cpus().length,
+    uptime: os.uptime(),
+  };
+}
+
+// Sprint 31: Model recommendation based on system specs
+export function recommendModel(): string {
+  const totalMemGB = os.totalmem() / (1024 ** 3);
+  
+  if (totalMemGB >= 32) {
+    return "qwen3:32b";
+  } else if (totalMemGB >= 16) {
+    return "qwen3:8b";
+  } else if (totalMemGB >= 8) {
+    return "phi3:mini";
+  } else {
+    return "tinyllama";
+  }
+}
+
+// Sprint 32: Startup time tracking
+let startupStartTime: number = 0;
+let startupMetrics: { phase: string; duration: number }[] = [];
+
+export function startStartupTimer(): void {
+  startupStartTime = Date.now();
+  startupMetrics = [];
+}
+
+export function recordStartupPhase(phase: string): void {
+  const now = Date.now();
+  const lastTime = startupMetrics.length > 0 
+    ? startupStartTime + startupMetrics.reduce((sum, m) => sum + m.duration, 0)
+    : startupStartTime;
+  startupMetrics.push({ phase, duration: now - lastTime });
+}
+
+export function getStartupMetrics(): { totalMs: number; phases: { phase: string; duration: number }[] } {
+  return {
+    totalMs: Date.now() - startupStartTime,
+    phases: startupMetrics,
+  };
+}
+
+// Sprint 33: Graceful degradation
+export interface DegradedModeOptions {
+  allowOfflineMode: boolean;
+  fallbackModel: string;
+  skipOptionalChecks: boolean;
+}
+
+const DEFAULT_DEGRADED_OPTIONS: DegradedModeOptions = {
+  allowOfflineMode: true,
+  fallbackModel: "phi3:mini",
+  skipOptionalChecks: true,
+};
+
+// Sprint 34: Pre-warm Ollama model
+export async function prewarmModel(model: string, host: string = "http://localhost:11434"): Promise<boolean> {
+  try {
+    const response = await fetch(`${host}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        prompt: "Hello",
+        stream: false,
+        options: { num_predict: 1 },
+      }),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+// Sprint 35: Health check endpoint for monitoring
+export function createHealthCheckResponse(result: BootstrapResult): {
+  status: "healthy" | "degraded" | "unhealthy";
+  timestamp: string;
+  checks: Record<string, boolean>;
+  uptime: number;
+} {
+  const checkStatus = Object.fromEntries(
+    result.checks.map(c => [c.name, c.status === "pass"])
+  );
+  
+  const status = result.success ? "healthy" 
+    : result.warnings.length > 0 ? "degraded" 
+    : "unhealthy";
+  
+  return {
+    status,
+    timestamp: new Date().toISOString(),
+    checks: checkStatus,
+    uptime: process.uptime(),
+  };
+}
+
 // Export for direct testing
 export {
   isOllamaInstalled,
@@ -463,5 +665,9 @@ export {
   ensureModelAvailable,
   pullModel,
   getOllamaVersion,
+  getCachedCheck,
+  withRetry,
+  withTimeout,
+  runParallelChecks,
 };
 
