@@ -31,7 +31,8 @@ interface ServerConfig {
 }
 
 const DEFAULT_CONFIG: ServerConfig = {
-  host: "0.0.0.0",
+  // Bind dual-stack by default; some platforms healthcheck via IPv6.
+  host: "::",
   port: 8787,
   corsOrigins: [],
   rateLimit: {
@@ -525,7 +526,7 @@ async function handleMcpMethod(
 // Main entry point
 async function main(): Promise<void> {
   const port = parseInt(process.env.PORT ?? process.env.SCA_PORT ?? "8787", 10);
-  const host = process.env.SCA_HOST ?? "0.0.0.0";
+  const host = process.env.HOST ?? process.env.SCA_HOST ?? "::";
   const log = new HyperLog("./logs", "startup.jsonl");
 
   // Initialize database if DATABASE_URL is set
