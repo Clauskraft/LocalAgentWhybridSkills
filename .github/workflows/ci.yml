@@ -63,6 +63,54 @@ jobs:
         working-directory: sca-01-phase2
         continue-on-error: true
 
+  api-phase3:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sca01
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: sca-01-phase3/package-lock.json
+
+      - name: Install dependencies (Phase 3)
+        run: npm ci
+        working-directory: sca-01-phase3
+
+      - name: Build Phase 3
+        run: npm run build
+        working-directory: sca-01-phase3
+
+      - name: Run migrations (dev)
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sca01
+        run: npm run db:migrate:dev
+        working-directory: sca-01-phase3
+
+      - name: Test Phase 3
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sca01
+        run: npm run test
+        working-directory: sca-01-phase3
+
   security-audit:
     runs-on: ubuntu-latest
     steps:
