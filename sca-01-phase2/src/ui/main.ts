@@ -1,9 +1,14 @@
 import { app, BrowserWindow, ipcMain, dialog, Notification } from "electron";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { globalApprovalQueue } from "../approval/approvalQueue.js";
 import { loadConfig } from "../config.js";
 import { DesktopAgent } from "../agent/DesktopAgent.js";
 import { HyperLog } from "../logging/hyperlog.js";
+
+// ES Module __dirname polyfill
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
 let agent: DesktopAgent | null = null;
