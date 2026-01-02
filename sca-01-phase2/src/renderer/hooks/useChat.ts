@@ -74,14 +74,16 @@ export function useChat() {
     setIsLoading(true);
     try {
       const api = (window as any).sca01?.chat;
+      const payload = {
+        messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content })),
+        model: settings?.model ?? DEFAULT_SETTINGS.model,
+        host: settings?.ollamaHost ?? DEFAULT_SETTINGS.ollamaHost,
+        backendUrl: settings?.backendUrl,
+        useCloud: settings?.useCloud,
+      };
+
       if (api?.sendMessage) {
-        const resp = await api.sendMessage({
-          messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content })),
-          model: settings?.model ?? DEFAULT_SETTINGS.model,
-          host: settings?.ollamaHost ?? DEFAULT_SETTINGS.ollamaHost,
-          backendUrl: settings?.backendUrl,
-          useCloud: settings?.useCloud,
-        });
+        const resp = await api.sendMessage(payload);
         if (resp?.content) {
           const assistantMsg = createMessage('assistant', resp.content);
           // @ts-expect-error optional toolCalls
@@ -91,6 +93,32 @@ export function useChat() {
             prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c)
           );
         }
+      } else {
+        // Fallback: direct HTTP call to backendUrl (no mocks)
+        const backend = settings?.backendUrl?.trim();
+        if (!backend) throw new Error("Ingen backendUrl sat og IPC er ikke tilgængelig");
+        const res = await fetch(`${backend.replace(/\\/+$/, "")}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: payload.model,
+            messages: payload.messages,
+            stream: false,
+          }),
+        });
+        if (!res.ok) {
+          const txt = await res.text().catch(() => "");
+          throw new Error(`Cloud chat fejlede: ${res.status} ${res.statusText} ${txt}`);
+        }
+        const data = await res.json();
+        const content = data?.message?.content ?? data?.content ?? "";
+        const assistantMsg = createMessage('assistant', content);
+        // @ts-expect-error optional toolCalls
+        assistantMsg.toolCalls = data?.message?.tool_calls;
+        setMessages((prev) => [...prev, assistantMsg]);
+        setChats((prev) =>
+          prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c)
+        );
       }
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : 'Ukendt fejl';
