@@ -10,13 +10,9 @@
   },
   "scripts": {
     "dev": "tsx src/cli.ts",
-    "dev:ui": "tsc && electron build/ui/main.js",
-    "dev:cockpit": "tsc && electron build/ui/mainCockpit.js",
-    "dev:chat": "tsc && electron build/ui/mainChat.js",
     "dev:renderer": "vite --config vite.config.ts",
     "build": "tsc -p tsconfig.json && npm run build:renderer",
     "build:renderer": "vite build --config vite.config.ts",
-    "copy-assets": "node -e \"const fs=require('fs');const path=require('path');['html','cjs','css'].forEach(ext=>{const src='src/ui';const dst='build/ui';fs.readdirSync(src).filter(f=>f.endsWith('.'+ext)).forEach(f=>fs.copyFileSync(path.join(src,f),path.join(dst,f)))});\"",
     "build:ui": "npm run build && electron-builder",
     "lint": "eslint .",
     "test": "vitest run",
@@ -25,8 +21,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:smoke": "playwright test tests/e2e/smoke.spec.ts",
     "sca": "node build/cli.js",
-    "start": "electron build/ui/main.js",
-    "cockpit": "electron build/ui/mainCockpit.js"
+    "start": "npm run build && electron build/ui/main.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.35.0",

@@ -14,6 +14,17 @@ let mainWindow: BrowserWindow | null = null;
 let agent: DesktopAgent | null = null;
 let log: HyperLog | null = null;
 
+function resolveRendererEntry(): { type: "url" | "file"; value: string } {
+  const devUrl = process.env.VITE_DEV_SERVER_URL;
+  if (devUrl) {
+    return { type: "url", value: devUrl };
+  }
+  return {
+    type: "file",
+    value: path.resolve(__dirname, "../../dist/renderer/index.html")
+  };
+}
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -29,8 +40,18 @@ function createWindow(): void {
     backgroundColor: "#1a1a2e"
   });
 
-  const rendererIndex = path.resolve(__dirname, "../../dist/renderer/index.html");
-  mainWindow.loadFile(rendererIndex);
+  const renderer = resolveRendererEntry();
+  if (renderer.type === "url") {
+    mainWindow.loadURL(renderer.value).catch((err) => {
+      console.error("Failed to load renderer dev server:", err);
+      dialog.showErrorBox("Renderer load error", `Dev server failed: ${err.message}`);
+    });
+  } else {
+    mainWindow.loadFile(renderer.value).catch((err) => {
+      console.error("Failed to load renderer file:", err);
+      dialog.showErrorBox("Renderer load error", `File load failed: ${err.message}`);
+    });
+  }
 
   mainWindow.on("closed", () => {
     mainWindow = null;
