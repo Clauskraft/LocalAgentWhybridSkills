@@ -14,27 +14,6 @@ import { executionRoutes } from "../routes/executionRoutes.js";
 import { registerGitHubRoutes } from "../routes/githubRoutes.js";
 import { registerRepoRoutes } from "../routes/repoRoutes.js";
 import fs from "node:fs/promises";
-import http from "node:http";
-
-// Quick health server that starts immediately before Fastify
-// This helps diagnose if Railway edge can reach us at all
-const quickPort = parseInt(process.env.PORT ?? "3000", 10);
-const quickServer = http.createServer((req, res) => {
-  console.log(`📥 QUICK: ${req.method} ${req.url}`);
-  if (req.url === "/health" || req.url === "/") {
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ status: "ok", server: "quick-http", ts: new Date().toISOString() }));
-  } else if (req.url === "/ready") {
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ status: "ready", server: "quick-http", ts: new Date().toISOString() }));
-  } else {
-    res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "not found" }));
-  }
-});
-quickServer.listen(quickPort, "0.0.0.0", () => {
-  console.log(`⚡ Quick HTTP server listening on 0.0.0.0:${quickPort}`);
-});
 
 
 // ============================================================================
@@ -581,21 +560,17 @@ async function main(): Promise<void> {
   await registerGitHubRoutes(server, log);
   console.log("✅ GitHub routes registered");
   
-  // TEMPORARY: Skip Fastify listen - quick HTTP server already using port 3000
-  // Testing if the issue is with Fastify or Railway's networking
-  console.log(`⏭️ Skipping Fastify listen (quick server on port ${port})`);
-  console.log(`🚀 SCA-01 Cloud Server ready (quick mode)`);
-  // try {
-  //   console.log(`🔧 Binding to port=${port} host=${host}`);
-  //   await server.listen({ port, host });
-  //   console.log(`🚀 SCA-01 Cloud Server running at http://${host}:${port}`);
-  //   console.log(`📋 MCP endpoint: http://${host}:${port}/mcp`);
-  //   console.log(`🔐 Auth: POST http://${host}:${port}/auth/login`);
-  //   console.log(`📊 API: http://${host}:${port}/api/sessions`);
-  // } catch (err) {
-  //   server.log.error(err);
-  //   process.exit(1);
-  // }
+  try {
+    console.log(`🔧 Binding to port=${port} host=${host}`);
+    await server.listen({ port, host });
+    console.log(`🚀 SCA-01 Cloud Server running at http://${host}:${port}`);
+    console.log(`📋 MCP endpoint: http://${host}:${port}/mcp`);
+    console.log(`🔐 Auth: POST http://${host}:${port}/auth/login`);
+    console.log(`📊 API: http://${host}:${port}/api/sessions`);
+  } catch (err) {
+    server.log.error(err);
+    process.exit(1);
+  }
 
   // Some Railway stacks route/healthcheck on port 3000 regardless of the injected PORT.
   // To avoid "service unavailable" healthcheck failures, expose a tiny health listener on 3000 as well.
