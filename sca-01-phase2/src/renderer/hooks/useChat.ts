@@ -97,7 +97,7 @@ export function useChat() {
         // Fallback: direct HTTP call to backendUrl (no mocks)
         const backend = settings?.backendUrl?.trim();
         if (!backend) throw new Error("Ingen backendUrl sat og IPC er ikke tilgængelig");
-        const res = await fetch(`${backend.replace(/\\/+$/, "")}/api/chat`, {
+          const res = await fetch(`${backend.replace(/\/+$/, "")}/api/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

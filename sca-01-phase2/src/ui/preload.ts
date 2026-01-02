@@ -69,7 +69,7 @@ const api: SCA01API = {
       try {
         const cfg = await ipcRenderer.invoke("get-config");
         const host = (cfg as { ollamaHost?: string })?.ollamaHost ?? "http://localhost:11434";
-        const res = await fetch(`${host.replace(/\\/+$/, "")}/api/version`);
+        const res = await fetch(`${host.replace(/\/+$/, "")}/api/version`);
         return res.ok;
       } catch {
         return false;

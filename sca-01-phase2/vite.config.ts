@@ -8,7 +8,9 @@ import { resolve } from 'path';
  */
 export default defineConfig({
   plugins: [
-    tailwindcss(),
+    // Tailwind CSS v4 plugin requires Vite 5+, but Vite 5 has Rollup compatibility issues on Windows ARM64
+    // TODO: Re-enable when Tailwind CSS v3 or compatible Vite 5 + Rollup version is available
+    // tailwindcss(),
   ],
   root: 'src/renderer',
   base: './',
@@ -30,9 +32,6 @@ export default defineConfig({
       '@hooks': resolve(__dirname, 'src/renderer/hooks'),
       '@store': resolve(__dirname, 'src/renderer/store'),
     },
-  },
-  esbuild: {
-    tsconfig: 'tsconfig.renderer.json',
   },
   server: {
     port: 5173,
