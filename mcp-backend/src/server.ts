@@ -1,11 +1,10 @@
 import Fastify from "fastify";
-import cors from "@fastify/cors";
-import rateLimit from "@fastify/rate-limit";
 import { z } from "zod";
 import { loadConfig } from "./config.js";
 import { HyperLog } from "@local-agent/hyperlog";
 import { FinisherAgent } from "./agent/FinisherAgent.js";
 import { createHealthResponse } from "@local-agent/health";
+import { registerMiddleware } from "@local-agent/fastify-middleware";
 
 const RunSchema = z.object({
   goal: z.string().optional(),
@@ -18,11 +17,18 @@ export async function createServer() {
 
   const app = Fastify({ logger: false });
 
-  if (cfg.corsOrigins.length > 0) {
-    await app.register(cors, { origin: cfg.corsOrigins, credentials: true });
-  }
-
-  await app.register(rateLimit, { max: cfg.rateLimitMax, timeWindow: cfg.rateLimitWindow });
+  await registerMiddleware(app, {
+    cors: {
+      enabled: cfg.corsOrigins.length > 0,
+      origins: cfg.corsOrigins,
+      credentials: true,
+    },
+    rateLimit: {
+      enabled: true,
+      max: cfg.rateLimitMax,
+      timeWindow: cfg.rateLimitWindow,
+    },
+  });
 
   app.get("/health", async () => {
     return createHealthResponse("mcp-backend");

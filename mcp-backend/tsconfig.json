@@ -17,7 +17,8 @@
     "paths": {
       "@local-agent/hyperlog": ["../shared/hyperlog/index.ts"],
       "@local-agent/config-utils": ["../shared/config-utils/index.ts"],
-      "@local-agent/health": ["../shared/health/index.ts"]
+      "@local-agent/health": ["../shared/health/index.ts"],
+      "@local-agent/fastify-middleware": ["../shared/fastify-middleware/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

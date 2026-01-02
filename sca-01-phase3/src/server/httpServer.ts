@@ -1,7 +1,6 @@
 import Fastify from "fastify";
-import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
-import rateLimit from "@fastify/rate-limit";
+import { registerMiddleware } from "@local-agent/fastify-middleware";
 import { z } from "zod";
 import { getAuthService, TokenPayload } from "../auth/jwtAuth.js";
 import { HyperLog } from "@local-agent/hyperlog";
@@ -126,20 +125,21 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
     }
   });
 
-  if (cfg.corsOrigins.length > 0) {
-    await app.register(cors, {
-      origin: cfg.corsOrigins,
+  await registerMiddleware(app, {
+    cors: {
+      enabled: cfg.corsOrigins.length > 0,
+      origins: cfg.corsOrigins,
       methods: ["GET", "POST", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
-      credentials: true
-    });
-  }
-
-  await app.register(rateLimit, {
-    max: cfg.rateLimit.max,
-    timeWindow: cfg.rateLimit.timeWindow,
-    keyGenerator: (req) => (req.headers["x-real-ip"] as string) || (req.ip ?? "unknown"),
-    allowList: (req) => (req.headers["x-rate-limit-allow"] as string) === "true"
+      credentials: true,
+    },
+    rateLimit: {
+      enabled: true,
+      max: cfg.rateLimit.max,
+      timeWindow: cfg.rateLimit.timeWindow,
+      keyGenerator: (req) => (req.headers["x-real-ip"] as string) || (req.ip ?? "unknown"),
+      allowList: (req) => (req.headers["x-rate-limit-allow"] as string) === "true",
+    },
   });
 
   // Request ID decorator - store in custom property, propagate to response header

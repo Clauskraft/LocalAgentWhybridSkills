@@ -1,0 +1,26 @@
+{
+  "name": "@local-agent/fastify-middleware",
+  "version": "1.0.0",
+  "description": "Shared Fastify middleware (CORS + rate limiting) for Local Agent services",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./plugin": "./index.ts"
+  },
+  "files": [
+    "index.ts"
+  ],
+  "devDependencies": {
+    "@fastify/cors": "^10.0.0",
+    "@fastify/rate-limit": "^10.0.0",
+    "@types/node": "^20.0.0",
+    "fastify": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@fastify/cors": "^9.0.0 || ^10.0.0",
+    "@fastify/rate-limit": "^9.0.0 || ^10.0.0",
+    "fastify": "^4.0.0 || ^5.0.0"
+  }
+}
