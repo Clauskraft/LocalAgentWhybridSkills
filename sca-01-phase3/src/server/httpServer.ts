@@ -4,7 +4,7 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import { z } from "zod";
 import { getAuthService, TokenPayload } from "../auth/jwtAuth.js";
-import { HyperLog } from "../logging/hyperlog.js";
+import { HyperLog } from "@local-agent/hyperlog";
 import { initializeDatabase } from "../db/database.js";
 import { migrate } from "../db/migrate.js";
 import { registerAuthRoutes } from "../routes/authRoutes.js";

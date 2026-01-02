@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { HyperLog } from "../logging/hyperlog.js";
+import { HyperLog } from "@local-agent/hyperlog";
 import { TokenPayload } from "../auth/jwtAuth.js";
 import { archiveRepo, createRepo, findRepoById, listReposByUserId, updateRepo } from "../db/repoRepository.js";
 

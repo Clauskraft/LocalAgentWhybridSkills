@@ -1,5 +1,5 @@
 import type { McpBackendConfig } from "../config.js";
-import { HyperLog } from "../logging/hyperlog.js";
+import { HyperLog } from "@local-agent/hyperlog";
 import { McpToolClient, type McpTool } from "../mcp/mcpToolClient.js";
 import { OllamaChatClient, type OllamaMessage, type OllamaToolSpec } from "../ollama/ollamaClient.js";
 import { createFinisherStateMachine, generateFinisherMermaid, READ, PLAN, ACT, TEST, REPORT, DONE, ERROR, WAIT_FOR_APPROVAL, type FinisherContext } from "./finisherStateMachine.js";

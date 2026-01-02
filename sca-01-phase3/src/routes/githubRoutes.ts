@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { GitHubService } from "../github/githubService.js";
-import { HyperLog } from "../logging/hyperlog.js";
+import { HyperLog } from "@local-agent/hyperlog";
 
 export async function registerGitHubRoutes(app: FastifyInstance, log: HyperLog): Promise<void> {
   app.get("/api/github/status", { preHandler: [app.verifyJwt] }, async (_request, reply) => {

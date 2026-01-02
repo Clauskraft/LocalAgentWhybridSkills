@@ -9,7 +9,7 @@ import {
   createMessage,
   findMessagesBySessionId
 } from "../db/sessionRepository.js";
-import { HyperLog } from "../logging/hyperlog.js";
+import { HyperLog } from "@local-agent/hyperlog";
 import type { TokenPayload } from "../auth/jwtAuth.js";
 
 // ============================================================================

@@ -3,7 +3,7 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import { z } from "zod";
 import { loadConfig } from "./config.js";
-import { HyperLog } from "./logging/hyperlog.js";
+import { HyperLog } from "@local-agent/hyperlog";
 import { FinisherAgent } from "./agent/FinisherAgent.js";
 
 const RunSchema = z.object({

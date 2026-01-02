@@ -1,0 +1,15 @@
+{
+  "name": "@local-agent/hyperlog",
+  "version": "1.0.0",
+  "description": "Shared HyperLog logging library for Local Agent services",
+  "type": "module",
+  "main": "./hyperlog.ts",
+  "types": "./hyperlog.ts",
+  "exports": {
+    ".": "./hyperlog.ts"
+  },
+  "files": [
+    "hyperlog.ts"
+  ]
+}
+
