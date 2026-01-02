@@ -525,8 +525,8 @@ async function handleMcpMethod(
 // Main entry point
 async function main(): Promise<void> {
   const port = parseInt(process.env.PORT ?? process.env.SCA_PORT ?? "8787", 10);
-  // Railway healthchecks must be able to reach the process; bind to all IPv4 interfaces.
-  const host = "0.0.0.0";
+  // Railway networking supports IPv4 & IPv6; bind dual-stack so edge can connect either way.
+  const host = "::";
   const log = new HyperLog("./logs", "startup.jsonl");
   
   const server = await createServer({ port, host });
