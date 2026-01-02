@@ -1,10 +1,10 @@
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
-import { registerMiddleware } from "@local-agent/fastify-middleware";
+import rateLimit from "@fastify/rate-limit";
 import { z } from "zod";
 import { getAuthService, TokenPayload } from "../auth/jwtAuth.js";
-import { HyperLog } from "@local-agent/hyperlog";
-import { createHealthResponse, createReadyResponse, type HealthStatus } from "@local-agent/health";
+import { HyperLog } from "../logging/hyperlog.js";
 import { initializeDatabase } from "../db/database.js";
 import { migrate } from "../db/migrate.js";
 import { registerAuthRoutes } from "../routes/authRoutes.js";
@@ -125,21 +125,20 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
     }
   });
 
-  await registerMiddleware(app, {
-    cors: {
-      enabled: cfg.corsOrigins.length > 0,
-      origins: cfg.corsOrigins,
+  if (cfg.corsOrigins.length > 0) {
+    await app.register(cors, {
+      origin: cfg.corsOrigins,
       methods: ["GET", "POST", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
       credentials: true,
-    },
-    rateLimit: {
-      enabled: true,
-      max: cfg.rateLimit.max,
-      timeWindow: cfg.rateLimit.timeWindow,
-      keyGenerator: (req) => (req.headers["x-real-ip"] as string) || (req.ip ?? "unknown"),
-      allowList: (req) => (req.headers["x-rate-limit-allow"] as string) === "true",
-    },
+    });
+  }
+
+  await app.register(rateLimit, {
+    max: cfg.rateLimit.max,
+    timeWindow: cfg.rateLimit.timeWindow,
+    keyGenerator: (req) => (req.headers["x-real-ip"] as string) || (req.ip ?? "unknown"),
+    allowList: (req) => (req.headers["x-rate-limit-allow"] as string) === "true",
   });
 
   // Request ID decorator - store in custom property, propagate to response header
@@ -177,43 +176,47 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
 
   // Health check
   app.get("/health", async () => {
-    return createHealthResponse("sca-01-phase3", { version: "0.3.0" });
+    return {
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      service: "sca-01-phase3",
+      version: "0.3.0",
+    };
   });
 
   // Readiness probe (checks DB)
   app.get("/ready", async (_req, reply) => {
     // In production, require DB to be ready if DATABASE_URL is expected.
     const dbRequired = process.env.NODE_ENV === "production";
-    const checks: Record<string, { status: HealthStatus; message?: string }> = {};
 
     if (dbRequired && !process.env.DATABASE_URL) {
-      checks.database = { status: "unhealthy", message: "DATABASE_URL not set" };
       reply.code(503);
-      return createReadyResponse("sca-01-phase3", checks);
+      return { status: "degraded", error: "DATABASE_URL not set", service: "sca-01-phase3", timestamp: new Date().toISOString() };
     }
 
     if (dbRequired && migrationsStatus === "running") {
-      checks.migrations = { status: "degraded", message: "migrations in progress" };
       reply.code(503);
-      return createReadyResponse("sca-01-phase3", checks);
+      return { status: "degraded", error: "migrations in progress", service: "sca-01-phase3", timestamp: new Date().toISOString() };
     }
 
     if (dbRequired && migrationsStatus === "error") {
-      checks.migrations = { status: "unhealthy", message: `migrations failed: ${migrationsError ?? "unknown"}` };
       reply.code(503);
-      return createReadyResponse("sca-01-phase3", checks);
+      return {
+        status: "degraded",
+        error: `migrations failed: ${migrationsError ?? "unknown"}`,
+        service: "sca-01-phase3",
+        timestamp: new Date().toISOString(),
+      };
     }
 
     try {
       if (process.env.DATABASE_URL) {
         await initializeDatabase(); // connectivity check
-        checks.database = { status: "ok" };
       }
-      return createReadyResponse("sca-01-phase3", checks);
+      return { status: "ready", timestamp: new Date().toISOString(), db: !!process.env.DATABASE_URL, service: "sca-01-phase3" };
     } catch (err) {
-      checks.database = { status: "unhealthy", message: (err as Error).message };
       reply.code(503);
-      return createReadyResponse("sca-01-phase3", checks);
+      return { status: "degraded", error: (err as Error).message, service: "sca-01-phase3", timestamp: new Date().toISOString() };
     }
   });
 

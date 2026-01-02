@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { createUser, findUserByEmail, verifyPassword } from "../db/userRepository.js";
 import { getAuthService } from "../auth/jwtAuth.js";
-import { HyperLog } from "@local-agent/hyperlog";
+import { HyperLog } from "../logging/hyperlog.js";
 
 // ============================================================================
 // AUTH ROUTES (User Registration & Login)

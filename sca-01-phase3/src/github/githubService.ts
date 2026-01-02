@@ -1,4 +1,4 @@
-import { HyperLog } from "@local-agent/hyperlog";
+import { HyperLog } from "../logging/hyperlog.js";
 
 const GITHUB_API = "https://api.github.com";
 const DEFAULT_TIMEOUT_MS = 15_000;
