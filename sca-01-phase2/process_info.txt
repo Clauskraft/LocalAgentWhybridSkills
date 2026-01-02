@@ -1,0 +1,5 @@
+
+ NPM(K)    PM(M)      WS(M)     CPU(s)      Id  SI ProcessName
+ ------    -----      -----     ------      --  -- -----------
+      9    10,61       8,38       0,09   41080   1 SCA-01 The Finisher
+
