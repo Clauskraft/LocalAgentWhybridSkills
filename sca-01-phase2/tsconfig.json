@@ -4,7 +4,6 @@
     "module": "Node16",
     "moduleResolution": "Node16",
     "outDir": "./build",
-    "rootDir": "./src",
     "strict": true,
     "noImplicitAny": true,
     "noUncheckedIndexedAccess": true,
@@ -15,7 +14,10 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@local-agent/config-utils": ["../shared/config-utils/index.ts"]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "build", "**/*.test.ts", "src/renderer/**"]

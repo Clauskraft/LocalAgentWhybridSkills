@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
+import { parseIntSafe, parseBool, parseList } from "@local-agent/config-utils";
 
 export interface McpBackendConfig {
   host: string;
@@ -22,24 +23,6 @@ export interface McpBackendConfig {
   allowExec: boolean;
 }
 
-function parseIntSafe(v: string | undefined, fallback: number): number {
-  if (!v) return fallback;
-  const n = Number.parseInt(v, 10);
-  return Number.isFinite(n) ? n : fallback;
-}
-
-function parseBool(v: string | undefined, fallback: boolean): boolean {
-  if (v === undefined) return fallback;
-  const s = v.trim().toLowerCase();
-  if (s === "true" || s === "1" || s === "yes") return true;
-  if (s === "false" || s === "0" || s === "no") return false;
-  return fallback;
-}
-
-function parseList(v: string | undefined): string[] {
-  if (!v) return [];
-  return v.split(",").map((x) => x.trim()).filter(Boolean);
-}
 
 export function loadConfig(): McpBackendConfig {
   const repoRoot = detectRepoRoot();

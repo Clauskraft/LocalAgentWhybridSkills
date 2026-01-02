@@ -15,7 +15,8 @@
     "sourceMap": true,
     "types": ["node"],
     "paths": {
-      "@local-agent/hyperlog": ["../shared/hyperlog/index.ts"]
+      "@local-agent/hyperlog": ["../shared/hyperlog/index.ts"],
+      "@local-agent/config-utils": ["../shared/config-utils/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

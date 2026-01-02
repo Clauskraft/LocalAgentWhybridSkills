@@ -1,4 +1,5 @@
 import path from "node:path";
+import { parseIntSafe, parseBool } from "@local-agent/config-utils";
 
 export interface AppConfig {
   ollamaHost: string;
@@ -10,19 +11,6 @@ export interface AppConfig {
   logDir: string;
 }
 
-function parseBool(value: string | undefined, defaultValue: boolean): boolean {
-  if (value === undefined) return defaultValue;
-  const v = value.trim().toLowerCase();
-  if (v === "true" || v === "1" || v === "yes") return true;
-  if (v === "false" || v === "0" || v === "no") return false;
-  return defaultValue;
-}
-
-function parseIntSafe(value: string | undefined, defaultValue: number): number {
-  if (value === undefined) return defaultValue;
-  const n = Number.parseInt(value, 10);
-  return Number.isFinite(n) ? n : defaultValue;
-}
 
 export function loadConfig(): AppConfig {
   const cwd = process.cwd();

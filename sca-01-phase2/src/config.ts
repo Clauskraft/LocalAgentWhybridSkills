@@ -1,5 +1,6 @@
 import path from "node:path";
 import os from "node:os";
+import { parseIntSafe, parseBool, parseStringList } from "@local-agent/config-utils";
 
 export interface Phase2Config {
   // LLM
@@ -28,24 +29,6 @@ export interface Phase2Config {
   maxFileSize: number;
 }
 
-function parseBool(value: string | undefined, defaultValue: boolean): boolean {
-  if (value === undefined) return defaultValue;
-  const v = value.trim().toLowerCase();
-  if (v === "true" || v === "1" || v === "yes") return true;
-  if (v === "false" || v === "0" || v === "no") return false;
-  return defaultValue;
-}
-
-function parseIntSafe(value: string | undefined, defaultValue: number): number {
-  if (value === undefined) return defaultValue;
-  const n = Number.parseInt(value, 10);
-  return Number.isFinite(n) ? n : defaultValue;
-}
-
-function parseStringList(value: string | undefined, defaultValue: string[]): string[] {
-  if (value === undefined) return defaultValue;
-  return value.split(",").map((s) => s.trim()).filter(Boolean);
-}
 
 export function loadConfig(): Phase2Config {
   const cwd = process.cwd();
