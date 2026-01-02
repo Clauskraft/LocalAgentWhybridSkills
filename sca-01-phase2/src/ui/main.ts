@@ -29,7 +29,8 @@ function createWindow(): void {
     backgroundColor: "#1a1a2e"
   });
 
-  mainWindow.loadFile(path.join(__dirname, "index.html"));
+  const rendererIndex = path.resolve(__dirname, "../../dist/renderer/index.html");
+  mainWindow.loadFile(rendererIndex);
 
   mainWindow.on("closed", () => {
     mainWindow = null;
