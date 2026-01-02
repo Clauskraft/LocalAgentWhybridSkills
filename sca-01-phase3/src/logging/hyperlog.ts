@@ -24,16 +24,18 @@ export class HyperLog {
   }
 
   public write(evt: HyperLogEvent): void {
-    // Promote requestId from context if not set
-    if (!evt.requestId && evt.context && typeof evt.context.requestId === "string") {
-      evt.requestId = evt.context.requestId as string;
-    }
-    const line = JSON.stringify(evt);
+    // Avoid mutating caller's object; enrich on a copy
+    const enriched: HyperLogEvent = {
+      ...evt,
+      requestId: evt.requestId ?? (typeof evt.context?.requestId === "string" ? (evt.context.requestId as string) : undefined),
+    };
+
+    const line = JSON.stringify(enriched);
     process.stderr.write(line + "\n");
     fs.appendFileSync(this.logFilePath, line + "\n", { encoding: "utf8" });
     
     // Security events go to separate file for compliance
-    if (evt.level === "security") {
+    if (enriched.level === "security") {
       fs.appendFileSync(this.securityLogPath, line + "\n", { encoding: "utf8" });
     }
   }
@@ -54,4 +56,3 @@ export class HyperLog {
     this.write({ ts: new Date().toISOString(), level: "security", event, message, context });
   }
 }
-
