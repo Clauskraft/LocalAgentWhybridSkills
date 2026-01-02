@@ -9,6 +9,8 @@ const DEFAULT_SETTINGS = {
 type Settings = {
   model: string;
   ollamaHost: string;
+  backendUrl?: string;
+  useCloud?: boolean;
 };
 
 function createMessage(role: Message['role'], content: string): Message {
@@ -86,7 +88,6 @@ export function useChat() {
         const resp = await api.sendMessage(payload);
         if (resp?.content) {
           const assistantMsg = createMessage('assistant', resp.content);
-          // @ts-expect-error optional toolCalls
           assistantMsg.toolCalls = resp?.toolCalls;
           setMessages((prev) => [...prev, assistantMsg]);
           setChats((prev) =>
@@ -97,7 +98,7 @@ export function useChat() {
         // Fallback: direct HTTP call to backendUrl (no mocks)
         const backend = settings?.backendUrl?.trim();
         if (!backend) throw new Error("Ingen backendUrl sat og IPC er ikke tilgængelig");
-          const res = await fetch(`${backend.replace(/\/+$/, "")}/api/chat`, {
+        const res = await fetch(`${backend.replace(/\/+$/, "")}/api/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -113,7 +114,6 @@ export function useChat() {
         const data = await res.json();
         const content = data?.message?.content ?? data?.content ?? "";
         const assistantMsg = createMessage('assistant', content);
-        // @ts-expect-error optional toolCalls
         assistantMsg.toolCalls = data?.message?.tool_calls;
         setMessages((prev) => [...prev, assistantMsg]);
         setChats((prev) =>
