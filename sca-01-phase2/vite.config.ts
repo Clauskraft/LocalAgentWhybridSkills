@@ -18,7 +18,7 @@ export default defineConfig({
     // Emit renderer assets into Electron's build/ui folder so main process
     // can load index.html via loadFile(__dirname, 'index.html')
     outDir: '../../build/ui',
-    emptyOutDir: true,
+    emptyOutDir: false,
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'src/renderer/index.html'),

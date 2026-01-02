@@ -1,0 +1,20 @@
+
+[35604:0102/232706.209:ERROR:cache_util_win.cc(20)] Unable to move the cache: Adgang nægtet. (0x5)
+[35604:0102/232706.209:ERROR:cache_util_win.cc(20)] Unable to move the cache: Adgang nægtet. (0x5)
+[35604:0102/232706.209:ERROR:cache_util_win.cc(20)] Unable to move the cache: Adgang nægtet. (0x5)
+[35604:0102/232706.219:ERROR:disk_cache.cc(208)] Unable to create cache
+[35604:0102/232706.219:ERROR:gpu_disk_cache.cc(713)] Gpu Cache Creation failed: -2
+[35604:0102/232706.219:ERROR:disk_cache.cc(208)] Unable to create cache
+[35604:0102/232706.219:ERROR:gpu_disk_cache.cc(713)] Gpu Cache Creation failed: -2
+[35604:0102/232706.219:ERROR:disk_cache.cc(208)] Unable to create cache
+[35604:0102/232706.219:ERROR:gpu_disk_cache.cc(713)] Gpu Cache Creation failed: -2
+(node:35604) electron: Failed to load URL: file:///C:/Users/claus/Projects/Local_Agent/sca-01-phase2/dist-electron/win-arm64-unpacked/resources/ui/index.html with error: ERR_FILE_NOT_FOUND
+(Use `"SCA-01 --trace-warnings ...` to show where the warning was created)
+Failed to load renderer file: Error: ERR_FILE_NOT_FOUND (-6) loading 'file:///C:/Users/claus/Projects/Local_Agent/sca-01-phase2/dist-electron/win-arm64-unpacked/resources/ui/index.html'
+    at rejectAndCleanup (node:electron/js2c/browser_init:2:80969)
+    at WebContents.finishListener (node:electron/js2c/browser_init:2:81131)
+    at WebContents.emit (node:events:518:28) {
+  errno: -6,
+  code: 'ERR_FILE_NOT_FOUND',
+  url: 'file:///C:/Users/claus/Projects/Local_Agent/sca-01-phase2/dist-electron/win-arm64-unpacked/resources/ui/index.html'
+}
