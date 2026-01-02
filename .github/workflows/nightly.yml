@@ -1,0 +1,92 @@
+# SCA-01 Nightly Builds
+# Creates pre-release builds for testing from develop branch
+
+name: Nightly Build
+
+on:
+  schedule:
+    # Run at 02:00 UTC every day
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.check.outputs.should_build }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 2
+
+      - name: Check for changes
+        id: check
+        run: |
+          CHANGES=$(git diff --name-only HEAD~1 HEAD -- 'sca-01-phase2/**' | wc -l)
+          if [ "$CHANGES" -gt "0" ]; then
+            echo "should_build=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_build=false" >> $GITHUB_OUTPUT
+          fi
+
+  nightly-build:
+    needs: check-changes
+    if: needs.check-changes.outputs.should_build == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win
+          - os: ubuntu-latest
+            platform: linux
+
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: sca-01-phase2/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --force
+        working-directory: sca-01-phase2
+
+      - name: Set nightly version
+        run: npm version prerelease --preid=nightly.$(date +%Y%m%d) --no-git-tag-version
+        working-directory: sca-01-phase2
+        shell: bash
+
+      - name: Build application
+        run: npm run build
+        working-directory: sca-01-phase2
+
+      - name: Build Electron (Windows)
+        if: matrix.platform == 'win'
+        run: npx electron-builder --win --publish never
+        working-directory: sca-01-phase2
+
+      - name: Build Electron (Linux)
+        if: matrix.platform == 'linux'
+        run: npx electron-builder --linux --publish never
+        working-directory: sca-01-phase2
+
+      - name: Upload nightly artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sca-01-nightly-${{ matrix.platform }}-${{ github.run_number }}
+          path: sca-01-phase2/dist/
+          retention-days: 7
+

@@ -1,0 +1,90 @@
+# Dependabot configuration for automatic security updates
+# https://docs.github.com/en/code-security/dependabot
+
+version: 2
+updates:
+  # Phase 1 (CLI)
+  - package-ecosystem: "npm"
+    directory: "/sca-01-phase1"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(phase1):"
+    labels:
+      - "dependencies"
+      - "phase1"
+    groups:
+      development:
+        patterns:
+          - "@types/*"
+          - "eslint*"
+          - "typescript*"
+          - "vitest*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Phase 2 (Desktop)
+  - package-ecosystem: "npm"
+    directory: "/sca-01-phase2"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(phase2):"
+    labels:
+      - "dependencies"
+      - "phase2"
+    groups:
+      electron:
+        patterns:
+          - "electron*"
+      development:
+        patterns:
+          - "@types/*"
+          - "eslint*"
+          - "typescript*"
+          - "vitest*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Phase 3 (Cloud)
+  - package-ecosystem: "npm"
+    directory: "/sca-01-phase3"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(phase3):"
+    labels:
+      - "dependencies"
+      - "phase3"
+
+  # Mobile
+  - package-ecosystem: "npm"
+    directory: "/sca-01-mobile"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps(mobile):"
+    labels:
+      - "dependencies"
+      - "mobile"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci:"
+    labels:
+      - "ci"
+

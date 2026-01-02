@@ -1,0 +1,106 @@
+# SCA-01 Auto-Release
+# Builds and publishes releases for all platforms
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.3.0)'
+        required: true
+        type: string
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build-and-release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win
+            artifact: "*.exe"
+          - os: ubuntu-latest
+            platform: linux
+            artifact: "*.AppImage"
+          - os: macos-latest
+            platform: mac
+            artifact: "*.dmg"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: sca-01-phase2/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --force
+        working-directory: sca-01-phase2
+
+      - name: Build application
+        run: npm run build
+        working-directory: sca-01-phase2
+
+      - name: Build Electron (Windows)
+        if: matrix.platform == 'win'
+        run: npx electron-builder --win --publish always
+        working-directory: sca-01-phase2
+
+      - name: Build Electron (Linux)
+        if: matrix.platform == 'linux'
+        run: npx electron-builder --linux --publish always
+        working-directory: sca-01-phase2
+
+      - name: Build Electron (macOS)
+        if: matrix.platform == 'mac'
+        run: npx electron-builder --mac --publish always
+        working-directory: sca-01-phase2
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sca-01-${{ matrix.platform }}
+          path: sca-01-phase2/dist/${{ matrix.artifact }}
+          if-no-files-found: ignore
+
+  create-release-notes:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate Release Notes
+        id: notes
+        run: |
+          echo "## Changes in this release" > notes.md
+          echo "" >> notes.md
+          git log --oneline $(git describe --tags --abbrev=0 HEAD^)..HEAD >> notes.md || echo "- Initial release" >> notes.md
+          echo "" >> notes.md
+          echo "## Downloads" >> notes.md
+          echo "- **Windows:** Download the .exe installer" >> notes.md
+          echo "- **macOS:** Download the .dmg file" >> notes.md
+          echo "- **Linux:** Download the .AppImage" >> notes.md
+
+      - name: Update Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          body_path: notes.md
+          draft: false
+          prerelease: false
+

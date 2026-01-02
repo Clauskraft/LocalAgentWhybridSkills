@@ -1,0 +1,23 @@
+# SCA-01 Code Owners
+# These owners will be requested for review when someone opens a pull request
+
+# Default owner for everything
+* @Clauskraft
+
+# Security-critical files require explicit review
+.env* @Clauskraft
+**/security/** @Clauskraft
+**/auth/** @Clauskraft
+sca-01-phase3/src/routes/auth* @Clauskraft
+
+# CI/CD configuration
+.github/** @Clauskraft
+
+# Desktop agent core
+sca-01-phase2/src/tools/** @Clauskraft
+sca-01-phase2/src/security/** @Clauskraft
+
+# Cloud infrastructure
+sca-01-phase3/** @Clauskraft
+railway.toml @Clauskraft
+
