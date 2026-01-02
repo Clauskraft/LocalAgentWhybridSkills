@@ -13,9 +13,15 @@ export interface SCA01API {
   getConfig: () => Promise<Record<string, unknown>>;
   runAgent: (goal: string) => Promise<{ result?: string; error?: string }>;
   chat: {
-    getConfig: () => Promise<{ ollamaHost: string; model: string; theme?: string }>;
+    getConfig: () => Promise<{ ollamaHost: string; model: string; theme?: string; backendUrl?: string; useCloud?: boolean }>;
     checkOllama: () => Promise<boolean>;
-    sendMessage: (payload: { messages: Array<{ role: string; content: string }>; model?: string; host?: string }) => Promise<{ content: string; toolCalls?: unknown[] }>;
+    sendMessage: (payload: {
+      messages: Array<{ role: string; content: string }>;
+      model?: string;
+      host?: string;
+      backendUrl?: string;
+      useCloud?: boolean;
+    }) => Promise<{ content: string; toolCalls?: unknown[] }>;
     getModels: () => Promise<Array<{ name: string; size?: string }>>;
     getAvailableModels: () => Promise<Array<{ name: string; description?: string; size?: string; recommended?: boolean }>>;
     updateSettings: (partial: Record<string, unknown>) => void;
@@ -40,7 +46,9 @@ const api: SCA01API = {
       return {
         ollamaHost: (cfg as { ollamaHost?: string })?.ollamaHost ?? "http://localhost:11434",
         model: (cfg as { ollamaModel?: string })?.ollamaModel ?? "qwen3",
-        theme: (cfg as { theme?: string })?.theme ?? "dark"
+        theme: (cfg as { theme?: string })?.theme ?? "dark",
+        backendUrl: (cfg as { backendUrl?: string })?.backendUrl ?? "",
+        useCloud: (cfg as { useCloud?: boolean })?.useCloud ?? false,
       };
     },
     checkOllama: async () => {

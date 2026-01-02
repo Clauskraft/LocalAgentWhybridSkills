@@ -79,6 +79,8 @@ export function useChat() {
           messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content })),
           model: settings?.model ?? DEFAULT_SETTINGS.model,
           host: settings?.ollamaHost ?? DEFAULT_SETTINGS.ollamaHost,
+          backendUrl: settings?.backendUrl,
+          useCloud: settings?.useCloud,
         });
         if (resp?.content) {
           const assistantMsg = createMessage('assistant', resp.content);

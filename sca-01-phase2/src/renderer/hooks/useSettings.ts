@@ -10,6 +10,8 @@ export interface UISettings {
   fullAccess: boolean;
   autoApprove: boolean;
   theme: string;
+  backendUrl?: string;
+  useCloud?: boolean;
 }
 
 const DEFAULT_SETTINGS: UISettings = {
@@ -20,6 +22,8 @@ const DEFAULT_SETTINGS: UISettings = {
   fullAccess: false,
   autoApprove: false,
   theme: 'dark',
+  backendUrl: '',
+  useCloud: false,
 };
 
 export function useSettings() {

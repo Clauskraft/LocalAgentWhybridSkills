@@ -8,6 +8,8 @@ interface Settings {
   fullAccess: boolean;
   autoApprove: boolean;
   theme?: string;
+  backendUrl?: string;
+  useCloud?: boolean;
 }
 
 interface SettingsModalProps {
@@ -145,6 +147,29 @@ function GeneralSettings({
             onChange={(e) => onUpdate({ maxTurns: parseInt(e.target.value) })}
             className="form-input"
           />
+        </FormGroup>
+      </Section>
+
+      <Section title="Cloud Backend (Railway)">
+        <FormGroup label="Backend URL (Railway)">
+          <input
+            type="text"
+            value={settings.backendUrl ?? ''}
+            onChange={(e) => onUpdate({ backendUrl: e.target.value })}
+            placeholder="https://sca-01-phase3-production.up.railway.app"
+            className="form-input"
+          />
+        </FormGroup>
+        <FormGroup label="Foretræk cloud-model">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!settings.useCloud}
+              onChange={(e) => onUpdate({ useCloud: e.target.checked })}
+              className="w-4 h-4 rounded border-border-primary"
+            />
+            <span className="text-sm text-text-secondary">Brug Railway-backend som primær</span>
+          </label>
         </FormGroup>
       </Section>
     </div>

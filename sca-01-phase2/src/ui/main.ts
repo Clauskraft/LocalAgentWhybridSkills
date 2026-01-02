@@ -59,10 +59,42 @@ function createWindow(): void {
   });
 }
 
-async function chatSendMessage(payload: { messages: Array<{ role: string; content: string }>; model?: string; host?: string }) {
+async function chatSendMessage(payload: {
+  messages: Array<{ role: string; content: string }>;
+  model?: string;
+  host?: string;
+  backendUrl?: string;
+  useCloud?: boolean;
+}) {
   const cfg = loadConfig();
-  const host = (payload.host ?? cfg.ollamaHost).replace(/\/+$/, "");
   const model = payload.model ?? cfg.ollamaModel;
+
+  // Prefer cloud backend if configured
+  const backend = payload.backendUrl?.trim();
+  if (backend) {
+    const body = {
+      model,
+      messages: payload.messages,
+      stream: false,
+    };
+    const res = await fetch(`${backend.replace(/\/+$/, "")}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(`Cloud chat failed: ${res.status} ${res.statusText} ${txt}`);
+    }
+    const data = await res.json();
+    return {
+      content: data?.message?.content ?? data?.content ?? "",
+      toolCalls: data?.message?.tool_calls,
+    };
+  }
+
+  // Fallback to local Ollama
+  const host = (payload.host ?? cfg.ollamaHost).replace(/\/+$/, "");
   const body = {
     model,
     messages: payload.messages,
