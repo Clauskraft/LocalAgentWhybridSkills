@@ -5,7 +5,9 @@
 nixPkgs = ["nodejs_20", "npm-9_x"]
 
 [phases.install]
-cmds = ["npm install --prefer-offline --no-audit"]
+# IMPORTANT: Railway/Nixpacks often runs with NODE_ENV=production during build,
+# which omits devDependencies. We need devDependencies for the TypeScript build (tsc).
+cmds = ["npm ci --include=dev --prefer-offline --no-audit"]
 cacheDirectories = []
 
 [phases.build]
@@ -17,3 +19,4 @@ cmd = "node build/server/httpServer.js"
 
 [variables]
 NPM_CONFIG_CACHE = "/tmp/.npm"
+NPM_CONFIG_PRODUCTION = "false"
