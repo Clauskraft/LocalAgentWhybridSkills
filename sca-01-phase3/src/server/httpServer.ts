@@ -96,7 +96,9 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
   };
   const log = new HyperLog("./logs", "http-server.jsonl");
   const auth = getAuthService();
-  await auth.initialize();
+  // NOTE: Do not eagerly initialize JWT keys on startup.
+  // In some container environments key generation can be slow enough to fail healthchecks.
+  // JwtAuthService lazily initializes on first sign/verify anyway.
 
   const app = Fastify({
     logger: {
