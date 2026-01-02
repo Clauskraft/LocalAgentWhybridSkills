@@ -20,3 +20,6 @@ cmd = "node build/server/httpServer.js"
 [variables]
 NPM_CONFIG_CACHE = "/tmp/.npm"
 NPM_CONFIG_PRODUCTION = "false"
+# Ensure even implicit `npm ci` in build phase includes devDependencies (tsc).
+NPM_CONFIG_INCLUDE = "dev"
+NPM_CONFIG_OMIT = ""
