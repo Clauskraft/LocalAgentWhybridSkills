@@ -7,6 +7,7 @@ interface Settings {
   systemPrompt: string;
   fullAccess: boolean;
   autoApprove: boolean;
+  theme?: string;
 }
 
 interface SettingsModalProps {
@@ -23,6 +24,7 @@ const TABS = [
   { id: 'mcp', icon: '🔌', label: 'MCP Servere' },
   { id: 'prompts', icon: '📝', label: 'System Prompts' },
   { id: 'security', icon: '🔐', label: 'Sikkerhed' },
+  { id: 'theme', icon: '🎨', label: 'Theme' },
 ];
 
 export const SettingsModal = memo(function SettingsModal({
@@ -92,6 +94,9 @@ export const SettingsModal = memo(function SettingsModal({
             )}
             {activeTab === 'security' && (
               <SecuritySettings settings={settings} onUpdate={onUpdateSettings} />
+            )}
+            {activeTab === 'theme' && (
+              <ThemeSettings settings={settings} onUpdate={onUpdateSettings} />
             )}
           </div>
         </div>
@@ -330,6 +335,44 @@ function SecuritySettings({
       <button className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors">
         💾 Gem Sikkerhed
       </button>
+    </div>
+  );
+}
+
+function ThemeSettings({
+  settings,
+  onUpdate
+}: {
+  settings: Settings;
+  onUpdate: (s: Partial<Settings>) => void;
+}) {
+  const themes = [
+    { id: 'dark', label: 'Dark (default)' },
+    { id: 'light', label: 'Light' },
+    { id: 'tdc-blue', label: 'TDC Blue' },
+    { id: 'tdc-purple', label: 'TDC Purple' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <Section title="Theme">
+        <div className="grid grid-cols-2 gap-3">
+          {themes.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => onUpdate({ theme: t.id })}
+              className={`p-3 border rounded-lg text-left transition-colors ${
+                settings.theme === t.id
+                  ? 'border-accent bg-bg-tertiary'
+                  : 'border-border-primary hover:border-accent'
+              }`}
+            >
+              <div className="font-semibold">{t.label}</div>
+              <div className="text-sm text-text-muted">{t.id}</div>
+            </button>
+          ))}
+        </div>
+      </Section>
     </div>
   );
 }

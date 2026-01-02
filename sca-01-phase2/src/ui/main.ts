@@ -5,6 +5,7 @@ import { globalApprovalQueue } from "../approval/approvalQueue.js";
 import { loadConfig } from "../config.js";
 import { DesktopAgent } from "../agent/DesktopAgent.js";
 import { HyperLog } from "../logging/hyperlog.js";
+import fetch from "node-fetch";
 
 // ES Module __dirname polyfill
 const __filename = fileURLToPath(import.meta.url);
@@ -55,6 +56,64 @@ function createWindow(): void {
 
   mainWindow.on("closed", () => {
     mainWindow = null;
+  });
+}
+
+async function chatSendMessage(payload: { messages: Array<{ role: string; content: string }>; model?: string; host?: string }) {
+  const cfg = loadConfig();
+  const host = (payload.host ?? cfg.ollamaHost).replace(/\/+$/, "");
+  const model = payload.model ?? cfg.ollamaModel;
+  const body = {
+    model,
+    messages: payload.messages,
+    stream: false
+  };
+  const res = await fetch(`${host}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Ollama chat failed: ${res.status} ${res.statusText} ${txt}`);
+  }
+  const data = await res.json();
+  const content = data?.message?.content ?? "";
+  const toolCalls = data?.message?.tool_calls;
+  return { content, toolCalls };
+}
+
+async function chatGetModels() {
+  const cfg = loadConfig();
+  const host = cfg.ollamaHost.replace(/\/+$/, "");
+  const res = await fetch(`${host}/api/tags`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return (data?.models ?? []).map((m: any) => ({ name: m.name, size: m.size }));
+}
+
+async function chatGetAvailableModels() {
+  // Ollama does not expose a full catalog; provide curated list
+  return [
+    { name: "qwen3", description: "General model with tool calling", size: "4.7 GB", recommended: true },
+    { name: "llama3.1", description: "Meta Llama 3.1", size: "4.1 GB", recommended: true },
+    { name: "mistral", description: "Mistral 7B", size: "4.1 GB" },
+    { name: "codellama", description: "Code-focused model", size: "7B+" }
+  ];
+}
+
+function setupChatIpc(): void {
+  ipcMain.handle("chat-send-message", (_event, payload) => chatSendMessage(payload));
+  ipcMain.handle("chat-get-models", () => chatGetModels());
+  ipcMain.handle("chat-get-available-models", () => chatGetAvailableModels());
+  ipcMain.handle("chat-update-settings", (_event, partial: Record<string, unknown>) => {
+    // persist in memory for now; can be extended to disk
+    // this keeps compatibility with existing cfg load
+  });
+  ipcMain.handle("chat-set-theme", (_event, theme: string) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("chat-theme", theme);
+    }
   });
 }
 
@@ -148,6 +207,8 @@ function setupIpc(): void {
       mainWindow.webContents.send("approval-resolved", request);
     }
   });
+
+  setupChatIpc();
 }
 
 app.whenReady().then(() => {

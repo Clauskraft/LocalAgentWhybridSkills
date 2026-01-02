@@ -9,6 +9,7 @@ export interface UISettings {
   systemPrompt: string;
   fullAccess: boolean;
   autoApprove: boolean;
+  theme: string;
 }
 
 const DEFAULT_SETTINGS: UISettings = {
@@ -18,6 +19,7 @@ const DEFAULT_SETTINGS: UISettings = {
   systemPrompt: '',
   fullAccess: false,
   autoApprove: false,
+  theme: 'dark',
 };
 
 export function useSettings() {
@@ -31,6 +33,7 @@ export function useSettings() {
         if (api?.getConfig) {
           const cfg = await api.getConfig();
           setSettings((prev) => ({ ...prev, ...cfg }));
+          applyTheme(cfg.theme ?? DEFAULT_SETTINGS.theme);
         }
       } catch {
         // ignore
@@ -39,11 +42,19 @@ export function useSettings() {
     load();
   }, []);
 
+  const applyTheme = (theme: string) => {
+    document.documentElement.setAttribute('data-theme', theme);
+  };
+
   const updateSettings = useCallback((partial: Partial<UISettings>) => {
     setSettings((prev) => ({ ...prev, ...partial }));
     try {
       const api = (window as any).sca01?.chat;
       api?.updateSettings?.(partial);
+      if (partial.theme) {
+        applyTheme(partial.theme);
+        api?.setTheme?.(partial.theme);
+      }
     } catch {
       // ignore
     }
