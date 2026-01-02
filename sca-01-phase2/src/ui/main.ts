@@ -174,22 +174,38 @@ function setupChatIpc(): void {
   });
 }
 
-function setupIpc(): void {
+async function setupIpc(): Promise<void> {
   const cfg = loadConfig();
   runtimeCfg = cfg;
   settingsFilePath = path.join(app.getPath("userData"), "settings.json");
 
-  // Load persisted overrides (best-effort)
-  (async () => {
-    if (!settingsFilePath) return;
+  // Load persisted overrides (best-effort) BEFORE agent/log init
+  if (settingsFilePath) {
     try {
       const raw = await fs.readFile(settingsFilePath, { encoding: "utf8" });
-      const persisted = JSON.parse(raw) as Partial<typeof runtimeCfg>;
-      runtimeCfg = { ...runtimeCfg, ...persisted };
+      const persisted = JSON.parse(raw) as unknown;
+      if (persisted && typeof persisted === "object") {
+        const p = persisted as Record<string, unknown>;
+        const next = { ...runtimeCfg };
+
+        if (typeof p.ollamaHost === "string") next.ollamaHost = p.ollamaHost;
+        if (typeof p.ollamaModel === "string") next.ollamaModel = p.ollamaModel;
+        if (typeof p.maxTurns === "number" && Number.isFinite(p.maxTurns)) next.maxTurns = p.maxTurns;
+        if (typeof p.fullAccess === "boolean") next.fullAccess = p.fullAccess;
+        if (typeof p.autoApprove === "boolean") next.autoApprove = p.autoApprove;
+        if (typeof p.backendUrl === "string") next.backendUrl = p.backendUrl;
+        if (typeof p.useCloud === "boolean") next.useCloud = p.useCloud;
+        if (typeof p.theme === "string") next.theme = p.theme;
+        if (Array.isArray(p.safeDirs) && p.safeDirs.every((x) => typeof x === "string")) {
+          next.safeDirs = p.safeDirs.map((x) => x.trim()).filter(Boolean);
+        }
+
+        runtimeCfg = next;
+      }
     } catch {
-      // ignore
+      // ignore missing/invalid settings
     }
-  })().catch(() => undefined);
+  }
 
   log = new HyperLog(runtimeCfg.logDir, "ui.hyperlog.jsonl");
   agent = new DesktopAgent(runtimeCfg);
@@ -283,8 +299,8 @@ function setupIpc(): void {
   setupChatIpc();
 }
 
-app.whenReady().then(() => {
-  setupIpc();
+app.whenReady().then(async () => {
+  await setupIpc();
   createWindow();
 
   app.on("activate", () => {

@@ -260,6 +260,7 @@ function ModelsSettings({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const api = (window as any).sca01?.chat;
@@ -269,13 +270,17 @@ function ModelsSettings({
               .filter((m) => m && typeof m.name === 'string')
               .map((m) => ({ name: m.name as string, size: (m.size as string) ?? '' }))
           : [];
-        setModels(parsed);
+        if (!cancelled) setModels(parsed);
       } catch {
-        setModels([]);
+        if (!cancelled) setModels([]);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
