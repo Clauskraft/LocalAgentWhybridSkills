@@ -1,0 +1,6 @@
+{
+  "search.useRipgrep": true,
+  "search.ripgrep.path": "${workspaceFolder}\\\\tools\\\\rg\\\\rg.exe"
+}
+
+

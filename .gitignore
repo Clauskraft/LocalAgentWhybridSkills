@@ -21,7 +21,8 @@ logs/
 sca-01-phase3/config/keys/jwt-key.json
 
 # IDE
-.vscode/
+.vscode/*
+!.vscode/settings.json
 .idea/
 *.swp
 *.swo
@@ -36,4 +37,7 @@ coverage/
 # Temporary
 tmp/
 temp/
+
+# Repo-local tooling
+tools/rg/
 
