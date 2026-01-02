@@ -29,8 +29,13 @@ Implementer Phase 2 af SCA-01 med:
 - [x] CLI med doctor/run/chat/approve
 - [x] Electron UI med approval panel
 - [x] SelfHealingAdapter integration
-- [ ] Smoke tests
-- [ ] End-to-end test på Windows
+- [x] Smoke tests (Playwright)
+- [x] E2E test framework (Playwright)
+- [x] TDC-CVI color system
+- [x] Auto-update system (electron-updater)
+- [x] CI/CD workflows (GitHub Actions)
+- [ ] React 19 + Tailwind v4 migration
+- [ ] Live theme preview
 
 ---
 

@@ -1,0 +1,322 @@
+/**
+ * TDC Corporate Visual Identity (CVI) Colors
+ * SCA-01 Theme System
+ * 
+ * Based on TDC Erhverv brand guidelines
+ */
+
+:root {
+  /* ============================================
+     TDC PRIMARY COLORS
+     ============================================ */
+  --tdc-magenta: #E20074;
+  --tdc-magenta-dark: #B8005D;
+  --tdc-magenta-light: #FF3399;
+  
+  --tdc-blue: #00A0D2;
+  --tdc-blue-dark: #0080A8;
+  --tdc-blue-light: #33B5DE;
+  
+  --tdc-purple: #6B3FA0;
+  --tdc-purple-dark: #562F80;
+  --tdc-purple-light: #8C5FB8;
+
+  /* ============================================
+     TDC NEUTRAL COLORS
+     ============================================ */
+  --tdc-black: #1A1A1A;
+  --tdc-gray-900: #2D2D2D;
+  --tdc-gray-800: #3D3D3D;
+  --tdc-gray-700: #4D4D4D;
+  --tdc-gray-600: #6D6D6D;
+  --tdc-gray-500: #8D8D8D;
+  --tdc-gray-400: #ADADAD;
+  --tdc-gray-300: #CDCDCD;
+  --tdc-gray-200: #E0E0E0;
+  --tdc-gray-100: #F0F0F0;
+  --tdc-white: #FFFFFF;
+
+  /* ============================================
+     SEMANTIC COLORS
+     ============================================ */
+  --tdc-success: #00B050;
+  --tdc-success-dark: #008C40;
+  --tdc-success-light: #33C070;
+  
+  --tdc-warning: #FFB000;
+  --tdc-warning-dark: #CC8C00;
+  --tdc-warning-light: #FFC333;
+  
+  --tdc-error: #E53935;
+  --tdc-error-dark: #B71C1C;
+  --tdc-error-light: #EF5350;
+  
+  --tdc-info: #2196F3;
+  --tdc-info-dark: #1565C0;
+  --tdc-info-light: #42A5F5;
+
+  /* ============================================
+     THEME: DARK (Default for SCA-01)
+     ============================================ */
+  --bg-primary: #0D0D12;
+  --bg-secondary: #13131A;
+  --bg-tertiary: #1A1A24;
+  --bg-elevated: #22222E;
+  --bg-hover: #2A2A38;
+  --bg-active: #32324A;
+  
+  --text-primary: #F5F5F7;
+  --text-secondary: #A1A1AA;
+  --text-muted: #71717A;
+  --text-disabled: #52525B;
+  
+  --border-primary: #27272A;
+  --border-secondary: #3F3F46;
+  --border-focus: var(--tdc-magenta);
+  
+  --accent: var(--tdc-magenta);
+  --accent-hover: var(--tdc-magenta-light);
+  --accent-active: var(--tdc-magenta-dark);
+  
+  /* ============================================
+     COMPONENT TOKENS
+     ============================================ */
+  --sidebar-bg: var(--bg-secondary);
+  --sidebar-border: var(--border-primary);
+  --sidebar-item-hover: var(--bg-hover);
+  --sidebar-item-active: var(--bg-active);
+  
+  --header-bg: var(--bg-secondary);
+  --header-border: var(--border-primary);
+  
+  --input-bg: var(--bg-tertiary);
+  --input-border: var(--border-primary);
+  --input-focus-border: var(--tdc-magenta);
+  --input-text: var(--text-primary);
+  --input-placeholder: var(--text-muted);
+  
+  --button-primary-bg: var(--tdc-magenta);
+  --button-primary-text: var(--tdc-white);
+  --button-primary-hover: var(--tdc-magenta-light);
+  
+  --button-secondary-bg: var(--bg-tertiary);
+  --button-secondary-text: var(--text-primary);
+  --button-secondary-border: var(--border-secondary);
+  --button-secondary-hover: var(--bg-hover);
+  
+  --card-bg: var(--bg-secondary);
+  --card-border: var(--border-primary);
+  --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  
+  --code-bg: #0A0A0E;
+  --code-text: #E0E0E0;
+  --code-border: var(--border-primary);
+  
+  --toast-success-bg: var(--tdc-success);
+  --toast-error-bg: var(--tdc-error);
+  --toast-warning-bg: var(--tdc-warning);
+  --toast-info-bg: var(--tdc-info);
+  
+  /* ============================================
+     CHAT MESSAGE COLORS
+     ============================================ */
+  --message-user-bg: rgba(226, 0, 116, 0.15);
+  --message-user-border: var(--tdc-magenta);
+  --message-user-avatar: var(--tdc-magenta);
+  
+  --message-assistant-bg: var(--bg-tertiary);
+  --message-assistant-border: var(--border-secondary);
+  --message-assistant-avatar: var(--tdc-purple);
+  
+  --message-system-bg: rgba(255, 176, 0, 0.1);
+  --message-system-border: var(--tdc-warning);
+  --message-system-avatar: var(--tdc-warning);
+  
+  --message-tool-bg: rgba(0, 160, 210, 0.1);
+  --message-tool-border: var(--tdc-blue);
+  
+  /* ============================================
+     STATUS INDICATORS
+     ============================================ */
+  --status-online: var(--tdc-success);
+  --status-offline: var(--tdc-error);
+  --status-pending: var(--tdc-warning);
+  --status-unknown: var(--tdc-gray-500);
+  
+  /* ============================================
+     TYPOGRAPHY
+     ============================================ */
+  --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* ============================================
+     SPACING
+     ============================================ */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  
+  /* ============================================
+     BORDER RADIUS
+     ============================================ */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+  
+  /* ============================================
+     SHADOWS
+     ============================================ */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.5);
+  
+  /* ============================================
+     TRANSITIONS
+     ============================================ */
+  --transition-fast: 0.1s ease;
+  --transition-base: 0.2s ease;
+  --transition-slow: 0.3s ease;
+  --transition-bounce: 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  
+  /* ============================================
+     Z-INDEX LAYERS
+     ============================================ */
+  --z-dropdown: 100;
+  --z-modal-backdrop: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+  --z-tooltip: 500;
+}
+
+/* ============================================
+   THEME: LIGHT
+   ============================================ */
+[data-theme="light"] {
+  --bg-primary: #FAFAFA;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #F5F5F5;
+  --bg-elevated: #FFFFFF;
+  --bg-hover: #EEEEEE;
+  --bg-active: #E0E0E0;
+  
+  --text-primary: #1A1A1A;
+  --text-secondary: #52525B;
+  --text-muted: #71717A;
+  --text-disabled: #A1A1AA;
+  
+  --border-primary: #E0E0E0;
+  --border-secondary: #D0D0D0;
+  
+  --code-bg: #F5F5F5;
+  --code-text: #1A1A1A;
+  
+  --message-user-bg: rgba(226, 0, 116, 0.08);
+  --message-assistant-bg: #F0F0F0;
+  --message-system-bg: rgba(255, 176, 0, 0.08);
+  --message-tool-bg: rgba(0, 160, 210, 0.08);
+  
+  --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================
+   THEME: TDC BLUE
+   ============================================ */
+[data-theme="tdc-blue"] {
+  --accent: var(--tdc-blue);
+  --accent-hover: var(--tdc-blue-light);
+  --accent-active: var(--tdc-blue-dark);
+  
+  --button-primary-bg: var(--tdc-blue);
+  --button-primary-hover: var(--tdc-blue-light);
+  
+  --border-focus: var(--tdc-blue);
+  --input-focus-border: var(--tdc-blue);
+  
+  --message-user-bg: rgba(0, 160, 210, 0.15);
+  --message-user-border: var(--tdc-blue);
+  --message-user-avatar: var(--tdc-blue);
+}
+
+/* ============================================
+   THEME: TDC PURPLE
+   ============================================ */
+[data-theme="tdc-purple"] {
+  --accent: var(--tdc-purple);
+  --accent-hover: var(--tdc-purple-light);
+  --accent-active: var(--tdc-purple-dark);
+  
+  --button-primary-bg: var(--tdc-purple);
+  --button-primary-hover: var(--tdc-purple-light);
+  
+  --border-focus: var(--tdc-purple);
+  --input-focus-border: var(--tdc-purple);
+  
+  --message-user-bg: rgba(107, 63, 160, 0.15);
+  --message-user-border: var(--tdc-purple);
+  --message-user-avatar: var(--tdc-purple);
+}
+
+/* ============================================
+   ACCESSIBILITY: HIGH CONTRAST
+   ============================================ */
+@media (prefers-contrast: high) {
+  :root {
+    --text-primary: #FFFFFF;
+    --text-secondary: #E0E0E0;
+    --border-primary: #FFFFFF;
+    --border-secondary: #E0E0E0;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY: REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0s;
+    --transition-base: 0s;
+    --transition-slow: 0s;
+    --transition-bounce: 0s;
+  }
+  
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+

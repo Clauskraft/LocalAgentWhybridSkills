@@ -18,6 +18,10 @@
     "build:ui": "tsc -p tsconfig.ui.json && electron-builder",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:smoke": "playwright test tests/e2e/smoke.spec.ts",
     "sca": "node build/cli.js",
     "start": "electron build/ui/main.js",
     "cockpit": "electron build/ui/mainCockpit.js"
@@ -35,7 +39,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
+    "@playwright/test": "^1.49.0",
     "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "electron": "^33.0.0",
     "electron-builder": "^25.0.0",
     "eslint": "^9.0.0",
