@@ -1,6 +1,6 @@
 import path from "node:path";
 import os from "node:os";
-import { parseIntSafe, parseBool, parseStringList } from "@local-agent/config-utils";
+import { parseBool, parseIntSafe, parseStringList } from "./configUtils.js";
 
 export interface Phase2Config {
   // LLM
