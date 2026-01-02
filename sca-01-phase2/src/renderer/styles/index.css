@@ -1,191 +1,25 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/**
- * SCA-01 TDC Corporate Visual Identity Theme
- * Tailwind CSS v4 + Custom Properties
- */
-
-@theme {
-  /* ============================================
-     TDC PRIMARY COLORS
-     ============================================ */
-  --color-tdc-magenta: #E20074;
-  --color-tdc-magenta-dark: #B8005D;
-  --color-tdc-magenta-light: #FF3399;
-  
-  --color-tdc-blue: #00A0D2;
-  --color-tdc-blue-dark: #0080A8;
-  --color-tdc-blue-light: #33B5DE;
-  
-  --color-tdc-purple: #6B3FA0;
-  --color-tdc-purple-dark: #562F80;
-  --color-tdc-purple-light: #8C5FB8;
-
-  /* ============================================
-     SEMANTIC COLORS
-     ============================================ */
-  --color-success: #00B050;
-  --color-success-dark: #008C40;
-  --color-warning: #FFB000;
-  --color-warning-dark: #CC8C00;
-  --color-error: #E53935;
-  --color-error-dark: #B71C1C;
-  --color-info: #2196F3;
-
-  /* ============================================
-     DARK THEME (Default)
-     ============================================ */
-  --color-bg-primary: #0D0D12;
-  --color-bg-secondary: #13131A;
-  --color-bg-tertiary: #1A1A24;
-  --color-bg-elevated: #22222E;
-  --color-bg-hover: #2A2A38;
-  --color-bg-active: #32324A;
-  
-  --color-text-primary: #F5F5F7;
-  --color-text-secondary: #A1A1AA;
-  --color-text-muted: #71717A;
-  --color-text-disabled: #52525B;
-  
-  --color-border-primary: #27272A;
-  --color-border-secondary: #3F3F46;
-  --color-border-focus: var(--color-tdc-magenta);
-  
-  --color-accent: var(--color-tdc-magenta);
-  --color-accent-hover: var(--color-tdc-magenta-light);
-  
-  /* ============================================
-     SPACING
-     ============================================ */
-  --spacing-sidebar: 280px;
-  
-  /* ============================================
-     FONTS
-     ============================================ */
-  --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --font-mono: 'Fira Code', 'Consolas', 'Monaco', monospace;
-  
-  /* ============================================
-     ANIMATIONS
-     ============================================ */
-  --animate-fade-in: fade-in 0.2s ease-out;
-  --animate-slide-up: slide-up 0.3s ease-out;
-  --animate-pulse-slow: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slide-up {
-  from { 
-    opacity: 0; 
-    transform: translateY(10px); 
+@layer base {
+  body {
+    @apply bg-bg-primary text-text-primary font-sans antialiased overflow-hidden h-screen m-0 p-0;
   }
-  to { 
-    opacity: 1; 
-    transform: translateY(0); 
+
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border-secondary rounded;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-text-muted;
   }
 }
-
-/* ============================================
-   BASE STYLES
-   ============================================ */
-body {
-  font-family: var(--font-sans);
-  background-color: var(--color-bg-primary);
-  color: var(--color-text-primary);
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  height: 100vh;
-}
-
-/* ============================================
-   SCROLLBAR
-   ============================================ */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-border-secondary);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
-}
-
-/* ============================================
-   FOCUS STATES
-   ============================================ */
-button:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
-/* ============================================
-   LIGHT THEME
-   ============================================ */
-.light {
-  --color-bg-primary: #FAFAFA;
-  --color-bg-secondary: #FFFFFF;
-  --color-bg-tertiary: #F5F5F5;
-  --color-bg-elevated: #FFFFFF;
-  --color-bg-hover: #EEEEEE;
-  --color-bg-active: #E0E0E0;
-  
-  --color-text-primary: #1A1A1A;
-  --color-text-secondary: #52525B;
-  --color-text-muted: #71717A;
-  
-  --color-border-primary: #E0E0E0;
-  --color-border-secondary: #D0D0D0;
-}
-
-/* ============================================
-   UTILITY CLASSES
-   ============================================ */
-.glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.gradient-accent {
-  background: linear-gradient(135deg, var(--color-tdc-magenta), var(--color-tdc-purple));
-}
-
-.text-gradient {
-  background: linear-gradient(135deg, var(--color-tdc-magenta), var(--color-tdc-blue));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Form inputs */
-.form-input {
-  width: 100%;
-  padding: 0.6rem 0.75rem;
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border-primary);
-  border-radius: 0.5rem;
-  color: var(--color-text-primary);
-  font-size: 0.95rem;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--color-border-focus);
-}
-

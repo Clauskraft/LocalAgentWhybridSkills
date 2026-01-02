@@ -7,6 +7,7 @@ import { globalApprovalQueue } from "../approval/approvalQueue.js";
 import { loadConfig } from "../config.js";
 import { DesktopAgent } from "../agent/DesktopAgent.js";
 import { HyperLog } from "../logging/hyperlog.js";
+// import { initUpdater } from "../updater/autoUpdater.js"; // TODO: Fix ESM/CJS loading issue
 
 import type { ApprovalRequest } from "../approval/approvalQueue.js";
 
@@ -190,7 +191,7 @@ function resolveRendererEntry(): { type: "url" | "file"; value: string } {
   return {
     type: "file",
     // Vite build outputs to build/ui (see vite.config.ts)
-    value: path.resolve(__dirname, "../../../ui/index.html")
+    value: path.join(__dirname, "index.html")
   };
 }
 
@@ -517,6 +518,19 @@ async function setupIpc(): Promise<void> {
 app.whenReady().then(async () => {
   await setupIpc();
   createWindow();
+
+  // TODO: Re-enable auto-updater after fixing ESM/CJS loading issue
+  // const updater = initUpdater({
+  //   checkOnStartup: true,
+  //   autoDownload: true,
+  //   autoInstallOnQuit: true,
+  //   checkInterval: 60 * 60 * 1000, // 1 hour
+  // }, runtimeCfg.logDir);
+  //
+  // if (mainWindow) {
+  //   updater.setMainWindow(mainWindow);
+  //   updater.startPeriodicChecks();
+  // }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {

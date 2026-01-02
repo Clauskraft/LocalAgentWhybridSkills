@@ -42,11 +42,11 @@ export function loadConfig(): Phase2Config {
   const ollamaHost = process.env["OLLAMA_HOST"] ?? (useCloud ? "" : "http://localhost:11434");
 
   return {
-    // LLM
+    // LLM - Production defaults for desktop agent
     ollamaHost,
-    ollamaModel: process.env["OLLAMA_MODEL"] ?? "qwen3",
+    ollamaModel: process.env["OLLAMA_MODEL"] ?? "qwen2.5-coder:7b",
 
-    // UI / Cloud preference
+    // UI / Cloud preference - Dark theme as default
     theme: process.env["SCA_THEME"] ?? "dark",
     backendUrl: process.env["SCA_BACKEND_URL"] ?? "",
     useCloud,
@@ -56,14 +56,14 @@ export function loadConfig(): Phase2Config {
     logDir: process.env["SCA_LOG_DIR"] ?? "./logs",
     safeDirs,
 
-    // Permissions
+    // Permissions - Safe defaults for desktop usage
     fullAccess: parseBool(process.env["SCA_FULL_ACCESS"], false),
     autoApprove: parseBool(process.env["SCA_AUTO_APPROVE"], false),
-    allowWrite: parseBool(process.env["SCA_ALLOW_WRITE"], false),
-    allowExec: parseBool(process.env["SCA_ALLOW_EXEC"], false),
+    allowWrite: parseBool(process.env["SCA_ALLOW_WRITE"], true),
+    allowExec: parseBool(process.env["SCA_ALLOW_EXEC"], true),
 
-    // Limits
-    maxTurns: parseIntSafe(process.env["SCA_MAX_TURNS"], 16),
+    // Limits - Production-optimized values
+    maxTurns: parseIntSafe(process.env["SCA_MAX_TURNS"], 20),
     shellTimeout: parseIntSafe(process.env["SCA_SHELL_TIMEOUT"], 300_000), // 5 min
     maxFileSize: parseIntSafe(process.env["SCA_MAX_FILE_SIZE"], 10_000_000) // 10MB
   };

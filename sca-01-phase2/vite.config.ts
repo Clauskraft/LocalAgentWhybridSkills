@@ -1,16 +1,14 @@
 import { defineConfig } from 'vite';
-import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 /**
  * SCA-01 Vite Configuration
- * Builds React renderer for Electron
+ * Builds React renderer for Electron with Tailwind CSS v3
  */
 export default defineConfig({
   plugins: [
-    // Tailwind CSS v4 plugin requires Vite 5+, but Vite 5 has Rollup compatibility issues on Windows ARM64
-    // TODO: Re-enable when Tailwind CSS v3 or compatible Vite 5 + Rollup version is available
-    // tailwindcss(),
+    react(),
   ],
   root: 'src/renderer',
   base: './',
@@ -18,7 +16,7 @@ export default defineConfig({
     // Emit renderer assets into Electron's build/ui folder so main process
     // can load index.html via loadFile(__dirname, 'index.html')
     outDir: '../../build/ui',
-    emptyOutDir: true,
+    emptyOutDir: false,
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'src/renderer/index.html'),
