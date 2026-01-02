@@ -24,6 +24,10 @@ export class HyperLog {
   }
 
   public write(evt: HyperLogEvent): void {
+    // Promote requestId from context if not set
+    if (!evt.requestId && evt.context && typeof evt.context.requestId === "string") {
+      evt.requestId = evt.context.requestId as string;
+    }
     const line = JSON.stringify(evt);
     process.stderr.write(line + "\n");
     fs.appendFileSync(this.logFilePath, line + "\n", { encoding: "utf8" });

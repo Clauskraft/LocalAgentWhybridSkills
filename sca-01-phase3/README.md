@@ -44,6 +44,7 @@
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/health` | GET | Health check |
+| `/ready` | GET | Readiness (DB ping) |
 | `/mcp/info` | GET | MCP server info |
 
 ### Authentication
@@ -100,6 +101,15 @@
 DATABASE_URL=postgresql://...
 JWT_SECRET=your-secret-key-min-32-chars
 
+# Security / Networking
+# Comma-separated origins; if empty, CORS disabled (deny by default)
+CORS_ORIGINS=https://your-frontend.example.com
+# Rate limit
+RATE_LIMIT_MAX=60
+RATE_LIMIT_WINDOW=1 minute
+# Trust proxy for Railway/ingress
+TRUST_PROXY=true
+
 # Notion (optional)
 NOTION_API_KEY=secret_xxx
 NOTION_DATABASE_ID=xxx
@@ -108,6 +118,15 @@ NOTION_BLACKBOARD_PAGE_ID=xxx
 # Server
 PORT=8787
 HOST=0.0.0.0
+```
+
+### Database Migrations
+```bash
+# Dev / local (TS)
+npm run db:migrate:dev
+
+# After build (production)
+npm run db:migrate
 ```
 
 ### Manual Deploy
