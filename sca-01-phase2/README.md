@@ -57,8 +57,8 @@ In cloud mode, chat requests are made from the Electron **main process** to the 
 ## UI Applications
 
 ### React Renderer (nyt flow)
-- React 19 + Tailwind v4 via Vite (`npm run dev:renderer`)
-- Electron loader peger på Vite dev-server eller `dist/renderer`
+- React 19 + Tailwind v3 via Vite (`npm run dev:renderer`)
+- Electron loader peger på Vite dev-server eller den byggede renderer i `build/ui`
 - Temaer (dark/light/tdc-blue/tdc-purple) kan vælges i Settings
 
 > Note: Older “chat.html” / “cockpit.html” entrypoints are considered legacy in Phase 2.

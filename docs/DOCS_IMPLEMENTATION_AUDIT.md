@@ -17,6 +17,10 @@ This document validates **documentation claims** against the **current implement
   - **Fix**: update root `README.md` + `sca-01-phase2/README.md` to reference `dev:ui` and remove/mark legacy scripts.
 
 ### P1 (Incorrect / inconsistent details)
+- **Root env var drift**: root README listed Phase 2 env vars that are not implemented.
+  - **Reality**: Phase 2 uses `SCA_ALLOW_WRITE`, `SCA_ALLOW_EXEC`, `SCA_FULL_ACCESS`, `SCA_AUTO_APPROVE`, limits, theme, and cloud flags (see `sca-01-phase2/src/defaultConfig.ts`).
+  - **Fix**: update root `README.md` to match Phase 2 env vars.
+
 - **Phase 3 port mismatch**: docs mention `:3000` and `:8787`.
   - **Reality**: `sca-01-phase3/src/server/httpServer.ts` defaults to `8787` in dev; `PORT` env overrides (Railway typically sets `PORT=3000`).
   - **Fix**: update `sca-01-phase3/README.md` to reflect default + override behavior consistently.
