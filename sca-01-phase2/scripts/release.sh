@@ -13,7 +13,7 @@ echo "========================="
 # Check for GH_TOKEN
 if [ -z "$GH_TOKEN" ] && [ -z "$GITHUB_TOKEN" ]; then
     echo "❌ Error: GH_TOKEN or GITHUB_TOKEN environment variable required"
-    echo "Set it with: export GH_TOKEN='ghp_...'"
+    echo "Set it with: export GH_TOKEN='<github_token>'"
     exit 1
 fi
 

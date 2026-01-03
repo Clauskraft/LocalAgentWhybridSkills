@@ -43,7 +43,10 @@ jobs:
       - name: Lint Phase 2
         run: npm run lint
         working-directory: sca-01-phase2
-        continue-on-error: true
+      
+      - name: Typecheck Phase 2 (noEmit)
+        run: npm run typecheck
+        working-directory: sca-01-phase2
 
       - name: Build Phase 1
         run: npm run build
@@ -61,7 +64,14 @@ jobs:
       - name: Test Phase 2
         run: npm run test
         working-directory: sca-01-phase2
-        continue-on-error: true
+
+      - name: Install Playwright browsers (Phase 2)
+        run: npx playwright install --with-deps chromium
+        working-directory: sca-01-phase2
+
+      - name: Playwright smoke (Phase 2, chromium)
+        run: npm run test:smoke:ci
+        working-directory: sca-01-phase2
 
   api-phase3:
     runs-on: ubuntu-latest
@@ -188,7 +198,6 @@ jobs:
       - name: Audit Phase 2
         run: npm audit --audit-level=high
         working-directory: sca-01-phase2
-        continue-on-error: true
 
   build-check:
     needs: lint-and-test

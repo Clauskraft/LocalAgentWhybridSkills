@@ -20,6 +20,15 @@ This repo uses **two different runtime contexts**:
 - **`OLLAMA_HOST`**: Ollama host URL (default `http://localhost:11434`).
 - **`OLLAMA_MODEL`**: Default Ollama model name.
 
+## Desktop security / policy variables (Electron + CLI)
+
+These are read by the policy engine. Defaults are conservative.
+
+- **`SCA_FULL_ACCESS`**: `true|false` to allow operations outside safe directories (still gated by approval for high-risk actions).
+- **`SCA_AUTO_APPROVE`**: `true|false` to auto-approve high-risk actions (**dangerous**; do not use in production).
+- **`SCA_SAFE_DIRS`**: Comma-separated list of safe directories (default `"."`).
+- **`SCA_LOG_DIR`**: Directory for audit logs (default `./logs`).
+
 ## Desktop integrations (MCP servers)
 
 Phase 2 can launch additional MCP servers (stdio) from the UI catalog. Some of them are configured via `config/integrations.json` (copy from `config/integrations.example.json`).
@@ -28,10 +37,24 @@ Phase 2 can launch additional MCP servers (stdio) from the UI catalog. Some of t
 
 ### WidgetDC / WidgetTDC
 
-The **WidgetDC Core** catalog entry is a small shim (`build/mcp/widgetdc-server.js`) that forwards MCP over stdio to your real WidgetDC server.
+The **WidgetDC Core** catalog entry runs `build/mcp/widgetdc-server.js` and supports two modes:
+
+1. **Cyberstreams proxy mode** (external MCP server): forwards stdio to your real WidgetDC MCP server
+2. **Native HTTP mode** (no external MCP server): exposes minimal safe HTTP-backed tools when Cockpit/Worker URLs are configured
+
+See `docs/WIDGETDC.md` for full details.
 
 - **`WIDGETDC_CYBERSTREAMS_SERVER_PATH`**: Absolute path to the real WidgetDC MCP server entrypoint (overrides `integrations.json`).
 - **`WIDGETDC_COCKPIT_URL`**: Optional URL for cockpit UI/API (populated from `integrations.json` when enabled).
 - **`WIDGETDC_WORKER_URL`**: Optional Cloudflare Worker base URL (populated from `integrations.json` when enabled).
+
+#### Native HTTP tools
+
+When `WIDGETDC_COCKPIT_URL` and/or `WIDGETDC_WORKER_URL` is configured (and no `WIDGETDC_CYBERSTREAMS_SERVER_PATH` is set), the shim exposes:
+
+- **`widgetdc.cockpit.request`**
+- **`widgetdc.worker.request`**
+
+Both tools only accept a relative `path` starting with `/` (no `..` traversal) and enforce same-origin with the configured base URL. Requests time out after ~10 seconds.
 
 

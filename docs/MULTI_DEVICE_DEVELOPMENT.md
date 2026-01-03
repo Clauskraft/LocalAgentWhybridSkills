@@ -38,7 +38,6 @@ graph TB
     API --> DB
     Agent --> Ollama
     Desktop --> Agent
-</graph>
 ```
 
 ## Auto-Update System
@@ -47,9 +46,17 @@ graph TB
 
 1. **Developer pushes code** → GitHub Actions builds all platforms
 2. **Tag created** → Release published to GitHub Releases
-3. **Desktop apps check** → `electron-updater` polls GitHub every hour
+3. **Desktop apps check** → `electron-updater` polls GitHub (when enabled in the app)
 4. **User notified** → Dialog prompts to download/install
 5. **Seamless update** → App restarts with new version
+
+### Current Implementation Status (Phase 2)
+
+Phase 2 contains an `electron-updater` implementation (`sca-01-phase2/src/updater/autoUpdater.ts`), but **it is currently disabled** in the Electron main process due to an ESM/CJS loading issue:
+
+- `sca-01-phase2/src/ui/main.ts` has `initUpdater` commented out with a TODO.
+
+Until that TODO is resolved, updates are done via manual install (or release artifacts).
 
 ### Configuration
 
@@ -110,10 +117,11 @@ npm run dev
 ### Manual Release
 
 ```powershell
-# Set token
-$env:GH_TOKEN = "ghp_..."
+# Set token (use your own token; never commit it to the repo)
+$env:GH_TOKEN = "<github_token>"
 
 # Run release script
+cd sca-01-phase2
 .\scripts\release.ps1 -VersionBump patch
 ```
 

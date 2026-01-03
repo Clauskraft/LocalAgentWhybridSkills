@@ -294,11 +294,12 @@ export const MCP_SERVER_CATALOG: McpServerDefinition[] = [
   {
     id: "widgetdc-core",
     name: "WidgetDC Core",
-    description: "Core WidgetDC tools and integrations",
+    description: "Core WidgetDC tools and integrations (proxy MCP or native HTTP mode)",
     category: "widgetdc",
     transport: "stdio",
     command: "node",
     args: ["./build/mcp/widgetdc-server.js"],
+    documentation: "docs/WIDGETDC.md",
     icon: "🔧",
     tags: ["widgetdc", "core", "tools"],
   },

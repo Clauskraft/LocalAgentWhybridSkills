@@ -4,27 +4,27 @@
   
   "github": {
     "enabled": true,
-    "token": "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "token": "<github_token>",
     "scopes": ["repo", "user", "read:org"],
     "getTokenUrl": "https://github.com/settings/tokens"
   },
   
   "notion": {
     "enabled": true,
-    "apiKey": "secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    "databaseId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "apiKey": "<notion_api_key>",
+    "databaseId": "<notion_database_id>",
     "getTokenUrl": "https://www.notion.so/my-integrations"
   },
   
   "huggingface": {
     "enabled": true,
-    "token": "hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "token": "<huggingface_token>",
     "getTokenUrl": "https://huggingface.co/settings/tokens"
   },
   
   "braveSearch": {
     "enabled": true,
-    "apiKey": "BSAxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "apiKey": "<brave_api_key>",
     "getTokenUrl": "https://brave.com/search/api/"
   },
   
@@ -111,12 +111,12 @@
   "ai": {
     "openai": {
       "enabled": false,
-      "apiKey": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "apiKey": "<openai_api_key>",
       "getTokenUrl": "https://platform.openai.com/api-keys"
     },
     "anthropic": {
       "enabled": false,
-      "apiKey": "sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "apiKey": "<anthropic_api_key>",
       "getTokenUrl": "https://console.anthropic.com/settings/keys"
     }
   },
@@ -151,7 +151,7 @@
   "widgetdc": {
     "cyberstreams": {
       "enabled": true,
-      "serverPath": "C:\\Users\\claus\\cyberstreams-hybrid\\build\\local\\src\\mcp-server.js"
+      "serverPath": "C:\\path\\to\\widgetdc-mcp-server.js"
     },
     "cockpit": {
       "enabled": true,

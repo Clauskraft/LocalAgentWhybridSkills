@@ -18,7 +18,7 @@ Write-Host "=========================" -ForegroundColor Cyan
 # Check for GH_TOKEN
 if (-not $env:GH_TOKEN -and -not $env:GITHUB_TOKEN) {
     Write-Host "❌ Error: GH_TOKEN or GITHUB_TOKEN environment variable required" -ForegroundColor Red
-    Write-Host "Set it with: `$env:GH_TOKEN = 'ghp_...'" -ForegroundColor Yellow
+    Write-Host "Set it with: `$env:GH_TOKEN = '<github_token>'" -ForegroundColor Yellow
     exit 1
 }
 

@@ -1,6 +1,8 @@
 import React, { memo, useEffect, useId, useState } from 'react';
 import type { ReactNode } from 'react';
 
+import { MCP_SERVER_CATALOG } from '../../mcp/serverCatalog';
+
 interface Settings {
   ollamaHost: string;
   model: string;
@@ -670,6 +672,22 @@ function ModelsSettings({
 }
 
 function MCPSettings() {
+  const [query, setQuery] = useState('');
+
+  const normalized = query.trim().toLowerCase();
+  const catalog = MCP_SERVER_CATALOG.filter((s) => {
+    // Keep WidgetDC visible even if user filters heavily.
+    if (s.category === 'widgetdc' && normalized.length === 0) return true;
+
+    if (normalized.length === 0) return s.popular === true || s.category === 'widgetdc';
+
+    return (
+      s.name.toLowerCase().includes(normalized) ||
+      s.description.toLowerCase().includes(normalized) ||
+      (s.tags ?? []).some((t) => t.toLowerCase().includes(normalized))
+    );
+  });
+
   return (
     <div className="space-y-6">
       <Section title="Konfigurerede MCP Servere">
@@ -692,20 +710,24 @@ function MCPSettings() {
         <input
           type="text"
           placeholder="🔍 Søg efter servere..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
           className="form-input mb-4"
         />
         <div className="space-y-2">
-          {['GitHub', 'Filesystem', 'Puppeteer', 'Notion'].map((name) => (
+          {catalog.map((s) => (
             <div
-              key={name}
+              key={s.id}
               className="p-3 bg-bg-tertiary border border-border-primary rounded-lg flex items-center gap-3 cursor-pointer hover:border-accent transition-colors"
             >
               <div className="w-10 h-10 bg-bg-secondary rounded-lg flex items-center justify-center text-xl">
-                {name === 'GitHub' ? '🐙' : name === 'Filesystem' ? '📁' : name === 'Puppeteer' ? '🎭' : '📝'}
+                {s.icon ?? '🔌'}
               </div>
               <div className="flex-1">
-                <div className="font-semibold text-sm">{name}</div>
-                <div className="text-xs text-text-muted">Official MCP server</div>
+                <div className="font-semibold text-sm">{s.name}</div>
+                <div className="text-xs text-text-muted">
+                  {s.transport} • {s.category}
+                </div>
               </div>
               <button className="px-3 py-1 text-sm bg-accent text-white rounded hover:bg-accent-hover">
                 + Tilføj

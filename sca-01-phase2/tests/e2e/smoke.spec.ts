@@ -53,6 +53,16 @@ test.describe('Smoke Tests', () => {
     await expect(page.getByRole('heading', { name: 'Indstillinger' })).toBeVisible();
   });
 
+  test('MCP library contains WidgetDC Core entry', async ({ page }) => {
+    // Open MCP settings from sidebar
+    await page.locator('aside').getByText('MCP Servere', { exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Indstillinger' })).toBeVisible();
+
+    // The MCP tab should be active (opened via sidebar), but assert the content we care about.
+    await expect(page.getByText('📚 MCP Server Library', { exact: true })).toBeVisible();
+    await expect(page.getByText('WidgetDC Core', { exact: true })).toBeVisible();
+  });
+
   test('model dropdown toggles', async ({ page }) => {
     // Open model dropdown (button that contains current model and "Ollama" label)
     await page.getByRole('button', { name: /Ollama/i }).click();

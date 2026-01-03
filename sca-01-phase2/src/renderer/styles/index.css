@@ -32,10 +32,18 @@
   }
 
   .form-input:focus {
-    @apply outline-none ring-2 ring-accent ring-opacity-60 border-accent;
+    /*
+      Avoid `@apply ring-accent/border-accent` because Tailwind's class resolver can
+      fail hard in dev-server contexts, which blocks the Vite page from rendering.
+    */
+    --tw-ring-color: rgba(226, 0, 116, var(--tw-ring-opacity));
+    border-color: theme('colors.accent');
+    @apply outline-none ring-2 ring-opacity-60;
   }
 
   .form-input:disabled {
     @apply opacity-60 cursor-not-allowed;
   }
 }
+
+@layer utilities {}

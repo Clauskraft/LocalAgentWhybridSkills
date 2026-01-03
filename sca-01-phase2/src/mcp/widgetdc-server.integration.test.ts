@@ -4,6 +4,7 @@
  * This file intentionally has exactly ONE `fs` import.
  */
 import fs from "node:fs";
+import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 
@@ -84,6 +85,68 @@ describe("widgetdc-server shim (integration)", () => {
     expect(JSON.stringify(res.content)).toContain("pong");
 
     await client.close();
+  }, 30_000);
+
+  it("runs in native mode (cockpit) when cyberstreams serverPath is not configured", async () => {
+    const server = http.createServer((req, res) => {
+      if (req.url === "/ping") {
+        res.statusCode = 200;
+        res.setHeader("content-type", "text/plain; charset=utf-8");
+        res.end("pong");
+        return;
+      }
+      res.statusCode = 404;
+      res.end("not found");
+    });
+
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Expected TCP address");
+    const cockpitUrl = `http://127.0.0.1:${address.port}`;
+
+    fs.mkdirSync(path.join(process.cwd(), "build"), { recursive: true });
+    const tmpRoot = fs.mkdtempSync(path.join(process.cwd(), "build", "tmp-widgetdc-native-"));
+    const cfgDir = path.join(tmpRoot, "config");
+    fs.mkdirSync(cfgDir, { recursive: true });
+
+    const integrationsPath = path.join(cfgDir, "integrations.json");
+    fs.writeFileSync(
+      integrationsPath,
+      JSON.stringify(
+        {
+          widgetdc: {
+            cyberstreams: { enabled: false, serverPath: "" },
+            cockpit: { enabled: true, url: cockpitUrl },
+            cloudflare: { enabled: false, workerUrl: "" },
+          },
+        },
+        null,
+        2
+      ),
+      "utf8"
+    );
+
+    const client = new McpToolClient({
+      command: tsxNodeArgs().command,
+      args: [...tsxNodeArgs().argsPrefix, "src/mcp/widgetdc-server.ts"],
+      env: {
+        ...process.env,
+        SCA_CONFIG_DIR: cfgDir,
+      },
+    });
+
+    try {
+      await client.connect();
+      const tools = await client.listTools();
+      expect(tools.tools.some((t) => t.name === "widgetdc.cockpit.request")).toBe(true);
+
+      const res = await client.callTool("widgetdc.cockpit.request", { path: "/ping", method: "GET" });
+      expect(res.isError).toBeFalsy();
+      expect(JSON.stringify(res.content)).toContain("pong");
+    } finally {
+      await client.close();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   }, 30_000);
 
   it("(smoke) fails with a clear error when WidgetDC is not configured", async () => {

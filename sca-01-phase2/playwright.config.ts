@@ -19,7 +19,8 @@ export default defineConfig({
   ],
   
   use: {
-    baseURL: 'http://localhost:3000',
+    // Use Vite's standard dev port to avoid common local collisions (e.g. Open WebUI on 3000).
+    baseURL: 'http://127.0.0.1:5173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -50,8 +51,8 @@ export default defineConfig({
 
   /* Run local dev server before tests */
   webServer: {
-    command: 'npm run dev:renderer -- --host --port 3000',
-    url: 'http://localhost:3000',
+    command: 'npm run dev:renderer -- --host 127.0.0.1 --port 5173 --strictPort',
+    url: 'http://127.0.0.1:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },

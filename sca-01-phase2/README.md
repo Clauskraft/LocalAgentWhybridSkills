@@ -117,16 +117,19 @@ SCA_BACKEND_URL=https://sca-01-phase3-production.up.railway.app
 OLLAMA_HOST=
 OLLAMA_MODEL=qwen3
 
-# Permissions (defaults are false)
-SCA_ALLOW_WRITE=false
-SCA_ALLOW_EXEC=false
+# Security / policy (defaults are conservative)
 SCA_FULL_ACCESS=false
 SCA_AUTO_APPROVE=false
+SCA_SAFE_DIRS=.
+SCA_LOG_DIR=./logs
 ```
+
+For the full list (including WidgetDC variables), see `docs/ENVIRONMENT_VARIABLES.md`.
 
 ## Health Check
 
 - Cloud backend: `GET https://sca-01-phase3-production.up.railway.app/health`
+- Local sanity: `npm run lint` and `npm run test`
 
 ## Cloud Sync
 
