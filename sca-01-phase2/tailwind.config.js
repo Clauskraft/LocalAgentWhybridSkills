@@ -27,6 +27,8 @@ export default {
         'text-disabled': '#52525B',
         'border-primary': '#27272A',
         'border-secondary': '#3F3F46',
+        // App accent color used across UI (buttons, focus rings, active states)
+        'accent': '#E20074',
       },
       fontFamily: {
         sans: ['Inter', 'Segoe UI', 'system-ui', '-apple-system', 'sans-serif'],
