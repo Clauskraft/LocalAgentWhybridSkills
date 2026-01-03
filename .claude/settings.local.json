@@ -25,7 +25,9 @@
       "Bash(npx electron-builder:*)",
       "Bash(npx asar:*)",
       "Bash(start \"\" \"dist-electron\\win-arm64-unpacked\\SCA-01 The Finisher.exe\")",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx electron:*)"
     ],
     "deny": [],
     "ask": []

@@ -37,7 +37,7 @@ function loadEnvironment() {
 let mainWindow: BrowserWindow | null = null;
 let agent: DesktopAgent | null = null;
 let log: HyperLog | null = null;
-let runtimeCfg = loadConfig();
+let runtimeCfg: ReturnType<typeof loadConfig>;
 let settingsFilePath: string | null = null;
 let cloudAccessToken: string | null = null;
 let cloudRefreshTokenEncrypted: string | null = null;
@@ -50,6 +50,7 @@ type CloudTokenPair = {
 };
 
 function getBackendBaseUrl(): string {
+  if (!runtimeCfg) throw new Error("Config not initialized");
   const raw = (runtimeCfg.backendUrl ?? "").trim();
   if (!raw) throw new Error("Cloud backendUrl is not configured");
   return raw.replace(/\/+$/, "");
@@ -71,7 +72,7 @@ function decryptFromStorage(valueB64: string): string {
 }
 
 async function persistSettingsToDisk(): Promise<void> {
-  if (!settingsFilePath) return;
+  if (!settingsFilePath || !runtimeCfg) return;
   await fs.mkdir(path.dirname(settingsFilePath), { recursive: true });
   await fs.writeFile(
     settingsFilePath,

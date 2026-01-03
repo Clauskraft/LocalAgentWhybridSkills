@@ -41,6 +41,10 @@ export function loadConfig(): Phase2Config {
   const useCloud = parseBool(process.env["SCA_USE_CLOUD"], false);
   const ollamaHost = process.env["OLLAMA_HOST"] ?? (useCloud ? "" : "http://localhost:11434");
 
+  // Debug log to verify environment is loaded
+  console.log("[loadConfig] OLLAMA_HOST:", process.env["OLLAMA_HOST"], "→", ollamaHost);
+  console.log("[loadConfig] OLLAMA_MODEL:", process.env["OLLAMA_MODEL"]);
+
   return {
     // LLM - Production defaults for desktop agent
     ollamaHost,
