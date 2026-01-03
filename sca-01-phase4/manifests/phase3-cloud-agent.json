@@ -1,0 +1,22 @@
+{
+  "id": "sca-01-cloud",
+  "name": "SCA-01 Cloud (Phase 3)",
+  "version": "0.3.0",
+  "description": "Remote agent endpoint for Phase 3 MCP over HTTP (Railway).",
+  "author": "Clauskraft",
+
+  "transport": "http",
+  "endpoint": "https://sca-01-phase3-production.up.railway.app/mcp",
+
+  "capabilities": [],
+  "resources": [],
+  "prompts": [],
+
+  "trustLevel": "verified",
+  "tags": ["cloud", "phase3", "mcp"],
+
+  "createdAt": "2026-01-03T00:00:00Z",
+  "updatedAt": "2026-01-03T00:00:00Z"
+}
+
+
