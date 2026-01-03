@@ -20,6 +20,7 @@ Commands:
   
   mesh start                 Start the mesh orchestrator
   mesh status                Show mesh status
+  mesh ping <agentId>        Ping/heartbeat a specific agent (online/offline/degraded + reason)
   mesh tools                 List all tools from all agents
   mesh call <agent> <tool>   Call a tool on an agent
   
@@ -105,6 +106,31 @@ Online:        ${status.online}
 Offline:       ${status.offline}
 Connections:   ${status.connections.length > 0 ? status.connections.join(", ") : "(none)"}
 `);
+
+  // Per-agent health summary (online/offline/degraded + short reason)
+  await registry.load();
+  const entries = registry.list();
+  if (entries.length > 0) {
+    console.log("Agents:");
+    for (const e of entries) {
+      const s = e.state.status;
+      const derived =
+        s === "online" ? "online" : s === "offline" ? "offline" : s === "busy" ? "online" : "degraded";
+      const reason = e.state.errorMessage ? ` (${e.state.errorMessage})` : "";
+      console.log(`  ${e.manifest.id}: ${derived}${reason}`);
+    }
+  }
+
+  await orchestrator.stop();
+}
+
+async function cmdMeshPing(agentId: string): Promise<void> {
+  await orchestrator.start();
+
+  const res = await orchestrator.pingAgent(agentId);
+  const reason = res.reason ? ` — ${res.reason}` : "";
+
+  console.log(`${res.agentId}: ${res.status} (${res.latencyMs}ms)${reason}`);
 
   await orchestrator.stop();
 }
@@ -226,6 +252,8 @@ async function main(): Promise<void> {
       await cmdRegistryRemove(args[2]);
     } else if (cmd === "mesh" && subcmd === "status") {
       await cmdMeshStatus();
+    } else if (cmd === "mesh" && subcmd === "ping" && args[2]) {
+      await cmdMeshPing(args[2]);
     } else if (cmd === "mesh" && subcmd === "tools") {
       await cmdMeshTools();
     } else if (cmd === "mesh" && subcmd === "call" && args[2] && args[3]) {

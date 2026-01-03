@@ -182,6 +182,66 @@ export class MeshOrchestrator {
     }
   }
 
+  public async pingAgent(
+    agentId: string,
+    timeoutMs: number = this.config.defaultTimeout
+  ): Promise<{ agentId: string; status: "online" | "offline" | "degraded"; latencyMs: number; reason?: string }> {
+    const entry = this.registry.get(agentId);
+    if (!entry) {
+      return { agentId, status: "offline", latencyMs: 0, reason: "agent_not_found" };
+    }
+
+    const start = Date.now();
+    try {
+      if (entry.manifest.transport === "http") {
+        const baseUrl = normalizePhase3BaseUrl(entry.manifest.endpoint);
+        const ok = await ping(`${baseUrl}/health`, timeoutMs);
+        const latencyMs = Date.now() - start;
+        if (!ok) {
+          this.registry.updateStatus(agentId, "offline", "health_check_failed");
+          return { agentId, status: "offline", latencyMs, reason: "health_check_failed" };
+        }
+
+        // Ensure token acquisition works (degraded if auth fails)
+        try {
+          const tm = new Phase3TokenManager(baseUrl);
+          await tm.getAccessToken(timeoutMs);
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "auth_failed";
+          this.registry.updateStatus(agentId, "error", msg);
+          return { agentId, status: "degraded", latencyMs, reason: msg };
+        }
+
+        this.registry.updateStatus(agentId, "online");
+        return { agentId, status: "online", latencyMs };
+      }
+
+      // stdio: verify we can list tools within timeout
+      const conn = this.connections.get(agentId);
+      if (!conn || !("client" in conn)) {
+        // try connecting
+        await this.connectAgent(entry);
+      }
+      const conn2 = this.connections.get(agentId);
+      if (!conn2 || !("client" in conn2)) {
+        this.registry.updateStatus(agentId, "offline", "no_connection");
+        return { agentId, status: "offline", latencyMs: Date.now() - start, reason: "no_connection" };
+      }
+
+      await Promise.race([
+        conn2.client.listTools(),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), timeoutMs)),
+      ]);
+
+      this.registry.updateStatus(agentId, "online");
+      return { agentId, status: "online", latencyMs: Date.now() - start };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.registry.updateStatus(agentId, "error", msg);
+      return { agentId, status: "degraded", latencyMs: Date.now() - start, reason: msg };
+    }
+  }
+
   async stop(): Promise<void> {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
