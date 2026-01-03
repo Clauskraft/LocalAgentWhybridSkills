@@ -5,7 +5,7 @@
 export const DEFAULT_ENV = {
   // Ollama Configuration
   OLLAMA_HOST: "http://localhost:11434",
-  OLLAMA_MODEL: "qwen2.5-coder:7b",
+  OLLAMA_MODEL: "qwen3:8b",
 
   // Permissions
   SCA_ALLOW_WRITE: "true",

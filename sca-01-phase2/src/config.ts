@@ -44,7 +44,7 @@ export function loadConfig(): Phase2Config {
   return {
     // LLM - Production defaults for desktop agent
     ollamaHost,
-    ollamaModel: process.env["OLLAMA_MODEL"] ?? "qwen2.5-coder:7b",
+    ollamaModel: process.env["OLLAMA_MODEL"] ?? "qwen3:8b",
 
     // UI / Cloud preference - Dark theme as default
     theme: process.env["SCA_THEME"] ?? "dark",

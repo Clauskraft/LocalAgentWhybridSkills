@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run lint:*)",
+      "Bash(npm test:*)",
+      "Bash(node -p:*)",
+      "Bash(npm run build:*)",
+      "Bash(git add:*)",
+      "Bash(git reset:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)",
+      "Bash(tasklist:*)",
+      "Bash(start \"\" \"dist-electron/win-arm64-unpacked/SCA-01 The Finisher.exe\")",
+      "Bash(cat:*)",
+      "Bash(npm run build:ui:dir:*)",
+      "Bash(start \"\" \"c:\\Users\\claus\\Projects\\Local_Agent\\sca-01-phase2\\dist-electron\\win-arm64-unpacked\\SCA-01 The Finisher.exe\")",
+      "Bash(npm install:*)",
+      "Bash(sca-01-phase2/src/updater/autoUpdater.ts)",
+      "Bash(sca-01-phase2/scripts/release.ps1)",
+      "Bash(sca-01-phase2/scripts/release.sh:*)",
+      "Bash(chmod:*)",
+      "Bash(src/mcp/serverCatalog.ts)",
+      "Bash(git cherry-pick:*)",
+      "Bash(cmd //c start \"\" \"dist-electron\\win-arm64-unpacked\\SCA-01 The Finisher.exe\")",
+      "Bash(npx electron-builder:*)",
+      "Bash(npx asar:*)",
+      "Bash(start \"\" \"dist-electron\\win-arm64-unpacked\\SCA-01 The Finisher.exe\")",
+      "Bash(curl:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
