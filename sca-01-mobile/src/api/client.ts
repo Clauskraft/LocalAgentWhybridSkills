@@ -2,8 +2,6 @@
  * SCA-01 Cloud API Client
  * Kommunikerer med Railway-hosted backend
  */
-import * as SecureStore from "expo-secure-store";
-
 const API_BASE_URL = "https://sca-01-phase3-production.up.railway.app";
 
 export type ApiLogEntry = {
@@ -44,6 +42,40 @@ interface ApiResponse<T> {
   error?: string;
 }
 
+type TokenStore = {
+  getItem(key: string): Promise<string | null>;
+  setItem(key: string, value: string): Promise<void>;
+  deleteItem(key: string): Promise<void>;
+};
+
+const memoryStore: Record<string, string> = {};
+let resolvedStore: TokenStore | null = null;
+
+async function getTokenStore(): Promise<TokenStore> {
+  if (resolvedStore) return resolvedStore;
+  try {
+    const SecureStore = await import("expo-secure-store");
+    resolvedStore = {
+      getItem: (key) => SecureStore.getItemAsync(key),
+      setItem: (key, value) => SecureStore.setItemAsync(key, value),
+      deleteItem: (key) => SecureStore.deleteItemAsync(key),
+    };
+    return resolvedStore;
+  } catch {
+    // Node/test fallback (no Expo runtime)
+    resolvedStore = {
+      getItem: async (key) => (key in memoryStore ? memoryStore[key]! : null),
+      setItem: async (key, value) => {
+        memoryStore[key] = value;
+      },
+      deleteItem: async (key) => {
+        delete memoryStore[key];
+      },
+    };
+    return resolvedStore;
+  }
+}
+
 class ApiClient {
   private tokens: AuthTokens | null = null;
   private logs: ApiLogEntry[] = [];
@@ -60,7 +92,8 @@ class ApiClient {
 
   async initialize(): Promise<boolean> {
     try {
-      const stored = await SecureStore.getItemAsync("auth_tokens");
+      const store = await getTokenStore();
+      const stored = await store.getItem("auth_tokens");
       if (stored) {
         this.tokens = JSON.parse(stored);
         // Check if token is expired
@@ -98,7 +131,8 @@ class ApiClient {
         refreshToken: data.refreshToken,
         expiresAt: Date.now() + (data.expiresIn || 900) * 1000,
       };
-      await SecureStore.setItemAsync("auth_tokens", JSON.stringify(this.tokens));
+      const store = await getTokenStore();
+      await store.setItem("auth_tokens", JSON.stringify(this.tokens));
 
       return { success: true, data: { userId: data.userId } };
     } catch (e) {
@@ -130,7 +164,8 @@ class ApiClient {
 
   async logout(): Promise<void> {
     this.tokens = null;
-    await SecureStore.deleteItemAsync("auth_tokens");
+    const store = await getTokenStore();
+    await store.deleteItem("auth_tokens");
   }
 
   private async refreshToken(): Promise<boolean> {
@@ -164,7 +199,8 @@ class ApiClient {
         refreshToken: data.refreshToken,
         expiresAt: Date.now() + (data.expiresIn || 900) * 1000,
       };
-      await SecureStore.setItemAsync("auth_tokens", JSON.stringify(this.tokens));
+      const store = await getTokenStore();
+      await store.setItem("auth_tokens", JSON.stringify(this.tokens));
       this.pushLog({
         ts: new Date().toISOString(),
         method: "POST",
