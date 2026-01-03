@@ -58,7 +58,7 @@ const api: SCA01API = {
       const cfg = await ipcRenderer.invoke("get-config");
       return {
         ollamaHost: (cfg as { ollamaHost?: string })?.ollamaHost ?? "http://localhost:11434",
-        model: (cfg as { ollamaModel?: string })?.ollamaModel ?? "qwen3",
+        model: (cfg as { ollamaModel?: string })?.ollamaModel ?? "qwen2.5-coder:7b",
         theme: (cfg as { theme?: string })?.theme ?? "dark",
         backendUrl: (cfg as { backendUrl?: string })?.backendUrl ?? "",
         useCloud: (cfg as { useCloud?: boolean })?.useCloud ?? false,

@@ -1,5 +1,14 @@
 /// <reference types="node" />
-import { app, BrowserWindow, ipcMain, dialog, Notification, safeStorage } from "electron";
+type ElectronModule = typeof import("electron");
+type BrowserWindowInstance = InstanceType<ElectronModule["BrowserWindow"]>;
+
+let app: ElectronModule["app"];
+let BrowserWindow: ElectronModule["BrowserWindow"];
+let ipcMain: ElectronModule["ipcMain"];
+let dialog: ElectronModule["dialog"];
+let Notification: ElectronModule["Notification"];
+let safeStorage: ElectronModule["safeStorage"];
+
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs/promises";
@@ -41,7 +50,7 @@ console.log("  - Write:", process.env.SCA_ALLOW_WRITE);
 console.log("  - Exec:", process.env.SCA_ALLOW_EXEC);
 console.log("  - Turns:", process.env.SCA_MAX_TURNS);
 
-let mainWindow: BrowserWindow | null = null;
+let mainWindow: BrowserWindowInstance | null = null;
 let agent: DesktopAgent | null = null;
 let log: HyperLog | null = null;
 let runtimeCfg: Phase2Config;
@@ -648,7 +657,17 @@ async function setupIpc(): Promise<void> {
   setupCloudIpc();
 }
 
-app.whenReady().then(async () => {
+export async function startMain(electron: ElectronModule): Promise<void> {
+  // Bind electron runtime APIs (keeps this module ESM-safe without importing 'electron')
+  app = electron.app;
+  BrowserWindow = electron.BrowserWindow;
+  ipcMain = electron.ipcMain;
+  dialog = electron.dialog;
+  Notification = electron.Notification;
+  safeStorage = electron.safeStorage;
+
+  await app.whenReady();
+
   await setupIpc();
 
   // Ensure settings.json always exists and contains a full default shape
@@ -659,29 +678,16 @@ app.whenReady().then(async () => {
 
   createWindow();
 
-  // TODO: Re-enable auto-updater after fixing ESM/CJS loading issue
-  // const updater = initUpdater({
-  //   checkOnStartup: true,
-  //   autoDownload: true,
-  //   autoInstallOnQuit: true,
-  //   checkInterval: 60 * 60 * 1000, // 1 hour
-  // }, runtimeCfg.logDir);
-  //
-  // if (mainWindow) {
-  //   updater.setMainWindow(mainWindow);
-  //   updater.startPeriodicChecks();
-  // }
-
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
   });
-});
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
-});
+  app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") {
+      app.quit();
+    }
+  });
+}
 
