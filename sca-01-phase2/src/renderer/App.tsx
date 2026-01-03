@@ -75,6 +75,12 @@ export function App() {
         isLoading={isLoading}
         currentModel={settings.model}
         ollamaStatus={ollamaStatus}
+        security={{
+          fullAccess: !!settings.fullAccess,
+          autoApprove: !!settings.autoApprove,
+          safeDirsCount: Array.isArray(settings.safeDirs) ? settings.safeDirs.length : 0,
+          useCloud: !!settings.useCloud,
+        }}
         onSendMessage={handleSendMessage}
         onOpenSettings={openSettings}
       />

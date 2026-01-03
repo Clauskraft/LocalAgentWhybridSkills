@@ -8,6 +8,12 @@ interface ChatAreaProps {
   isLoading: boolean;
   currentModel: string;
   ollamaStatus: 'online' | 'offline' | 'checking';
+  security: {
+    fullAccess: boolean;
+    autoApprove: boolean;
+    safeDirsCount: number;
+    useCloud: boolean;
+  };
   onSendMessage: (content: string) => Promise<void>;
   onOpenSettings: (tab: string) => void;
 }
@@ -17,6 +23,7 @@ export const ChatArea = memo(function ChatArea({
   isLoading,
   currentModel,
   ollamaStatus,
+  security,
   onSendMessage,
   onOpenSettings,
 }: ChatAreaProps) {
@@ -62,6 +69,8 @@ export const ChatArea = memo(function ChatArea({
     setInput(target.value);
   }, []);
 
+  const untrusted = detectUntrustedContent(messages);
+
   return (
     <main className="flex-1 flex flex-col h-screen bg-bg-primary">
       {/* Header */}
@@ -74,7 +83,7 @@ export const ChatArea = memo(function ChatArea({
           >
             <div>
               <div className="font-semibold text-sm">{currentModel}</div>
-              <div className="text-xs text-text-muted">Ollama</div>
+              <div className="text-xs text-text-muted">{security.useCloud ? 'Cloud' : 'Ollama'}</div>
             </div>
             <span className="text-text-muted">▼</span>
           </button>
@@ -113,6 +122,22 @@ export const ChatArea = memo(function ChatArea({
 
         {/* Status */}
         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded-md text-sm">
+            <span className={security.fullAccess ? 'text-warning' : 'text-text-muted'}>
+              {security.fullAccess ? '⚠️' : '🔒'}
+            </span>
+            <span className="text-text-secondary">
+              {security.fullAccess ? 'Full access' : 'Safe mode'}
+            </span>
+            <span className="text-text-muted">·</span>
+            <span className="text-text-muted">
+              {security.safeDirsCount} safe dirs
+            </span>
+            <span className="text-text-muted">·</span>
+            <span className={security.autoApprove ? 'text-warning' : 'text-text-muted'}>
+              {security.autoApprove ? 'Auto-approve' : 'Manual approve'}
+            </span>
+          </div>
           <button
             onClick={() => onOpenSettings('mcp')}
             className="px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded-md text-sm text-text-secondary hover:bg-bg-hover transition-colors"
@@ -132,6 +157,20 @@ export const ChatArea = memo(function ChatArea({
           </div>
         </div>
       </header>
+
+      {untrusted.flagged && (
+        <div className="px-6 py-2 border-b border-border-primary bg-bg-secondary">
+          <div className="max-w-3xl mx-auto px-2">
+            <div className="rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2 text-sm text-text-secondary">
+              <span className="text-warning">⚠️ Untrusted content detected.</span>{" "}
+              This chat contains instruction-like text that could be prompt-injection. Tools are still gated by policy and approvals.
+              {untrusted.reasons.length > 0 && (
+                <span className="text-text-muted"> ({untrusted.reasons.join(", ")})</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Chat Messages / Welcome */}
       {messages.length === 0 ? (
@@ -209,6 +248,27 @@ export const ChatArea = memo(function ChatArea({
     </main>
   );
 });
+
+function detectUntrustedContent(messages: Message[]): { flagged: boolean; reasons: string[] } {
+  const reasons = new Set<string>();
+
+  const needles: Array<{ label: string; re: RegExp }> = [
+    { label: "override_instructions", re: /\b(ignore|override)\b.*\b(instruction|rules|policy)\b/i },
+    { label: "reveal_system", re: /\b(system prompt|developer message|hidden instructions)\b/i },
+    { label: "exfiltrate_secrets", re: /\b(token|api key|credential|password|refresh token)\b/i },
+    { label: "tool_escalation", re: /\b(run|execute)\b.*\b(command|powershell|shell)\b/i },
+  ];
+
+  for (const m of messages) {
+    if (m.role !== "user" && m.role !== "assistant") continue;
+    const text = m.content ?? "";
+    for (const n of needles) {
+      if (n.re.test(text)) reasons.add(n.label);
+    }
+  }
+
+  return { flagged: reasons.size > 0, reasons: Array.from(reasons) };
+}
 
 function ToolButton({ 
   icon, 
