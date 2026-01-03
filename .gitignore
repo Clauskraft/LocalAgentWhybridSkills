@@ -42,3 +42,10 @@ temp/
 # Repo-local tooling
 tools/rg/
 
+# Cursor/Serena agent artifacts
+.serena/
+
+# Playwright artifacts (Phase 2)
+sca-01-phase2/playwright-report/
+sca-01-phase2/test-results/
+

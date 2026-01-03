@@ -4,13 +4,25 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs/promises";
 import { globalApprovalQueue } from "../approval/approvalQueue.js";
-import { loadConfig } from "../config.js";
+import type { Phase2Config } from "../config.js";
 import { DesktopAgent } from "../agent/DesktopAgent.js";
 import { HyperLog } from "../logging/hyperlog.js";
 import { DEFAULT_ENV } from "../defaultConfig.js";
+import { isOllamaInstalled, startOllama } from "../startup/bootstrap.js";
+import {
+  loadUnifiedConfig,
+  saveUnifiedConfig,
+  saveUnifiedSecrets,
+  toPhase2RuntimeConfig,
+  type CryptoProvider,
+  type UnifiedConfigPaths,
+} from "../config/unifiedConfig.js";
+import type { UnifiedConfig, UnifiedSecrets } from "../config/unifiedSchema.js";
 // import { initUpdater } from "../updater/autoUpdater.js"; // TODO: Fix ESM/CJS loading issue
 
 import type { ApprovalRequest } from "../approval/approvalQueue.js";
+
+const DEFAULT_RAILWAY_BACKEND = "https://sca-01-phase3-production.up.railway.app";
 
 // ES Module __dirname polyfill
 const __filename = fileURLToPath(import.meta.url);
@@ -32,8 +44,13 @@ console.log("  - Turns:", process.env.SCA_MAX_TURNS);
 let mainWindow: BrowserWindow | null = null;
 let agent: DesktopAgent | null = null;
 let log: HyperLog | null = null;
-let runtimeCfg: ReturnType<typeof loadConfig>;
-let settingsFilePath: string | null = null;
+let runtimeCfg: Phase2Config;
+
+let unifiedCfg: UnifiedConfig | null = null;
+let unifiedSecrets: UnifiedSecrets | null = null;
+let unifiedPaths: UnifiedConfigPaths | null = null;
+let cryptoProvider: CryptoProvider | null = null;
+
 let cloudAccessToken: string | null = null;
 let cloudRefreshTokenEncrypted: string | null = null;
 
@@ -66,31 +83,125 @@ function decryptFromStorage(valueB64: string): string {
   return safeStorage.decryptString(buf);
 }
 
-async function persistSettingsToDisk(): Promise<void> {
-  if (!settingsFilePath || !runtimeCfg) return;
-  await fs.mkdir(path.dirname(settingsFilePath), { recursive: true });
-  await fs.writeFile(
-    settingsFilePath,
-    JSON.stringify(
-      {
-        ollamaHost: runtimeCfg.ollamaHost,
-        ollamaModel: runtimeCfg.ollamaModel,
-        maxTurns: runtimeCfg.maxTurns,
-        fullAccess: runtimeCfg.fullAccess,
-        autoApprove: runtimeCfg.autoApprove,
-        backendUrl: runtimeCfg.backendUrl,
-        useCloud: runtimeCfg.useCloud,
-        theme: runtimeCfg.theme,
-        safeDirs: runtimeCfg.safeDirs,
+function createCryptoProvider(): CryptoProvider {
+  return {
+    isAvailable: () => safeStorage.isEncryptionAvailable(),
+    encryptString: (plain: string) => {
+      if (!safeStorage.isEncryptionAvailable()) {
+        throw new Error("OS encryption is not available (safeStorage)");
+      }
+      return safeStorage.encryptString(plain).toString("base64");
+    },
+    decryptString: (b64: string) => {
+      if (!safeStorage.isEncryptionAvailable()) {
+        throw new Error("OS encryption is not available (safeStorage)");
+      }
+      const buf = Buffer.from(b64, "base64");
+      return safeStorage.decryptString(buf);
+    },
+  };
+}
 
-        // Encrypted secrets (never expose to renderer)
-        cloudRefreshTokenEncrypted,
-      },
-      null,
-      2
-    ),
-    { encoding: "utf8" }
-  );
+async function persistUnifiedToDisk(): Promise<void> {
+  if (!unifiedPaths || !unifiedCfg || !unifiedSecrets) return;
+  await saveUnifiedConfig(unifiedPaths, unifiedCfg);
+  await saveUnifiedSecrets(unifiedPaths, unifiedSecrets);
+}
+
+function parseOllamaHost(hostUrl: string | undefined | null): { host: string; port: number; baseUrl: string } {
+  const fallback = { host: "localhost", port: 11434, baseUrl: "http://localhost:11434" };
+  const raw = (hostUrl ?? "").trim();
+  if (!raw) return fallback;
+  try {
+    const u = new URL(raw);
+    const host = u.hostname || "localhost";
+    const port = u.port ? Number(u.port) : 11434;
+    const baseUrl = `${u.protocol}//${host}:${port}`;
+    return { host, port, baseUrl };
+  } catch {
+    return fallback;
+  }
+}
+
+async function ping(url: string, timeoutMs: number): Promise<boolean> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function ensureDefaultsPersisted(): Promise<void> {
+  // Unified config load always persists a full default shape if missing.
+  // This remains as a no-op wrapper for backward compatibility.
+  await persistUnifiedToDisk();
+}
+
+async function ensureConnectivityOnStartup(): Promise<void> {
+  if (!runtimeCfg) return;
+
+  const cloudBackend = (runtimeCfg.backendUrl ?? "").trim() || DEFAULT_RAILWAY_BACKEND;
+  const cloudOk = await ping(`${cloudBackend.replace(/\/+$/, "")}/health`, 2500);
+
+  // If user explicitly wants cloud and it's reachable, keep it.
+  if (runtimeCfg.useCloud && cloudOk) return;
+
+  const { host, port, baseUrl } = parseOllamaHost(runtimeCfg.ollamaHost);
+  const localOk = await ping(`${baseUrl}/api/version`, 2500);
+  if (localOk) {
+    if (runtimeCfg.useCloud) {
+      runtimeCfg = { ...runtimeCfg, useCloud: false };
+        if (unifiedCfg) {
+          unifiedCfg = { ...unifiedCfg, useCloud: false };
+          await persistUnifiedToDisk();
+        }
+    }
+    return;
+  }
+
+  // Try to start Ollama if it's installed.
+  try {
+    const installed = await isOllamaInstalled();
+    if (installed) {
+      const started = await startOllama({
+        host,
+        port,
+        model: runtimeCfg.ollamaModel,
+        autoStart: true,
+        startTimeout: 15000,
+      });
+      if (started) {
+        const okAfter = await ping(`${baseUrl}/api/version`, 2500);
+        if (okAfter) {
+          runtimeCfg = { ...runtimeCfg, useCloud: false };
+          if (unifiedCfg) {
+            unifiedCfg = { ...unifiedCfg, useCloud: false };
+            await persistUnifiedToDisk();
+          }
+          return;
+        }
+      }
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log?.warn("startup.ollama.autostart_failed", msg);
+  }
+
+  // Fallback to cloud if local isn't reachable.
+  runtimeCfg = {
+    ...runtimeCfg,
+    useCloud: true,
+    backendUrl: cloudBackend,
+  };
+  if (unifiedCfg) {
+    unifiedCfg = { ...unifiedCfg, useCloud: true, backendUrl: cloudBackend };
+    await persistUnifiedToDisk();
+  }
 }
 
 async function cloudLogin(email: string, password: string): Promise<void> {
@@ -110,7 +221,10 @@ async function cloudLogin(email: string, password: string): Promise<void> {
   }
   cloudAccessToken = data.access_token;
   cloudRefreshTokenEncrypted = encryptForStorage(data.refresh_token);
-  await persistSettingsToDisk();
+  if (unifiedSecrets) {
+    unifiedSecrets = { ...unifiedSecrets, cloudRefreshTokenEncrypted: cloudRefreshTokenEncrypted ?? undefined };
+  }
+  await persistUnifiedToDisk();
 }
 
 async function cloudRefresh(): Promise<void> {
@@ -132,7 +246,10 @@ async function cloudRefresh(): Promise<void> {
   }
   cloudAccessToken = data.access_token;
   cloudRefreshTokenEncrypted = encryptForStorage(data.refresh_token);
-  await persistSettingsToDisk();
+  if (unifiedSecrets) {
+    unifiedSecrets = { ...unifiedSecrets, cloudRefreshTokenEncrypted: cloudRefreshTokenEncrypted ?? undefined };
+  }
+  await persistUnifiedToDisk();
 }
 
 async function cloudRequest<T>(method: string, pathSuffix: string, body?: unknown): Promise<T> {
@@ -341,7 +458,21 @@ function setupChatIpc(): void {
 
     runtimeCfg = next;
 
-    await persistSettingsToDisk();
+    if (unifiedCfg) {
+      unifiedCfg = {
+        ...unifiedCfg,
+        ollamaHost: runtimeCfg.ollamaHost,
+        ollamaModel: runtimeCfg.ollamaModel,
+        maxTurns: runtimeCfg.maxTurns,
+        fullAccess: runtimeCfg.fullAccess,
+        autoApprove: runtimeCfg.autoApprove,
+        backendUrl: runtimeCfg.backendUrl ?? "",
+        useCloud: !!runtimeCfg.useCloud,
+        theme: runtimeCfg.theme ?? "dark",
+        safeDirs: runtimeCfg.safeDirs,
+      };
+      await persistUnifiedToDisk();
+    }
 
     return true;
   });
@@ -370,7 +501,10 @@ function setupCloudIpc(): void {
   ipcMain.handle("cloud-logout", async () => {
     cloudAccessToken = null;
     cloudRefreshTokenEncrypted = null;
-    await persistSettingsToDisk();
+    if (unifiedSecrets) {
+      unifiedSecrets = { ...unifiedSecrets, cloudRefreshTokenEncrypted: undefined };
+    }
+    await persistUnifiedToDisk();
     return { success: true };
   });
 
@@ -391,40 +525,24 @@ function setupCloudIpc(): void {
 }
 
 async function setupIpc(): Promise<void> {
-  const cfg = loadConfig();
-  runtimeCfg = cfg;
-  settingsFilePath = path.join(app.getPath("userData"), "settings.json");
+  cryptoProvider = createCryptoProvider();
+  const userDataDir = app.getPath("userData");
+  unifiedPaths = {
+    configPath: path.join(userDataDir, "sca01-config.json"),
+    secretsPath: path.join(userDataDir, "sca01-secrets.json"),
+    legacySettingsPath: path.join(userDataDir, "settings.json"),
+    legacyConfigDir: path.resolve(process.cwd(), "config"),
+  };
 
-  // Load persisted overrides (best-effort) BEFORE agent/log init
-  if (settingsFilePath) {
-    try {
-      const raw = await fs.readFile(settingsFilePath, { encoding: "utf8" });
-      const persisted = JSON.parse(raw) as unknown;
-      if (persisted && typeof persisted === "object") {
-        const p = persisted as Record<string, unknown>;
-        const next = { ...runtimeCfg };
+  const loaded = await loadUnifiedConfig(unifiedPaths, cryptoProvider);
+  unifiedCfg = loaded.config;
+  unifiedSecrets = loaded.secrets;
 
-        if (typeof p.ollamaHost === "string") next.ollamaHost = p.ollamaHost;
-        if (typeof p.ollamaModel === "string") next.ollamaModel = p.ollamaModel;
-        if (typeof p.maxTurns === "number" && Number.isFinite(p.maxTurns)) next.maxTurns = p.maxTurns;
-        if (typeof p.fullAccess === "boolean") next.fullAccess = p.fullAccess;
-        if (typeof p.autoApprove === "boolean") next.autoApprove = p.autoApprove;
-        if (typeof p.backendUrl === "string") next.backendUrl = p.backendUrl;
-        if (typeof p.useCloud === "boolean") next.useCloud = p.useCloud;
-        if (typeof p.theme === "string") next.theme = p.theme;
-        if (Array.isArray(p.safeDirs) && p.safeDirs.every((x) => typeof x === "string")) {
-          next.safeDirs = p.safeDirs.map((x) => x.trim()).filter(Boolean);
-        }
-        if (typeof p.cloudRefreshTokenEncrypted === "string" && p.cloudRefreshTokenEncrypted.trim().length > 0) {
-          cloudRefreshTokenEncrypted = p.cloudRefreshTokenEncrypted.trim();
-        }
+  // Ensure all child processes (MCP toolserver, etc.) read the same canonical config.
+  process.env["SCA_UNIFIED_CONFIG_PATH"] = unifiedPaths.configPath;
 
-        runtimeCfg = next;
-      }
-    } catch {
-      // ignore missing/invalid settings
-    }
-  }
+  runtimeCfg = toPhase2RuntimeConfig(unifiedCfg);
+  cloudRefreshTokenEncrypted = unifiedSecrets.cloudRefreshTokenEncrypted ?? null;
 
   log = new HyperLog(runtimeCfg.logDir, "ui.hyperlog.jsonl");
   agent = new DesktopAgent(runtimeCfg);
@@ -532,6 +650,13 @@ async function setupIpc(): Promise<void> {
 
 app.whenReady().then(async () => {
   await setupIpc();
+
+  // Ensure settings.json always exists and contains a full default shape
+  await ensureDefaultsPersisted();
+
+  // Ensure we pick a working backend BEFORE the UI loads
+  await ensureConnectivityOnStartup();
+
   createWindow();
 
   // TODO: Re-enable auto-updater after fixing ESM/CJS loading issue

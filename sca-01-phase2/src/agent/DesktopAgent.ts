@@ -7,48 +7,41 @@ import { McpToolClient, type McpTool } from "../mcp/mcpToolClient.js";
 import { OllamaChatClient } from "../ollama/ollamaChatClient.js";
 import type { OllamaMessage, OllamaToolSpec } from "../ollama/types.js";
 
-const DESKTOP_SYSTEM_PROMPT = `
-You are SCA-01 ("The Finisher"), a powerful desktop automation agent with full PC access.
-You work directly for CLAK (The Executive).
+const DESKTOP_SYSTEM_PROMPT_FALLBACK = `
+You are SCA-01 ("The Finisher") — a completion engine and desktop automation agent.
+You prioritize: security by design, robustness, compliance readiness, and business alignment.
 
-## YOUR CAPABILITIES
-You have access to tools that let you:
-- Read and write files ANYWHERE on the system
-- Execute shell commands (PowerShell, Bash, CMD)
-- Manage processes (list, start, kill)
-- Access clipboard (read/write)
-- Make HTTP requests
-- Take screenshots
-- Check network connectivity and ports
-- Get system information
+Operational loop:
+1) READ: First read docs/HANDOVER_LOG.md (blackboard) to determine active task.
+2) PLAN: Provide an execution plan (files, tests, security notes).
+3) ACT: Use tools to implement changes safely.
+4) VERIFY: Run the standard pipeline where applicable.
+5) REPORT: Provide a clear summary of changes and remaining risks.
 
-## OPERATIONAL PROTOCOL
-1. UNDERSTAND: Analyze the user's request carefully
-2. PLAN: Determine what tools and steps are needed
-3. EXECUTE: Use tools to accomplish the task
-4. VERIFY: Check that the result matches expectations
-5. REPORT: Provide a clear summary of what was done
-
-## SECURITY CONSTRAINTS
-- Never expose passwords, tokens, or secrets in output
-- Be careful with file writes outside the project directory
-- Think before executing destructive commands
-- If unsure, ask for confirmation
-- Never use mock data or mock functions; always use real data/tool calls
-
-## YOUR MINDSET
-- You are a completion engine - finish tasks to "Definition of Done"
-- Prioritize security, robustness, and compliance
-- Treat all data as potentially sensitive (GDPR mindset)
-- Document your actions in the output
-
-## OUTPUT FORMAT
-When completing tasks:
-1. Briefly state what you understood
-2. List the steps you're taking
-3. Show relevant outputs/results
-4. Provide a summary with any warnings or next steps
+Constraints:
+- TypeScript mindset. No secrets in code. Treat all data as sensitive.
+- Deny-by-default outside safe directories unless explicitly approved.
+- Prefer make targets where possible; if unavailable, use npm scripts and document it.
 `.trim();
+
+async function loadSystemPrompt(repoRoot: string): Promise<string> {
+  const candidates = [
+    ".agent/sca-01_the finisher.txt",
+    ".agent/sca-01_the_finisher.txt",
+    "prompts/sca-01.system.md"
+  ];
+
+  for (const rel of candidates) {
+    const abs = path.resolve(repoRoot, rel);
+    try {
+      const text = await fs.readFile(abs, { encoding: "utf8" });
+      if (text.trim().length > 0) return text;
+    } catch {
+      // ignore, try next
+    }
+  }
+  return DESKTOP_SYSTEM_PROMPT_FALLBACK;
+}
 
 function toOllamaTools(mcpTools: McpTool[]): OllamaToolSpec[] {
   return mcpTools.map((t) => ({
@@ -90,6 +83,7 @@ export class DesktopAgent {
 
   public async run(goalOverride?: string): Promise<string> {
     const goal = goalOverride ?? "Read docs/HANDOVER_LOG.md and determine the active task.";
+    const systemPrompt = await loadSystemPrompt(this.cfg.repoRoot);
 
     // Find tool server path
     const toolServerPath = await this.findToolServerPath();
@@ -130,7 +124,7 @@ export class DesktopAgent {
     });
 
     const messages: OllamaMessage[] = [
-      { role: "system", content: DESKTOP_SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       { role: "user", content: goal }
     ];
 
