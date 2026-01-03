@@ -12,6 +12,7 @@ let safeStorage: ElectronModule["safeStorage"];
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs/promises";
+import { monitorEventLoopDelay } from "perf_hooks";
 import { globalApprovalQueue } from "../approval/approvalQueue.js";
 import type { Phase2Config } from "../config.js";
 import { DesktopAgent } from "../agent/DesktopAgent.js";
@@ -62,6 +63,90 @@ let cryptoProvider: CryptoProvider | null = null;
 
 let cloudAccessToken: string | null = null;
 let cloudRefreshTokenEncrypted: string | null = null;
+
+type PerfSample = {
+  ts: number;
+  rssMB: number;
+  heapUsedMB: number;
+  heapTotalMB: number;
+  extMB: number;
+  cpuUserMs: number;
+  cpuSystemMs: number;
+  eventLoopLagP50Ms: number | null;
+  eventLoopLagP95Ms: number | null;
+  eventLoopLagP99Ms: number | null;
+};
+
+const PERF_BUFFER_MAX = 600; // ~10 min @ 1s
+const perfSamples: PerfSample[] = [];
+let perfTimer: NodeJS.Timeout | null = null;
+let lastCpuUsage: NodeJS.CpuUsage | null = null;
+let lastCpuTs = 0;
+const elDelay = monitorEventLoopDelay({ resolution: 20 });
+
+function mb(bytes: number): number {
+  return Math.round((bytes / (1024 * 1024)) * 10) / 10;
+}
+
+function pushPerfSample(sample: PerfSample): void {
+  perfSamples.push(sample);
+  if (perfSamples.length > PERF_BUFFER_MAX) {
+    perfSamples.splice(0, perfSamples.length - PERF_BUFFER_MAX);
+  }
+}
+
+function startPerfSampler(intervalMs = 1000): void {
+  if (perfTimer) return;
+  try {
+    elDelay.enable();
+  } catch {
+    // ignore
+  }
+  lastCpuUsage = process.cpuUsage();
+  lastCpuTs = Date.now();
+
+  perfTimer = setInterval(() => {
+    const now = Date.now();
+    const mem = process.memoryUsage();
+    const curCpu = process.cpuUsage();
+
+    const prevCpu = lastCpuUsage ?? curCpu;
+    const cpuDelta = {
+      user: curCpu.user - prevCpu.user,
+      system: curCpu.system - prevCpu.system,
+    };
+    lastCpuUsage = curCpu;
+    lastCpuTs = now;
+
+    const p50 = Number(elDelay.percentile(50)) / 1e6;
+    const p95 = Number(elDelay.percentile(95)) / 1e6;
+    const p99 = Number(elDelay.percentile(99)) / 1e6;
+    elDelay.reset();
+
+    const sample: PerfSample = {
+      ts: now,
+      rssMB: mb(mem.rss),
+      heapUsedMB: mb(mem.heapUsed),
+      heapTotalMB: mb(mem.heapTotal),
+      extMB: mb(mem.external),
+      cpuUserMs: Math.round(cpuDelta.user / 1000),
+      cpuSystemMs: Math.round(cpuDelta.system / 1000),
+      eventLoopLagP50Ms: Number.isFinite(p50) ? Math.round(p50 * 10) / 10 : null,
+      eventLoopLagP95Ms: Number.isFinite(p95) ? Math.round(p95 * 10) / 10 : null,
+      eventLoopLagP99Ms: Number.isFinite(p99) ? Math.round(p99 * 10) / 10 : null,
+    };
+
+    pushPerfSample(sample);
+    log?.info("perf.sample", "perf.sample", sample);
+  }, intervalMs);
+
+  perfTimer.unref?.();
+}
+
+function getPerfStats(): { latest: PerfSample | null; samples: PerfSample[] } {
+  const latest = perfSamples.length ? (perfSamples[perfSamples.length - 1] ?? null) : null;
+  return { latest, samples: [...perfSamples] };
+}
 
 type CloudTokenPair = {
   access_token: string;
@@ -346,7 +431,7 @@ function createWindow(): void {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js")
+      preload: path.join(__dirname, "preload.cjs")
     },
     backgroundColor: "#1a1a2e"
   });
@@ -572,6 +657,10 @@ async function setupIpc(): Promise<void> {
     return runtimeCfg;
   });
 
+  ipcMain.handle("perf-get-stats", () => {
+    return getPerfStats();
+  });
+
   // Run agent with goal
   ipcMain.handle("run-agent", async (_event: unknown, goal: string) => {
     if (!agent) return { error: "Agent not initialized" };
@@ -669,6 +758,9 @@ export async function startMain(electron: ElectronModule): Promise<void> {
   await app.whenReady();
 
   await setupIpc();
+
+  // Start perf sampler early so we can catch leaks during app lifecycle.
+  startPerfSampler(1000);
 
   // Ensure settings.json always exists and contains a full default shape
   await ensureDefaultsPersisted();

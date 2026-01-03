@@ -29,6 +29,7 @@ const TABS = [
   { id: 'mcp', icon: '🔌', label: 'MCP Servere' },
   { id: 'prompts', icon: '📝', label: 'System Prompts' },
   { id: 'security', icon: '🔐', label: 'Sikkerhed' },
+  { id: 'perf', icon: '📈', label: 'Performance' },
   { id: 'theme', icon: '🎨', label: 'Theme' },
 ];
 
@@ -103,6 +104,9 @@ export const SettingsModal = memo(function SettingsModal({
             {activeTab === 'security' && (
               <SecuritySettings settings={settings} onUpdate={onUpdateSettings} />
             )}
+            {activeTab === 'perf' && (
+              <PerformanceSettings />
+            )}
             {activeTab === 'theme' && (
               <ThemeSettings settings={settings} onUpdate={onUpdateSettings} />
             )}
@@ -112,6 +116,75 @@ export const SettingsModal = memo(function SettingsModal({
     </div>
   );
 });
+
+function PerformanceSettings() {
+  const [latest, setLatest] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    const tick = async () => {
+      try {
+        const perf = (window as any).sca01?.perf;
+        if (!perf?.getStats) {
+          setError("Perf IPC not available");
+          return;
+        }
+        const res = await perf.getStats();
+        if (!alive) return;
+        setLatest(res?.latest ?? null);
+        setError(null);
+      } catch (e) {
+        if (!alive) return;
+        setError(e instanceof Error ? e.message : "Unknown error");
+      }
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <Section title="Performance (lokal sampler)">
+        <p className="text-sm text-text-secondary">
+          Opdateres hvert sekund. Brug dette til at spotte RAM/CPU/event-loop leaks over tid.
+        </p>
+        {error && <p className="text-sm text-red-400">{error}</p>}
+        {!latest ? (
+          <p className="text-sm text-text-muted">Ingen data endnu…</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="bg-bg-tertiary border border-border-primary rounded-lg p-3">
+              <div className="text-text-muted">RSS</div>
+              <div className="text-text-primary font-semibold">{latest.rssMB} MB</div>
+            </div>
+            <div className="bg-bg-tertiary border border-border-primary rounded-lg p-3">
+              <div className="text-text-muted">Heap used</div>
+              <div className="text-text-primary font-semibold">{latest.heapUsedMB} / {latest.heapTotalMB} MB</div>
+            </div>
+            <div className="bg-bg-tertiary border border-border-primary rounded-lg p-3">
+              <div className="text-text-muted">CPU (Δ/1s)</div>
+              <div className="text-text-primary font-semibold">{latest.cpuUserMs}ms user / {latest.cpuSystemMs}ms sys</div>
+            </div>
+            <div className="bg-bg-tertiary border border-border-primary rounded-lg p-3">
+              <div className="text-text-muted">Event loop lag</div>
+              <div className="text-text-primary font-semibold">
+                p50 {latest.eventLoopLagP50Ms ?? "—"}ms · p95 {latest.eventLoopLagP95Ms ?? "—"}ms · p99 {latest.eventLoopLagP99Ms ?? "—"}ms
+              </div>
+            </div>
+          </div>
+        )}
+        <p className="text-xs text-text-muted mt-2">
+          Tip: åbne DevTools console og kør <code className="font-mono">window.sca01.perf.getStats()</code> for fuld buffer.
+        </p>
+      </Section>
+    </div>
+  );
+}
 
 function GeneralSettings({ 
   settings, 

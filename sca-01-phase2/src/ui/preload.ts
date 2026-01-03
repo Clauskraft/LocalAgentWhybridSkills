@@ -40,6 +40,34 @@ export interface SCA01API {
     }) => Promise<{ repo: unknown }>;
     archiveRepo: (payload: { id: string }) => Promise<{ success: boolean }>;
   };
+  perf: {
+    getStats: () => Promise<{
+      latest: {
+        ts: number;
+        rssMB: number;
+        heapUsedMB: number;
+        heapTotalMB: number;
+        extMB: number;
+        cpuUserMs: number;
+        cpuSystemMs: number;
+        eventLoopLagP50Ms: number | null;
+        eventLoopLagP95Ms: number | null;
+        eventLoopLagP99Ms: number | null;
+      } | null;
+      samples: Array<{
+        ts: number;
+        rssMB: number;
+        heapUsedMB: number;
+        heapTotalMB: number;
+        extMB: number;
+        cpuUserMs: number;
+        cpuSystemMs: number;
+        eventLoopLagP50Ms: number | null;
+        eventLoopLagP95Ms: number | null;
+        eventLoopLagP99Ms: number | null;
+      }>;
+    }>;
+  };
   getPendingApprovals: () => Promise<ApprovalRequest[]>;
   getApprovalHistory: (limit: number) => Promise<ApprovalRequest[]>;
   approveRequest: (id: string) => Promise<boolean>;
@@ -80,7 +108,7 @@ const api: SCA01API = {
         }
 
         const host = (cfg as { ollamaHost?: string })?.ollamaHost ?? "http://localhost:11434";
-        if (!host || host.includes("localhost") || host.includes("127.0.0.1")) return false;
+        if (!host) return false;
         const res = await fetch(`${host.replace(/\/+$/, "")}/api/version`);
         return res.ok;
       } catch {
@@ -105,6 +133,9 @@ const api: SCA01API = {
     listRepos: (payload) => ipcRenderer.invoke("cloud-list-repos", payload),
     createRepo: (payload) => ipcRenderer.invoke("cloud-create-repo", payload),
     archiveRepo: (payload) => ipcRenderer.invoke("cloud-archive-repo", payload),
+  },
+  perf: {
+    getStats: () => ipcRenderer.invoke("perf-get-stats"),
   },
   getPendingApprovals: () => ipcRenderer.invoke("get-pending-approvals"),
   getApprovalHistory: (limit: number) => ipcRenderer.invoke("get-approval-history", limit),
