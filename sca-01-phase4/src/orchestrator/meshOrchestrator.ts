@@ -10,7 +10,7 @@ import type {
   ToolCallResponse,
   OrchestratorConfig,
 } from "../types/agent.js";
-import { registry } from "../registry/agentRegistry.js";
+import { AgentRegistry, registry as defaultRegistry } from "../registry/agentRegistry.js";
 
 const DEFAULT_CONFIG: OrchestratorConfig = {
   maxConcurrentCalls: 5,
@@ -20,28 +20,152 @@ const DEFAULT_CONFIG: OrchestratorConfig = {
   heartbeatIntervalMs: 30000,
 };
 
-interface ActiveConnection {
+type HttpTokens = {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number; // epoch ms
+};
+
+class Phase3TokenManager {
+  private baseUrl: string;
+  private tokens: HttpTokens | null = null;
+
+  public constructor(baseUrl: string) {
+    this.baseUrl = baseUrl.replace(/\/+$/, "");
+  }
+
+  private getClientCreds(): { clientId: string; clientSecret: string } {
+    const clientId =
+      (process.env.SCA_PHASE3_CLIENT_ID ?? process.env.PHASE3_CLIENT_ID ?? process.env.CLIENT_ID ?? "").trim();
+    const clientSecret =
+      (process.env.SCA_PHASE3_CLIENT_SECRET ?? process.env.PHASE3_CLIENT_SECRET ?? process.env.CLIENT_SECRET ?? "").trim();
+
+    if (!clientId || !clientSecret) {
+      throw new Error("Missing Phase3 client credentials (SCA_PHASE3_CLIENT_ID/SCA_PHASE3_CLIENT_SECRET)");
+    }
+    return { clientId, clientSecret };
+  }
+
+  private async fetchJson(url: string, init: RequestInit, timeoutMs: number): Promise<{ status: number; json: any }> {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...init, signal: controller.signal });
+      const txt = await res.text().catch(() => "");
+      let parsed: any = {};
+      try {
+        parsed = txt ? JSON.parse(txt) : {};
+      } catch {
+        parsed = { raw: txt };
+      }
+      return { status: res.status, json: parsed };
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
+  private async issueTokens(timeoutMs: number): Promise<void> {
+    const { clientId, clientSecret } = this.getClientCreds();
+    const url = `${this.baseUrl}/auth/token`;
+    const { status, json } = await this.fetchJson(
+      url,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ grant_type: "client_credentials", client_id: clientId, client_secret: clientSecret }),
+      },
+      timeoutMs
+    );
+    if (status !== 200) throw new Error(`Token issuance failed: HTTP ${status}`);
+
+    const expiresIn = Number(json?.expires_in ?? 900);
+    this.tokens = {
+      accessToken: String(json?.access_token ?? ""),
+      refreshToken: String(json?.refresh_token ?? ""),
+      expiresAt: Date.now() + Math.max(30, expiresIn - 60) * 1000, // refresh 60s early
+    };
+    if (!this.tokens.accessToken || !this.tokens.refreshToken) throw new Error("Token issuance returned invalid pair");
+  }
+
+  private async refreshTokens(timeoutMs: number): Promise<void> {
+    if (!this.tokens?.refreshToken) {
+      await this.issueTokens(timeoutMs);
+      return;
+    }
+    const url = `${this.baseUrl}/auth/token`;
+    const { status, json } = await this.fetchJson(
+      url,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ grant_type: "refresh_token", refresh_token: this.tokens.refreshToken }),
+      },
+      timeoutMs
+    );
+    if (status !== 200) {
+      // fallback: re-issue
+      this.tokens = null;
+      await this.issueTokens(timeoutMs);
+      return;
+    }
+    const expiresIn = Number(json?.expires_in ?? 900);
+    this.tokens = {
+      accessToken: String(json?.access_token ?? ""),
+      refreshToken: String(json?.refresh_token ?? ""),
+      expiresAt: Date.now() + Math.max(30, expiresIn - 60) * 1000,
+    };
+    if (!this.tokens.accessToken || !this.tokens.refreshToken) throw new Error("Token refresh returned invalid pair");
+  }
+
+  public async getAccessToken(timeoutMs: number): Promise<string> {
+    if (!this.tokens) {
+      await this.issueTokens(timeoutMs);
+      return this.tokens!.accessToken;
+    }
+    if (Date.now() >= this.tokens.expiresAt) {
+      await this.refreshTokens(timeoutMs);
+    }
+    return this.tokens!.accessToken;
+  }
+
+  public async refreshOn401(timeoutMs: number): Promise<void> {
+    await this.refreshTokens(timeoutMs);
+  }
+}
+
+type ActiveStdioConnection = {
   agentId: string;
   client: Client;
   transport: StdioClientTransport;
   lastUsed: Date;
-}
+};
+
+type ActiveHttpConnection = {
+  agentId: string;
+  baseUrl: string;
+  tokenManager: Phase3TokenManager;
+  lastUsed: Date;
+};
+
+type ActiveConnection = ActiveStdioConnection | ActiveHttpConnection;
 
 export class MeshOrchestrator {
   private config: OrchestratorConfig;
   private connections: Map<string, ActiveConnection> = new Map();
   private pendingRequests: Map<string, { resolve: (r: ToolCallResponse) => void; reject: (e: Error) => void }> = new Map();
   private heartbeatTimer: NodeJS.Timeout | null = null;
+  private registry: AgentRegistry;
 
-  constructor(config: Partial<OrchestratorConfig> = {}) {
+  constructor(config: Partial<OrchestratorConfig> = {}, registryImpl: AgentRegistry = defaultRegistry) {
     this.config = { ...DEFAULT_CONFIG, ...config };
+    this.registry = registryImpl;
   }
 
   async start(): Promise<void> {
-    await registry.load();
+    await this.registry.load();
     
     console.log("🔗 Mesh Orchestrator starting...");
-    console.log(`📋 ${registry.list().length} agents registered`);
+    console.log(`📋 ${this.registry.list().length} agents registered`);
     
     // Start heartbeat
     this.heartbeatTimer = setInterval(() => {
@@ -49,8 +173,8 @@ export class MeshOrchestrator {
     }, this.config.heartbeatIntervalMs);
     
     // Connect to all online agents
-    for (const entry of registry.list()) {
-      if (entry.manifest.transport === "stdio") {
+    for (const entry of this.registry.list()) {
+      if (entry.manifest.transport === "stdio" || entry.manifest.transport === "http") {
         await this.connectAgent(entry).catch((e) => {
           console.warn(`Failed to connect to ${entry.manifest.id}:`, e);
         });
@@ -66,15 +190,42 @@ export class MeshOrchestrator {
     
     // Close all connections
     for (const conn of this.connections.values()) {
-      await conn.transport.close().catch(() => {});
+      if ("transport" in conn) {
+        await conn.transport.close().catch(() => {});
+      }
     }
     this.connections.clear();
     
-    await registry.save();
+    await this.registry.save();
     console.log("🔗 Mesh Orchestrator stopped");
   }
 
   private async connectAgent(entry: AgentRegistryEntry): Promise<void> {
+    if (entry.manifest.transport === "http") {
+      const endpoint = entry.manifest.endpoint.trim();
+      if (!endpoint) throw new Error(`Invalid endpoint: ${entry.manifest.endpoint}`);
+      const baseUrl = normalizePhase3BaseUrl(endpoint);
+
+      // Validate cloud is reachable (public)
+      const ok = await ping(`${baseUrl}/health`, this.config.defaultTimeout);
+      if (!ok) throw new Error(`Health check failed for ${baseUrl}`);
+
+      // Prepare token manager (bearer token)
+      const tokenManager = new Phase3TokenManager(baseUrl);
+      await tokenManager.getAccessToken(this.config.defaultTimeout);
+
+      this.connections.set(entry.manifest.id, {
+        agentId: entry.manifest.id,
+        baseUrl,
+        tokenManager,
+        lastUsed: new Date(),
+      });
+
+      this.registry.updateStatus(entry.manifest.id, "online");
+      console.log(`✅ Connected to HTTP agent: ${entry.manifest.name}`);
+      return;
+    }
+
     if (entry.manifest.transport !== "stdio") {
       throw new Error(`Unsupported transport: ${entry.manifest.transport}`);
     }
@@ -103,28 +254,37 @@ export class MeshOrchestrator {
       lastUsed: new Date(),
     });
 
-    registry.updateStatus(entry.manifest.id, "online");
+    this.registry.updateStatus(entry.manifest.id, "online");
     console.log(`✅ Connected to agent: ${entry.manifest.name}`);
   }
 
   private async disconnectAgent(agentId: string): Promise<void> {
     const conn = this.connections.get(agentId);
     if (conn) {
-      await conn.transport.close().catch(() => {});
+      if ("transport" in conn) {
+        await conn.transport.close().catch(() => {});
+      }
       this.connections.delete(agentId);
-      registry.updateStatus(agentId, "offline");
+      this.registry.updateStatus(agentId, "offline");
     }
   }
 
   private async checkHeartbeats(): Promise<void> {
-    for (const entry of registry.list()) {
+    for (const entry of this.registry.list()) {
       const conn = this.connections.get(entry.manifest.id);
       
-      if (entry.manifest.transport === "stdio" && !conn) {
+      if ((entry.manifest.transport === "stdio" || entry.manifest.transport === "http") && !conn) {
         // Try to reconnect
         await this.connectAgent(entry).catch(() => {
-          registry.updateStatus(entry.manifest.id, "offline");
+          this.registry.updateStatus(entry.manifest.id, "offline");
         });
+      }
+      if (entry.manifest.transport === "http" && conn && "baseUrl" in conn) {
+        const ok = await ping(`${conn.baseUrl}/health`, this.config.defaultTimeout);
+        if (!ok) {
+          this.connections.delete(entry.manifest.id);
+          this.registry.updateStatus(entry.manifest.id, "offline", "health_check_failed");
+        }
       }
     }
   }
@@ -132,19 +292,16 @@ export class MeshOrchestrator {
   async listAllTools(): Promise<Array<{ agentId: string; agentName: string; tools: Array<{ name: string; description: string | undefined }> }>> {
     const results: Array<{ agentId: string; agentName: string; tools: Array<{ name: string; description: string | undefined }> }> = [];
 
-    for (const entry of registry.listOnline()) {
+    for (const entry of this.registry.listOnline()) {
       const conn = this.connections.get(entry.manifest.id);
       if (!conn) continue;
 
       try {
-        const toolsResult = await conn.client.listTools();
+        const toolsResult = await listToolsForConnection(conn, this.config.defaultTimeout);
         results.push({
           agentId: entry.manifest.id,
           agentName: entry.manifest.name,
-          tools: toolsResult.tools.map((t) => ({
-            name: t.name,
-            description: t.description,
-          })),
+          tools: toolsResult.map((t) => ({ name: t.name, description: t.description })),
         });
       } catch (e) {
         console.warn(`Failed to list tools for ${entry.manifest.id}:`, e);
@@ -158,7 +315,7 @@ export class MeshOrchestrator {
     const startTime = Date.now();
     
     // Find target agent
-    const entry = registry.get(request.targetAgentId);
+    const entry = this.registry.get(request.targetAgentId);
     if (!entry) {
       return {
         requestId: request.requestId,
@@ -195,21 +352,16 @@ export class MeshOrchestrator {
       try {
         const timeout = request.timeout ?? this.config.defaultTimeout;
         
-        const result = await Promise.race([
-          conn.client.callTool({ name: request.toolName, arguments: request.arguments }),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("Timeout")), timeout)
-          ),
-        ]);
+        const result = await callToolForConnection(conn, request.toolName, request.arguments, timeout);
 
         const durationMs = Date.now() - startTime;
-        registry.recordCall(request.targetAgentId, true, durationMs);
+        this.registry.recordCall(request.targetAgentId, true, durationMs);
         conn.lastUsed = new Date();
 
         return {
           requestId: request.requestId,
           success: true,
-          content: result.content,
+          content: result,
           durationMs,
         };
       } catch (e) {
@@ -222,7 +374,7 @@ export class MeshOrchestrator {
     }
 
     const durationMs = Date.now() - startTime;
-    registry.recordCall(request.targetAgentId, false, durationMs);
+    this.registry.recordCall(request.targetAgentId, false, durationMs);
 
     return {
       requestId: request.requestId,
@@ -237,7 +389,7 @@ export class MeshOrchestrator {
     args: Record<string, unknown>,
     filter?: { tags?: string[]; transport?: string }
   ): Promise<ToolCallResponse[]> {
-    let targets = registry.listOnline();
+    let targets = this.registry.listOnline();
 
     // Apply filters
     if (filter?.tags) {
@@ -279,7 +431,7 @@ export class MeshOrchestrator {
     total: number;
     connections: string[];
   } {
-    const agents = registry.list();
+    const agents = this.registry.list();
     const online = agents.filter((a) => a.state.status === "online").length;
     
     return {
@@ -293,6 +445,106 @@ export class MeshOrchestrator {
 
 // Singleton
 export const orchestrator = new MeshOrchestrator();
+
+function normalizePhase3BaseUrl(endpoint: string): string {
+  const trimmed = endpoint.trim().replace(/\/+$/, "");
+  // allow endpoint to be either base url or base url + /mcp
+  if (trimmed.endsWith("/mcp")) return trimmed.slice(0, -"/mcp".length);
+  if (trimmed.endsWith("/mcp/")) return trimmed.slice(0, -"/mcp/".length);
+  return trimmed;
+}
+
+async function ping(url: string, timeoutMs: number): Promise<boolean> {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function listToolsForConnection(
+  conn: ActiveConnection,
+  timeoutMs: number
+): Promise<Array<{ name: string; description?: string }>> {
+  if ("client" in conn) {
+    const toolsResult = await conn.client.listTools();
+    return toolsResult.tools.map((t) => ({
+      name: t.name,
+      ...(t.description ? { description: t.description } : {})
+    }));
+  }
+
+  const token = await conn.tokenManager.getAccessToken(timeoutMs);
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${conn.baseUrl}/mcp/tools`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    });
+    if (res.status === 401) {
+      await conn.tokenManager.refreshOn401(timeoutMs);
+      const retryToken = await conn.tokenManager.getAccessToken(timeoutMs);
+      const res2 = await fetch(`${conn.baseUrl}/mcp/tools`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${retryToken}` },
+        signal: controller.signal,
+      });
+      if (!res2.ok) throw new Error(`HTTP ${res2.status}`);
+      const j2 = (await res2.json()) as { tools?: Array<{ name: string; description?: string }> };
+      return j2.tools ?? [];
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const j = (await res.json()) as { tools?: Array<{ name: string; description?: string }> };
+    return j.tools ?? [];
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function callToolForConnection(
+  conn: ActiveConnection,
+  toolName: string,
+  args: Record<string, unknown>,
+  timeoutMs: number
+): Promise<unknown> {
+  if ("client" in conn) {
+    const result = await conn.client.callTool({ name: toolName, arguments: args });
+    return result.content;
+  }
+
+  const attemptCall = async (token: string): Promise<Response> => {
+    return fetch(`${conn.baseUrl}/mcp/tools/call`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ name: toolName, arguments: args }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  };
+
+  const token = await conn.tokenManager.getAccessToken(timeoutMs);
+  let res = await attemptCall(token);
+  if (res.status === 401) {
+    await conn.tokenManager.refreshOn401(timeoutMs);
+    const retryToken = await conn.tokenManager.getAccessToken(timeoutMs);
+    res = await attemptCall(retryToken);
+  }
+  const txt = await res.text().catch(() => "");
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${txt}`);
+  let parsed: unknown = {};
+  try {
+    parsed = txt ? JSON.parse(txt) : {};
+  } catch {
+    parsed = txt;
+  }
+  return parsed;
+}
 
 // CLI entry point
 if (import.meta.url === new URL(process.argv[1] ?? "", "file:").href) {
