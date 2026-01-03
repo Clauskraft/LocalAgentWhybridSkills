@@ -1,0 +1,23 @@
+appId: com.clauskraft.sca01
+productName: SCA-01 The Finisher
+copyright: Copyright © 2025 Clauskraft
+directories:
+  buildResources: build
+  output: dist-electron
+files:
+  - build/**/*
+  - package.json
+  - node_modules/**/*
+  - .env.production
+asarUnpack:
+  - node_modules/puppeteer-core/**/*
+extraResources:
+  - .env.production
+win:
+  target:
+    - target: dir
+      arch:
+        - arm64
+  artifactName: ${productName}-${version}-${arch}.${ext}
+  signtoolOptions:
+    publisherName: Clauskraft

@@ -7,6 +7,7 @@ import { globalApprovalQueue } from "../approval/approvalQueue.js";
 import { loadConfig } from "../config.js";
 import { DesktopAgent } from "../agent/DesktopAgent.js";
 import { HyperLog } from "../logging/hyperlog.js";
+import { DEFAULT_ENV } from "../defaultConfig.js";
 // import { initUpdater } from "../updater/autoUpdater.js"; // TODO: Fix ESM/CJS loading issue
 
 import type { ApprovalRequest } from "../approval/approvalQueue.js";
@@ -14,6 +15,24 @@ import type { ApprovalRequest } from "../approval/approvalQueue.js";
 // ES Module __dirname polyfill
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load default environment configuration
+function loadEnvironment() {
+  console.log("🔧 Loading default production configuration...");
+
+  // Apply defaults only if not already set
+  Object.entries(DEFAULT_ENV).forEach(([key, value]) => {
+    if (!process.env[key]) {
+      process.env[key] = value;
+    }
+  });
+
+  console.log("✅ Configuration loaded:");
+  console.log("  - Model:", process.env.OLLAMA_MODEL);
+  console.log("  - Write:", process.env.SCA_ALLOW_WRITE);
+  console.log("  - Exec:", process.env.SCA_ALLOW_EXEC);
+  console.log("  - Turns:", process.env.SCA_MAX_TURNS);
+}
 
 let mainWindow: BrowserWindow | null = null;
 let agent: DesktopAgent | null = null;
@@ -516,6 +535,7 @@ async function setupIpc(): Promise<void> {
 }
 
 app.whenReady().then(async () => {
+  loadEnvironment();
   await setupIpc();
   createWindow();
 
