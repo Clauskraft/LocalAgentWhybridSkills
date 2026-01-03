@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { resolveBackendUrl } from '../lib/backend';
 
 type OllamaStatus = 'online' | 'offline' | 'checking';
 
@@ -17,13 +18,14 @@ export interface UISettings {
 
 const DEFAULT_SETTINGS: UISettings = {
   ollamaHost: 'http://localhost:11434',
-  model: 'qwen3',
+  model: 'qwen2.5-coder:7b',
   maxTurns: 16,
   systemPrompt: '',
   fullAccess: false,
   autoApprove: false,
   theme: 'dark',
-  backendUrl: '',
+  // Browser/dev mode fallback can be configured via VITE_BACKEND_URL
+  backendUrl: resolveBackendUrl(undefined) ?? '',
   useCloud: false,
 };
 

@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import type { Chat, Message } from '../App';
+import { resolveBackendUrl } from '../lib/backend';
 
 const DEFAULT_SETTINGS = {
-  model: 'qwen3',
+  // Align with phase2 .env.production default, but browser-mode will also auto-fallback if missing.
+  model: 'qwen2.5-coder:7b',
   ollamaHost: 'http://localhost:11434',
 };
 
@@ -95,30 +97,96 @@ export function useChat() {
           );
         }
       } else {
-        // Fallback: direct HTTP call to backendUrl (no mocks)
-        const backend = settings?.backendUrl?.trim();
-        if (!backend) throw new Error("Ingen backendUrl sat og IPC er ikke tilgængelig");
-        const res = await fetch(`${backend.replace(/\/+$/, "")}/api/chat`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: payload.model,
-            messages: payload.messages,
-            stream: false,
-          }),
-        });
-        if (!res.ok) {
-          const txt = await res.text().catch(() => "");
-          throw new Error(`Cloud chat fejlede: ${res.status} ${res.statusText} ${txt}`);
+        // Browser mode (no Electron IPC):
+        // - If "useCloud" is enabled (or a backend URL is configured), use the Phase 3 backend.
+        // - Otherwise, talk directly to Ollama (best-effort; may require CORS support on Ollama).
+        const backend = resolveBackendUrl(settings?.backendUrl);
+        const wantsCloud = !!settings?.useCloud;
+
+        if (wantsCloud || backend) {
+          if (!backend) {
+            throw new Error(
+              "Cloud er slået til, men backend URL mangler. Sæt backend URL i Indstillinger → Cloud Backend, eller sæt VITE_BACKEND_URL i dit miljø."
+            );
+          }
+
+          const res = await fetch(`${backend}/api/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: payload.model,
+              messages: payload.messages,
+              stream: false,
+            }),
+          });
+          if (!res.ok) {
+            const txt = await res.text().catch(() => "");
+            throw new Error(`Cloud chat fejlede: ${res.status} ${res.statusText} ${txt}`);
+          }
+          const data = await res.json();
+          const content = data?.message?.content ?? data?.content ?? "";
+          const assistantMsg = createMessage('assistant', content);
+          assistantMsg.toolCalls = data?.message?.tool_calls;
+          setMessages((prev) => [...prev, assistantMsg]);
+          setChats((prev) =>
+            prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c)
+          );
+        } else {
+          const host = (payload.host ?? DEFAULT_SETTINGS.ollamaHost).replace(/\/+$/, "");
+
+          const callOllama = async (model: string) => {
+            return await fetch(`${host}/api/chat`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                model,
+                messages: payload.messages,
+                stream: false,
+              }),
+            });
+          };
+
+          let res = await callOllama(payload.model);
+          if (!res.ok) {
+            const txt = await res.text().catch(() => "");
+
+            // Best-effort: if configured model doesn't exist, retry with the first installed model.
+            const modelMissing = res.status === 404 && /model/i.test(txt) && /not found/i.test(txt);
+            if (modelMissing) {
+              try {
+                const tagsRes = await fetch(`${host}/api/tags`, { method: "GET" });
+                const tags = await tagsRes.json().catch(() => ({}));
+                const first = Array.isArray(tags?.models) ? tags.models[0]?.name : undefined;
+                if (typeof first === "string" && first.trim()) {
+                  res = await callOllama(first.trim());
+                  if (res.ok) {
+                    const data = await res.json();
+                    const content = data?.message?.content ?? data?.content ?? "";
+                    const assistantMsg = createMessage('assistant', content);
+                    setMessages((prev) => [...prev, assistantMsg]);
+                    setChats((prev) =>
+                      prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c)
+                    );
+                    return;
+                  }
+                }
+              } catch {
+                // fall through to error
+              }
+            }
+
+            throw new Error(
+              `Ollama chat fejlede: ${res.status} ${res.statusText} ${txt || "(ingen body)"} (tip: vælg en installeret model i Indstillinger → Modeller, eller kør i Electron for IPC)`
+            );
+          }
+          const data = await res.json();
+          const content = data?.message?.content ?? data?.content ?? "";
+          const assistantMsg = createMessage('assistant', content);
+          setMessages((prev) => [...prev, assistantMsg]);
+          setChats((prev) =>
+            prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c)
+          );
         }
-        const data = await res.json();
-        const content = data?.message?.content ?? data?.content ?? "";
-        const assistantMsg = createMessage('assistant', content);
-        assistantMsg.toolCalls = data?.message?.tool_calls;
-        setMessages((prev) => [...prev, assistantMsg]);
-        setChats((prev) =>
-          prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c)
-        );
       }
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : 'Ukendt fejl';
