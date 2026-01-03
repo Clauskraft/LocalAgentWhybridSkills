@@ -64,7 +64,7 @@ npm run sca -- run     # Run agent
 cd sca-01-phase2
 npm install
 npm run build
-npm run dev:chat       # Launch Chat UI
+npm run dev:ui         # Launch Desktop App (Electron + auto-port Vite renderer)
 ```
 
 ### Phase 3: Cloud Server

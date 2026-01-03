@@ -36,11 +36,9 @@ npm install
 # Build TypeScript
 npm run build
 
-# Run Chat UI (recommended)
-npm run dev:chat
-
-# Run Configuration Cockpit
-npm run dev:cockpit
+# Run Desktop App (recommended)
+# Starts Electron + Vite renderer on an auto-selected free port.
+npm run dev:ui
 
 # Run CLI
 npm run dev -- doctor
@@ -62,6 +60,9 @@ In cloud mode, chat requests are made from the Electron **main process** to the 
 - React 19 + Tailwind v4 via Vite (`npm run dev:renderer`)
 - Electron loader peger på Vite dev-server eller `dist/renderer`
 - Temaer (dark/light/tdc-blue/tdc-purple) kan vælges i Settings
+
+> Note: Older “chat.html” / “cockpit.html” entrypoints are considered legacy in Phase 2.
+> The supported desktop entrypoint is `npm run dev:ui`.
 
 ## Project Structure
 

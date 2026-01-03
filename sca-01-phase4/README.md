@@ -66,6 +66,9 @@ npm run dev -- registry list
 # Check mesh status
 npm run dev -- mesh status
 
+# Ping/heartbeat a specific agent
+npm run dev -- mesh ping <agentId>
+
 # List all available tools
 npm run dev -- mesh tools
 
@@ -229,7 +232,7 @@ npm run dev -- registry add phase3-manifest.json
 
 ## Roadmap
 
-- [ ] HTTP transport support
+- [x] HTTP transport support
 - [ ] WebSocket transport for real-time
 - [ ] Agent-to-agent direct communication
 - [ ] Load balancing for redundant agents

@@ -16,7 +16,8 @@ npm start
 Health check:
 
 ```bash
-curl http://127.0.0.1:3000/health
+# Default dev port is 8787 (can be overridden by PORT; Railway typically sets PORT=3000)
+curl http://127.0.0.1:8787/health
 ```
 
 ## Features

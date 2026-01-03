@@ -81,9 +81,12 @@ graph TB
 # Clone repo
 git clone https://github.com/Clauskraft/LocalAgentWhybridSkills.git
 
-# Install and run
+# Install and run (desktop dev)
 cd sca-01-phase2
 npm ci --force
+npm run dev:ui
+
+# Packaged run
 npm run start
 ```
 
