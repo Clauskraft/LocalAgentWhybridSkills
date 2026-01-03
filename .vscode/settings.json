@@ -1,6 +1,11 @@
 {
   "search.useRipgrep": true,
-  "search.ripgrep.path": "${workspaceFolder}\\\\tools\\\\rg\\\\rg.exe"
+  "search.ripgrep.path": "${workspaceFolder}\\\\tools\\\\rg\\\\rg.exe",
+
+  // Tailwind uses custom at-rules (@tailwind, @apply) which the base CSS language server flags incorrectly.
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore"
 }
 
 

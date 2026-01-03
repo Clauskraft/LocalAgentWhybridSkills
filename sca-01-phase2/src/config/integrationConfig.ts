@@ -320,13 +320,16 @@ export class IntegrationConfigManager {
   }
 }
 
-// Singleton instance
-let integrationManager: IntegrationConfigManager | null = null;
+// Cache per configDir to avoid cross-talk (tests/package/app can use different config roots).
+const integrationManagers = new Map<string, IntegrationConfigManager>();
 
-export function getIntegrationManager(configDir?: string): IntegrationConfigManager {
-  if (!integrationManager) {
-    integrationManager = new IntegrationConfigManager(configDir);
-  }
-  return integrationManager;
+export function getIntegrationManager(configDir: string = "./config"): IntegrationConfigManager {
+  const key = path.resolve(configDir);
+  const existing = integrationManagers.get(key);
+  if (existing) return existing;
+
+  const created = new IntegrationConfigManager(configDir);
+  integrationManagers.set(key, created);
+  return created;
 }
 

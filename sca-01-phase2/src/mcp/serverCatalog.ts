@@ -298,7 +298,7 @@ export const MCP_SERVER_CATALOG: McpServerDefinition[] = [
     category: "widgetdc",
     transport: "stdio",
     command: "node",
-    args: ["./mcp/widgetdc-server.js"],
+    args: ["./build/mcp/widgetdc-server.js"],
     icon: "🔧",
     tags: ["widgetdc", "core", "tools"],
   },
