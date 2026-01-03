@@ -8,6 +8,7 @@ import { loadConfig } from "../config.js";
 import { DesktopAgent } from "../agent/DesktopAgent.js";
 import { HyperLog } from "../logging/hyperlog.js";
 import { DEFAULT_ENV } from "../defaultConfig.js";
+import { isOllamaInstalled, isOllamaRunning, startOllama } from "../startup/bootstrap.js";
 // import { initUpdater } from "../updater/autoUpdater.js"; // TODO: Fix ESM/CJS loading issue
 
 import type { ApprovalRequest } from "../approval/approvalQueue.js";
@@ -36,6 +37,88 @@ let runtimeCfg: ReturnType<typeof loadConfig>;
 let settingsFilePath: string | null = null;
 let cloudAccessToken: string | null = null;
 let cloudRefreshTokenEncrypted: string | null = null;
+
+const DEFAULT_RAILWAY_BACKEND = "https://sca-01-phase3-production.up.railway.app";
+
+function parseOllamaHost(ollamaHost: string): { host: string; port: number } | null {
+  try {
+    const u = new URL(ollamaHost);
+    const host = u.hostname || "localhost";
+    const port = u.port ? Number(u.port) : u.protocol === "https:" ? 443 : 80;
+    if (!Number.isFinite(port) || port <= 0) return null;
+    return { host, port };
+  } catch {
+    return null;
+  }
+}
+
+async function httpOk(url: string, timeoutMs = 4000): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function ensureConnectivityOnStartup(): Promise<void> {
+  if (!runtimeCfg) return;
+
+  // 1) If cloud is explicitly enabled, verify it.
+  const configuredBackend = (runtimeCfg.backendUrl ?? "").trim();
+  const backendCandidate = configuredBackend || DEFAULT_RAILWAY_BACKEND;
+  if (runtimeCfg.useCloud) {
+    const cloudOk = await httpOk(`${backendCandidate.replace(/\/+$/, "")}/health`);
+    if (cloudOk) return;
+    // Cloud requested but unreachable → fall back to local attempt.
+    runtimeCfg.useCloud = false;
+  }
+
+  // 2) Check local Ollama.
+  const localBase = (runtimeCfg.ollamaHost ?? "").trim().replace(/\/+$/, "");
+  if (localBase) {
+    const localOk = await httpOk(`${localBase}/api/version`);
+    if (localOk) return;
+
+    // 3) If it's a local host, try to auto-start Ollama.
+    const parsed = parseOllamaHost(localBase);
+    const looksLocal = parsed && (parsed.host === "localhost" || parsed.host === "127.0.0.1");
+    if (looksLocal) {
+      const installed = await isOllamaInstalled();
+      if (installed) {
+        const alreadyRunning = await isOllamaRunning({
+          host: parsed.host,
+          port: parsed.port,
+          model: runtimeCfg.ollamaModel,
+          autoStart: true,
+          startTimeout: 30_000,
+        });
+        if (!alreadyRunning) {
+          await startOllama({
+            host: parsed.host,
+            port: parsed.port,
+            model: runtimeCfg.ollamaModel,
+            autoStart: true,
+            startTimeout: 30_000,
+          });
+        }
+        const localOk2 = await httpOk(`${localBase}/api/version`, 8000);
+        if (localOk2) return;
+      }
+    }
+  }
+
+  // 4) Fall back to Railway/cloud if reachable (only when local is down).
+  const cloudOk = await httpOk(`${backendCandidate.replace(/\/+$/, "")}/health`);
+  if (cloudOk) {
+    runtimeCfg.useCloud = true;
+    runtimeCfg.backendUrl = backendCandidate;
+    await persistSettingsToDisk();
+  }
+}
 
 type CloudTokenPair = {
   access_token: string;
@@ -532,6 +615,7 @@ async function setupIpc(): Promise<void> {
 
 app.whenReady().then(async () => {
   await setupIpc();
+  await ensureConnectivityOnStartup();
   createWindow();
 
   // TODO: Re-enable auto-updater after fixing ESM/CJS loading issue

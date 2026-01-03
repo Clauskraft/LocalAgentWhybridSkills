@@ -118,16 +118,42 @@ async function startOllama(config: OllamaConfig): Promise<boolean> {
   console.log("🚀 Starting Ollama...");
   
   try {
-    // Start Ollama in background
-    const ollamaPath = process.platform === "win32" 
-      ? "ollama"
-      : "/usr/local/bin/ollama";
-    
-    const child = spawn(ollamaPath, ["serve"], {
-      detached: true,
-      stdio: "ignore",
-      shell: true,
-    });
+    // Start Ollama in background.
+    // Prefer PATH ("ollama"), but also try common install locations.
+    const candidates: string[] =
+      process.platform === "win32"
+        ? [
+            "ollama",
+            ...(process.env["LOCALAPPDATA"]
+              ? [path.join(process.env["LOCALAPPDATA"], "Programs", "Ollama", "ollama.exe")]
+              : []),
+            "C:\\Program Files\\Ollama\\ollama.exe",
+          ]
+        : [
+            "ollama",
+            "/usr/local/bin/ollama",
+            "/opt/homebrew/bin/ollama", // Apple Silicon homebrew default
+          ];
+
+    let child: ReturnType<typeof spawn> | null = null;
+    for (const candidate of candidates) {
+      try {
+        child = spawn(candidate, ["serve"], {
+          detached: true,
+          stdio: "ignore",
+          windowsHide: true,
+          shell: false,
+        });
+        break;
+      } catch {
+        // Try next candidate
+      }
+    }
+
+    if (!child) {
+      console.error("❌ Failed to start Ollama: executable not found");
+      return false;
+    }
     
     child.unref();
     
