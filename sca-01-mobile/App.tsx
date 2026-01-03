@@ -11,6 +11,7 @@ type Screen = "loading" | "login" | "sessions" | "chat";
 export default function App() {
   const [screen, setScreen] = useState<Screen>("loading");
   const [currentSession, setCurrentSession] = useState<Session | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(true);
 
   useEffect(() => {
     initializeApp();
@@ -19,9 +20,7 @@ export default function App() {
   const initializeApp = async () => {
     // Check if server is online
     const isOnline = await api.checkHealth();
-    if (!isOnline) {
-      // Still try to initialize auth
-    }
+    setIsOnline(isOnline);
 
     // Try to restore auth
     const hasAuth = await api.initialize();
@@ -72,7 +71,7 @@ export default function App() {
   if (screen === "chat" && currentSession) {
     return (
       <>
-        <ChatScreen session={currentSession} onBack={handleBackFromChat} />
+        <ChatScreen session={currentSession} onBack={handleBackFromChat} isOnline={isOnline} />
         <StatusBar style="light" />
       </>
     );
@@ -83,6 +82,7 @@ export default function App() {
       <SessionsScreen
         onSelectSession={handleSelectSession}
         onLogout={handleLogout}
+        isOnline={isOnline}
       />
       <StatusBar style="light" />
     </>

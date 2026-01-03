@@ -11,21 +11,26 @@ import {
   Platform,
   TextInput,
   Modal,
+  ScrollView,
 } from "react-native";
-import { api, Session } from "../api/client";
+import { api, Session, ApiLogEntry } from "../api/client";
+import * as Clipboard from "expo-clipboard";
 
 interface SessionsScreenProps {
   onSelectSession: (session: Session) => void;
   onLogout: () => void;
+  isOnline?: boolean;
 }
 
 const MODELS = ["qwen3", "llama3.2", "deepseek-r1", "phi4", "gemma2"];
 
-export function SessionsScreen({ onSelectSession, onLogout }: SessionsScreenProps) {
+export function SessionsScreen({ onSelectSession, onLogout, isOnline }: SessionsScreenProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newModel, setNewModel] = useState("qwen3");
   const [isCreating, setIsCreating] = useState(false);
@@ -34,6 +39,9 @@ export function SessionsScreen({ onSelectSession, onLogout }: SessionsScreenProp
     const result = await api.getSessions();
     if (result.success && result.data) {
       setSessions(result.data.sessions);
+      setError(null);
+    } else {
+      setError(result.error || "Kunne ikke hente sessions");
     }
   }, []);
 
@@ -118,10 +126,21 @@ export function SessionsScreen({ onSelectSession, onLogout }: SessionsScreenProp
           <Text style={styles.logo}>🤖 SCA-01</Text>
           <Text style={styles.subtitle}>The Finisher</Text>
         </View>
-        <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Log ud</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={() => setShowLogs(true)} style={styles.logsButton}>
+            <Text style={styles.logsText}>Logs</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
+            <Text style={styles.logoutText}>Log ud</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {typeof isOnline === "boolean" && !isOnline && (
+        <View style={styles.offlineBanner}>
+          <Text style={styles.offlineText}>🔴 Offline – kan ikke nå serveren. Træk ned for at prøve igen.</Text>
+        </View>
+      )}
 
       {/* Sessions list */}
       {isLoading ? (
@@ -148,6 +167,10 @@ export function SessionsScreen({ onSelectSession, onLogout }: SessionsScreenProp
               <Text style={styles.emptySubtext}>
                 Opret din første session for at starte
               </Text>
+              {!!error && <Text style={styles.errorText}>{error}</Text>}
+              <TouchableOpacity style={styles.retryButton} onPress={loadSessions}>
+                <Text style={styles.retryText}>Prøv igen</Text>
+              </TouchableOpacity>
             </View>
           }
         />
@@ -226,6 +249,44 @@ export function SessionsScreen({ onSelectSession, onLogout }: SessionsScreenProp
           </View>
         </View>
       </Modal>
+
+      {/* Logs modal */}
+      <Modal visible={showLogs} transparent animationType="slide" onRequestClose={() => setShowLogs(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Request logs (redacted)</Text>
+            <ScrollView style={{ maxHeight: 420 }}>
+              {api.getRecentLogs().map((l: ApiLogEntry, idx: number) => (
+                <View key={`${l.ts}-${idx}`} style={styles.logRow}>
+                  <Text style={styles.logText}>
+                    {new Date(l.ts).toLocaleTimeString("da-DK")} · {l.method} {l.path} ·{" "}
+                    {l.ok ? "OK" : "ERR"}{typeof l.status === "number" ? ` (${l.status})` : ""} · {l.durationMs}ms
+                  </Text>
+                  {!!l.error && <Text style={styles.logErr}>{l.error}</Text>}
+                </View>
+              ))}
+            </ScrollView>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.modalCancelButton} onPress={() => setShowLogs(false)}>
+                <Text style={styles.modalCancelText}>Luk</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalCreateButton}
+                onPress={async () => {
+                  const txt = api
+                    .getRecentLogs()
+                    .map((l) => `${l.ts} ${l.method} ${l.path} ok=${l.ok} status=${l.status ?? ""} ms=${l.durationMs} err=${l.error ?? ""}`)
+                    .join("\n");
+                  await Clipboard.setStringAsync(txt);
+                  Alert.alert("Kopieret", "Logs er kopieret til clipboard (redacted).");
+                }}
+              >
+                <Text style={styles.modalCreateText}>Kopiér</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -257,9 +318,38 @@ const styles = StyleSheet.create({
   logoutButton: {
     padding: 8,
   },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  logsButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: "#1a1a2e",
+    borderWidth: 1,
+    borderColor: "#2a2a4a",
+  },
+  logsText: {
+    color: "#10b981",
+    fontSize: 12,
+    fontWeight: "600",
+  },
   logoutText: {
     color: "#ef4444",
     fontSize: 14,
+  },
+  offlineBanner: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1a1a2e",
+    backgroundColor: "#140a0a",
+  },
+  offlineText: {
+    color: "#fca5a5",
+    fontSize: 12,
   },
   loadingContainer: {
     flex: 1,
@@ -317,6 +407,37 @@ const styles = StyleSheet.create({
     color: "#666",
     fontSize: 14,
     marginTop: 8,
+  },
+  errorText: {
+    color: "#ef4444",
+    fontSize: 12,
+    marginTop: 12,
+  },
+  retryButton: {
+    marginTop: 14,
+    backgroundColor: "#10b981",
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  retryText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  logRow: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1a1a2e",
+  },
+  logText: {
+    color: "#d1d5db",
+    fontSize: 12,
+  },
+  logErr: {
+    color: "#fca5a5",
+    fontSize: 12,
+    marginTop: 4,
   },
   fab: {
     position: "absolute",

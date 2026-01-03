@@ -15,13 +15,15 @@ import { api, Message, Session } from "../api/client";
 interface ChatScreenProps {
   session: Session;
   onBack: () => void;
+  isOnline?: boolean;
 }
 
-export function ChatScreen({ session, onBack }: ChatScreenProps) {
+export function ChatScreen({ session, onBack, isOnline }: ChatScreenProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -33,6 +35,9 @@ export function ChatScreen({ session, onBack }: ChatScreenProps) {
     const result = await api.getMessages(session.id);
     if (result.success && result.data) {
       setMessages(result.data.messages);
+      setError(null);
+    } else {
+      setError(result.error || "Kunne ikke hente beskeder");
     }
     setIsLoading(false);
   };
@@ -43,6 +48,7 @@ export function ChatScreen({ session, onBack }: ChatScreenProps) {
     const content = input.trim();
     setInput("");
     setIsSending(true);
+    setError(null);
 
     // Optimistic update
     const tempMessage: Message = {
@@ -64,6 +70,7 @@ export function ChatScreen({ session, onBack }: ChatScreenProps) {
     } else {
       // Remove temp message on error
       setMessages((prev) => prev.filter((m) => m.id !== tempMessage.id));
+      setError(result.error || "Kunne ikke sende besked");
     }
 
     setIsSending(false);
@@ -139,9 +146,24 @@ export function ChatScreen({ session, onBack }: ChatScreenProps) {
               <Text style={styles.emptyText}>
                 Start en samtale med SCA-01
               </Text>
+              {!!error && <Text style={styles.errorText}>{error}</Text>}
+              <TouchableOpacity style={styles.retryButton} onPress={loadMessages}>
+                <Text style={styles.retryText}>Opdatér</Text>
+              </TouchableOpacity>
             </View>
           }
         />
+      )}
+
+      {!!error && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorBannerText}>{error}</Text>
+        </View>
+      )}
+      {typeof isOnline === "boolean" && !isOnline && (
+        <View style={styles.offlineBanner}>
+          <Text style={styles.offlineText}>🔴 Offline – beskeder kan fejle. Prøv igen når du er online.</Text>
+        </View>
       )}
 
       {/* Input */}
@@ -270,6 +292,46 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#666",
     fontSize: 16,
+  },
+  errorText: {
+    color: "#ef4444",
+    fontSize: 12,
+    marginTop: 12,
+    textAlign: "center",
+  },
+  retryButton: {
+    marginTop: 14,
+    backgroundColor: "#10b981",
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  retryText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  errorBanner: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#1a1a2e",
+    backgroundColor: "#140a0a",
+  },
+  errorBannerText: {
+    color: "#fca5a5",
+    fontSize: 12,
+  },
+  offlineBanner: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#1a1a2e",
+    backgroundColor: "#140a0a",
+  },
+  offlineText: {
+    color: "#fca5a5",
+    fontSize: 12,
   },
   inputContainer: {
     flexDirection: "row",

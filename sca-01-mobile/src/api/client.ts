@@ -6,6 +6,16 @@ import * as SecureStore from "expo-secure-store";
 
 const API_BASE_URL = "https://sca-01-phase3-production.up.railway.app";
 
+export type ApiLogEntry = {
+  ts: string;
+  method: string;
+  path: string;
+  status?: number;
+  ok: boolean;
+  durationMs: number;
+  error?: string;
+};
+
 interface AuthTokens {
   accessToken: string;
   refreshToken: string;
@@ -36,6 +46,17 @@ interface ApiResponse<T> {
 
 class ApiClient {
   private tokens: AuthTokens | null = null;
+  private logs: ApiLogEntry[] = [];
+  private maxLogs = 50;
+
+  private pushLog(entry: ApiLogEntry): void {
+    this.logs.unshift(entry);
+    if (this.logs.length > this.maxLogs) this.logs.length = this.maxLogs;
+  }
+
+  getRecentLogs(): ApiLogEntry[] {
+    return [...this.logs];
+  }
 
   async initialize(): Promise<boolean> {
     try {
@@ -116,6 +137,7 @@ class ApiClient {
     if (!this.tokens?.refreshToken) return false;
 
     try {
+      const start = Date.now();
       const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -123,6 +145,15 @@ class ApiClient {
       });
 
       if (!res.ok) {
+        this.pushLog({
+          ts: new Date().toISOString(),
+          method: "POST",
+          path: "/auth/refresh",
+          status: res.status,
+          ok: false,
+          durationMs: Date.now() - start,
+          error: "refresh_failed",
+        });
         await this.logout();
         return false;
       }
@@ -134,8 +165,24 @@ class ApiClient {
         expiresAt: Date.now() + (data.expiresIn || 900) * 1000,
       };
       await SecureStore.setItemAsync("auth_tokens", JSON.stringify(this.tokens));
+      this.pushLog({
+        ts: new Date().toISOString(),
+        method: "POST",
+        path: "/auth/refresh",
+        status: res.status,
+        ok: true,
+        durationMs: Date.now() - start,
+      });
       return true;
     } catch {
+      this.pushLog({
+        ts: new Date().toISOString(),
+        method: "POST",
+        path: "/auth/refresh",
+        ok: false,
+        durationMs: 0,
+        error: "network_error",
+      });
       await this.logout();
       return false;
     }
@@ -155,6 +202,7 @@ class ApiClient {
     }
 
     try {
+      const start = Date.now();
       const res = await fetch(`${API_BASE_URL}${path}`, {
         ...options,
         headers: {
@@ -169,18 +217,52 @@ class ApiClient {
         if (refreshed) {
           return this.request(path, options);
         }
+        this.pushLog({
+          ts: new Date().toISOString(),
+          method: String(options.method ?? "GET"),
+          path,
+          status: 401,
+          ok: false,
+          durationMs: Date.now() - start,
+          error: "unauthorized",
+        });
         return { success: false, error: "Session expired" };
       }
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ message: "Request failed" }));
+        this.pushLog({
+          ts: new Date().toISOString(),
+          method: String(options.method ?? "GET"),
+          path,
+          status: res.status,
+          ok: false,
+          durationMs: Date.now() - start,
+          error: err.message || `Error ${res.status}`,
+        });
         return { success: false, error: err.message || `Error ${res.status}` };
       }
 
       const data = await res.json();
+      this.pushLog({
+        ts: new Date().toISOString(),
+        method: String(options.method ?? "GET"),
+        path,
+        status: res.status,
+        ok: true,
+        durationMs: Date.now() - start,
+      });
       return { success: true, data };
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Network error";
+      this.pushLog({
+        ts: new Date().toISOString(),
+        method: String(options.method ?? "GET"),
+        path,
+        ok: false,
+        durationMs: 0,
+        error: msg,
+      });
       return { success: false, error: msg };
     }
   }
