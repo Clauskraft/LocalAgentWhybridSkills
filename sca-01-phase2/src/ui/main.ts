@@ -16,23 +16,18 @@ import type { ApprovalRequest } from "../approval/approvalQueue.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load default environment configuration
-function loadEnvironment() {
-  console.log("🔧 Loading default production configuration...");
-
-  // Apply defaults only if not already set
-  Object.entries(DEFAULT_ENV).forEach(([key, value]) => {
-    if (!process.env[key]) {
-      process.env[key] = value;
-    }
-  });
-
-  console.log("✅ Configuration loaded:");
-  console.log("  - Model:", process.env.OLLAMA_MODEL);
-  console.log("  - Write:", process.env.SCA_ALLOW_WRITE);
-  console.log("  - Exec:", process.env.SCA_ALLOW_EXEC);
-  console.log("  - Turns:", process.env.SCA_MAX_TURNS);
-}
+// Load default environment configuration IMMEDIATELY
+console.log("🔧 Loading default production configuration...");
+Object.entries(DEFAULT_ENV).forEach(([key, value]) => {
+  if (!process.env[key]) {
+    process.env[key] = value;
+  }
+});
+console.log("✅ Configuration loaded:");
+console.log("  - Model:", process.env.OLLAMA_MODEL);
+console.log("  - Write:", process.env.SCA_ALLOW_WRITE);
+console.log("  - Exec:", process.env.SCA_ALLOW_EXEC);
+console.log("  - Turns:", process.env.SCA_MAX_TURNS);
 
 let mainWindow: BrowserWindow | null = null;
 let agent: DesktopAgent | null = null;
@@ -536,7 +531,6 @@ async function setupIpc(): Promise<void> {
 }
 
 app.whenReady().then(async () => {
-  loadEnvironment();
   await setupIpc();
   createWindow();
 
