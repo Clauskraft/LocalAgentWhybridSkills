@@ -6,6 +6,7 @@ import { z } from "zod";
 import { loadConfig } from "../config.js";
 import { HyperLog } from "../logging/hyperlog.js";
 import type { PolicyContext } from "../security/policy.js";
+import { EnforcedExecutor } from "../security/enforcedExecutor.js";
 
 // Tool implementations
 import { executeShell } from "../tools/shellTools.js";
@@ -50,6 +51,7 @@ function getContext(): { ctx: PolicyContext; log: HyperLog } {
 export async function main(): Promise<void> {
   const { ctx, log } = getContext();
   const cfg = loadConfig();
+  const executor = new EnforcedExecutor(ctx, log);
 
   log.info("toolserver.start", "Starting Phase 2 MCP Tool Server", {
     fullAccess: ctx.fullAccess,
@@ -71,11 +73,11 @@ export async function main(): Promise<void> {
       path: z.string().describe("Absolute or relative file path")
     },
     async ({ path: filePath }) => {
-      const result = await readFileAnywhere(filePath, ctx, log, cfg.maxFileSize);
-      if (result.error) {
+      const result = await executor.readFile(filePath, cfg.maxFileSize);
+      if (!result.ok) {
         return { content: [{ type: "text" as const, text: result.error }], isError: true };
       }
-      return { content: [{ type: "text" as const, text: result.content ?? "" }] };
+      return { content: [{ type: "text" as const, text: result.value }] };
     }
   );
 
@@ -87,8 +89,8 @@ export async function main(): Promise<void> {
       content: z.string().describe("Full file content")
     },
     async ({ path: filePath, content }) => {
-      const result = await writeFileAnywhere(filePath, content, ctx, log);
-      if (result.error) {
+      const result = await executor.writeFile(filePath, content);
+      if (!result.ok) {
         return { content: [{ type: "text" as const, text: result.error }], isError: true };
       }
       return { content: [{ type: "text" as const, text: `Wrote file: ${filePath}` }] };
@@ -157,24 +159,25 @@ export async function main(): Promise<void> {
       timeout: z.number().optional().describe("Timeout in milliseconds")
     },
     async ({ command, cwd, timeout }) => {
-      const result = await executeShell(command, { cwd, timeout, shell: "auto" }, ctx, log);
-      if (result.error) {
+      const result = await executor.runShell(command, { cwd, timeout, shell: "auto" });
+      if (!result.ok) {
         return { content: [{ type: "text" as const, text: result.error }], isError: true };
       }
+      const r = result.value;
       const output = [
-        `Exit code: ${result.result?.exitCode}`,
-        `Duration: ${result.result?.duration}ms`,
-        result.result?.timedOut ? "TIMED OUT" : "",
+        `Exit code: ${r.exitCode}`,
+        `Duration: ${r.duration}ms`,
+        r.timedOut ? "TIMED OUT" : "",
         "",
         "STDOUT:",
-        result.result?.stdout ?? "",
+        r.stdout ?? "",
         "",
         "STDERR:",
-        result.result?.stderr ?? ""
+        r.stderr ?? ""
       ].join("\n");
       return {
         content: [{ type: "text" as const, text: output }],
-        isError: result.result?.exitCode !== 0
+        isError: r.exitCode !== 0
       };
     }
   );
@@ -187,13 +190,13 @@ export async function main(): Promise<void> {
       cwd: z.string().optional().describe("Working directory")
     },
     async ({ command, cwd }) => {
-      const result = await executeShell(command, { cwd, shell: "powershell" }, ctx, log);
-      if (result.error) {
+      const result = await executor.runShell(command, { cwd, shell: "powershell" });
+      if (!result.ok) {
         return { content: [{ type: "text" as const, text: result.error }], isError: true };
       }
       return {
-        content: [{ type: "text" as const, text: result.result?.stdout ?? "" }],
-        isError: result.result?.exitCode !== 0
+        content: [{ type: "text" as const, text: result.value.stdout ?? "" }],
+        isError: result.value.exitCode !== 0
       };
     }
   );
@@ -321,13 +324,11 @@ export async function main(): Promise<void> {
       headers: z.record(z.string()).optional().describe("Request headers")
     },
     async ({ url, method, body, headers }) => {
-      const result = await httpRequest(url, method ?? "GET", body, headers, ctx, log);
-      if (result.error) {
+      const result = await executor.httpRequest(url, method ?? "GET", body, headers);
+      if (!result.ok) {
         return { content: [{ type: "text" as const, text: result.error }], isError: true };
       }
-      return {
-        content: [{ type: "text" as const, text: `Status: ${result.status}\n\n${result.body}` }]
-      };
+      return { content: [{ type: "text" as const, text: `Status: ${result.value.status}\n\n${result.value.body}` }] };
     }
   );
 

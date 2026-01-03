@@ -83,6 +83,27 @@ export async function readFileAnywhere(
   }
 }
 
+export async function readFileRaw(
+  absPath: string,
+  log: HyperLog,
+  maxSize = 10_000_000
+): Promise<{ content?: string; error?: string }> {
+  try {
+    const stat = await fs.stat(absPath);
+    if (stat.size > maxSize) {
+      return { error: `File too large: ${stat.size} bytes (max ${maxSize})` };
+    }
+
+    const content = await fs.readFile(absPath, { encoding: "utf8" });
+    log.info("file.read", `Read file: ${absPath}`, { size: stat.size });
+    return { content };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    log.error("file.read.error", msg, { path: absPath });
+    return { error: msg };
+  }
+}
+
 export async function writeFileAnywhere(
   filePath: string,
   content: string,
@@ -135,6 +156,25 @@ export async function writeFileAnywhere(
   }
 }
 
+export async function writeFileRaw(
+  absPath: string,
+  content: string,
+  log: HyperLog
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const dir = path.dirname(absPath);
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(absPath, content, { encoding: "utf8" });
+
+    log.info("file.write", `Wrote file: ${absPath}`, { size: content.length });
+    return { success: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    log.error("file.write.error", msg, { path: absPath });
+    return { error: msg };
+  }
+}
+
 export async function listDirectory(
   dirPath: string,
   ctx: PolicyContext,
@@ -146,8 +186,22 @@ export async function listDirectory(
   // Use read policy for directory listing
   const policy = evaluateFileReadPolicy(absPath, ctx);
 
-  if (!policy.allowed && !policy.requiresApproval) {
-    return { error: policy.reason };
+  if (!policy.allowed) {
+    if (policy.requiresApproval) {
+      const request = globalApprovalQueue.createRequest(
+        "file_list",
+        `List directory: ${absPath}`,
+        policy.riskLevel,
+        policy,
+        { path: absPath }
+      );
+      const approved = await globalApprovalQueue.waitForApproval(request);
+      if (!approved) {
+        return { error: `Directory listing rejected: ${absPath}` };
+      }
+    } else {
+      return { error: policy.reason };
+    }
   }
 
   try {
@@ -237,6 +291,25 @@ export async function searchFiles(
   maxResults = 100
 ): Promise<{ files?: string[]; error?: string }> {
   const absPath = path.resolve(dir);
+  // Policy gate: searching a directory is effectively a read action over that tree.
+  const policy = evaluateFileReadPolicy(absPath, ctx);
+  if (!policy.allowed) {
+    if (policy.requiresApproval) {
+      const request = globalApprovalQueue.createRequest(
+        "file_search",
+        `Search files in: ${absPath}`,
+        policy.riskLevel,
+        policy,
+        { path: absPath, pattern, maxResults }
+      );
+      const approved = await globalApprovalQueue.waitForApproval(request);
+      if (!approved) {
+        return { error: `File search rejected: ${absPath}` };
+      }
+    } else {
+      return { error: policy.reason };
+    }
+  }
   const regex = new RegExp(pattern, "i");
   const results: string[] = [];
 

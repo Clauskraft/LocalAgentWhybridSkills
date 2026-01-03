@@ -43,45 +43,11 @@ function getShellCommand(shell: "powershell" | "bash" | "cmd" | "auto"): { cmd: 
   }
 }
 
-export async function executeShell(
+export async function executeShellRaw(
   command: string,
   options: ShellOptions,
-  ctx: PolicyContext,
   log: HyperLog
-): Promise<{ result?: ShellResult; error?: string; requiresApproval?: boolean; approvalId?: string }> {
-  // Evaluate policy
-  const policy = evaluateShellPolicy(command, ctx);
-
-  log.security("shell.policy", `Shell policy evaluated: ${policy.reason}`, {
-    command: command.substring(0, 100),
-    riskLevel: policy.riskLevel,
-    allowed: policy.allowed
-  });
-
-  if (!policy.allowed) {
-    if (policy.requiresApproval) {
-      const request = globalApprovalQueue.createRequest(
-        "shell",
-        `Execute command: ${command}`,
-        policy.riskLevel,
-        policy,
-        { command, cwd: options.cwd }
-      );
-
-      log.info("shell.approval_required", "Waiting for approval", { approvalId: request.id });
-
-      const approved = await globalApprovalQueue.waitForApproval(request);
-      if (!approved) {
-        return { error: `Shell command rejected or timed out: ${command}` };
-      }
-
-      log.security("shell.approved", "Command approved", { approvalId: request.id, command });
-    } else {
-      return { error: policy.reason };
-    }
-  }
-
-  // Execute command
+): Promise<{ result?: ShellResult; error?: string }> {
   const { cmd, args } = getShellCommand(options.shell ?? "auto");
   const timeout = options.timeout ?? 300_000;
   const cwd = options.cwd ?? process.cwd();
@@ -143,5 +109,46 @@ export async function executeShell(
       resolve({ result });
     });
   });
+}
+
+export async function executeShell(
+  command: string,
+  options: ShellOptions,
+  ctx: PolicyContext,
+  log: HyperLog
+): Promise<{ result?: ShellResult; error?: string; requiresApproval?: boolean; approvalId?: string }> {
+  // Evaluate policy
+  const policy = evaluateShellPolicy(command, ctx);
+
+  log.security("shell.policy", `Shell policy evaluated: ${policy.reason}`, {
+    command: command.substring(0, 100),
+    riskLevel: policy.riskLevel,
+    allowed: policy.allowed
+  });
+
+  if (!policy.allowed) {
+    if (policy.requiresApproval) {
+      const request = globalApprovalQueue.createRequest(
+        "shell",
+        `Execute command: ${command}`,
+        policy.riskLevel,
+        policy,
+        { command, cwd: options.cwd }
+      );
+
+      log.info("shell.approval_required", "Waiting for approval", { approvalId: request.id });
+
+      const approved = await globalApprovalQueue.waitForApproval(request);
+      if (!approved) {
+        return { error: `Shell command rejected or timed out: ${command}` };
+      }
+
+      log.security("shell.approved", "Command approved", { approvalId: request.id, command });
+    } else {
+      return { error: policy.reason };
+    }
+  }
+
+  return executeShellRaw(command, options, log);
 }
 
