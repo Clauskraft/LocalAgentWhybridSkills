@@ -62,30 +62,30 @@ export class ApprovalQueue extends EventEmitter {
     const timeout = timeoutMs ?? this.defaultTimeout;
 
     return new Promise((resolve) => {
-      const timer = setTimeout(() => {
-        request.status = "timeout";
-        request.resolvedAt = new Date().toISOString();
-        this.pending.delete(request.id);
-        this.history.push(request);
-        this.emit("resolved", request);
-        resolve(false);
-      }, timeout);
-
-      const checkResolved = () => {
-        const current = this.pending.get(request.id);
-        if (!current || current.status !== "pending") {
-          clearTimeout(timer);
-          resolve(current?.status === "approved");
-        }
+      const onResolved = (resolved: ApprovalRequest) => {
+        if (resolved.id !== request.id) return;
+        clearTimeout(timer);
+        this.off("resolved", onResolved);
+        resolve(resolved.status === "approved");
       };
 
-      // Check every 100ms
-      const interval = setInterval(() => {
-        checkResolved();
-        if (!this.pending.has(request.id)) {
-          clearInterval(interval);
+      this.on("resolved", onResolved);
+
+      const timer = setTimeout(() => {
+        // Only timeout if it is still pending
+        const current = this.pending.get(request.id);
+        if (!current) {
+          this.off("resolved", onResolved);
+          resolve(request.status === "approved");
+          return;
         }
-      }, 100);
+
+        current.status = "timeout";
+        current.resolvedAt = new Date().toISOString();
+        this.pending.delete(request.id);
+        this.history.push(current);
+        this.emit("resolved", current);
+      }, timeout);
     });
   }
 
