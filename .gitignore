@@ -44,8 +44,13 @@ tools/rg/
 
 # Cursor/Serena agent artifacts
 .serena/
+.cursor/
 
 # Playwright artifacts (Phase 2)
 sca-01-phase2/playwright-report/
 sca-01-phase2/test-results/
+
+# Phase 4 local registry artifacts (generated at runtime/tests)
+sca-01-phase4/.agent-registry.json
+sca-01-phase4/docs/AGENTS.md
 
