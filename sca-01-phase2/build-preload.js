@@ -5,12 +5,18 @@ import esbuild from 'esbuild';
  * Converts ESM to CommonJS for compatibility with electron-builder
  */
 await esbuild.build({
-  entryPoints: ['src/ui/preload.ts'],
+  entryPoints: {
+    preload: 'src/ui/preload.ts',
+    preloadChat: 'src/ui/preloadChat.ts',
+    preloadCockpit: 'src/ui/preloadCockpit.ts',
+  },
   bundle: true,
   platform: 'node',
   target: 'node20',
   format: 'cjs',
-  outfile: 'build/ui/preload.js',
+  outdir: 'build/ui',
+  entryNames: '[name]',
+  outExtension: { '.js': '.cjs' },
   external: ['electron'],
   sourcemap: true,
 });

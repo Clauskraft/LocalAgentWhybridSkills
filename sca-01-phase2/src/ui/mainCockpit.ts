@@ -13,7 +13,8 @@ function createWindow(): void {
     minHeight: 700,
     backgroundColor: "#0a0a12",
     webPreferences: {
-      preload: path.join(import.meta.dirname, "preloadCockpit.js"), // This is in build/ui
+      // Preload bundle is written to build/ui by build-preload.js
+      preload: path.join(import.meta.dirname, "preloadCockpit.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true

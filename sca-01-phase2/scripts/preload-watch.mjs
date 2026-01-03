@@ -1,23 +1,29 @@
 import esbuild from "esbuild";
 
 /**
- * Watch + bundle the Electron preload script into build/ui/preload.js.
+ * Watch + bundle the Electron preload scripts into build/ui/*.cjs.
  *
  * This is used by `npm run dev:ui`.
  */
 const ctx = await esbuild.context({
-  entryPoints: ["src/ui/preload.ts"],
+  entryPoints: {
+    preload: "src/ui/preload.ts",
+    preloadChat: "src/ui/preloadChat.ts",
+    preloadCockpit: "src/ui/preloadCockpit.ts",
+  },
   bundle: true,
   platform: "node",
   target: "node20",
   format: "cjs",
-  outfile: "build/ui/preload.js",
+  outdir: "build/ui",
+  entryNames: "[name]",
+  outExtension: { ".js": ".cjs" },
   external: ["electron"],
   sourcemap: true,
 });
 
 await ctx.watch();
-console.log("✅ Preload watch started (build/ui/preload.js)");
+console.log("✅ Preload watch started (build/ui/*.cjs)");
 
 // keep process alive
 process.stdin.resume();
