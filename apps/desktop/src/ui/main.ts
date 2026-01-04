@@ -11,7 +11,6 @@ let safeStorage: ElectronModule["safeStorage"];
 
 import path from "path";
 import { fileURLToPath } from "url";
-import fs from "fs/promises";
 import { monitorEventLoopDelay } from "perf_hooks";
 import { globalApprovalQueue } from "../approval/approvalQueue.js";
 import type { Phase2Config } from "../config.js";
@@ -81,7 +80,6 @@ const PERF_BUFFER_MAX = 600; // ~10 min @ 1s
 const perfSamples: PerfSample[] = [];
 let perfTimer: NodeJS.Timeout | null = null;
 let lastCpuUsage: NodeJS.CpuUsage | null = null;
-let lastCpuTs = 0;
 const elDelay = monitorEventLoopDelay({ resolution: 20 });
 
 function mb(bytes: number): number {
@@ -103,7 +101,6 @@ function startPerfSampler(intervalMs = 1000): void {
     // ignore
   }
   lastCpuUsage = process.cpuUsage();
-  lastCpuTs = Date.now();
 
   perfTimer = setInterval(() => {
     const now = Date.now();
@@ -116,7 +113,6 @@ function startPerfSampler(intervalMs = 1000): void {
       system: curCpu.system - prevCpu.system,
     };
     lastCpuUsage = curCpu;
-    lastCpuTs = now;
 
     const p50 = Number(elDelay.percentile(50)) / 1e6;
     const p95 = Number(elDelay.percentile(95)) / 1e6;

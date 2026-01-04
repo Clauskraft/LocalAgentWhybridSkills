@@ -71,4 +71,29 @@ This is the **single shared handoff thread** between Cursor agents working in th
 - Owner: @Clauskraft
 - What: Open a “🧭 Final Release Kickoff” issue and execute the checklist
 
+### 2026-01-04 15:50 (area:release)
+
+**Context**
+- Goal: Final release execution kickoff + rest-backlog seeding
+
+**Changes**
+- Files: `docs/FINAL_RELEASE.md`, `docs/REST_BACKLOG_FINAL_RELEASE.md`, `tools/final-release/run-gates.ps1`, `tools/final-release/seed.ps1`
+- Summary:
+  - Gates made green across cloud/web/desktop/cli (audits pass with `--audit-level=high`)
+  - Seeded GitHub issues for final release execution (P0/P1/P2)
+  - GitHub Projects creation is blocked until `gh` token gets `project` scopes
+
+**How to verify**
+```sh
+pwsh -File tools/final-release/run-gates.ps1
+pwsh -File tools/final-release/seed.ps1
+```
+
+**Next step**
+- Owner: @Clauskraft
+- What:
+  - Execute issue #35 (Final Release Kickoff)
+  - Run `gh auth refresh -s project,read:project -h github.com` then create the GitHub Project board
+  - Work down P0 → P1 → P2
+
 

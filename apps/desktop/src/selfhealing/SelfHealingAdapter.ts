@@ -76,7 +76,7 @@ export class SelfHealingAdapter extends EventEmitter {
         lastError = e instanceof Error ? e : new Error(String(e));
 
         // Log the error
-        const errorEvent = this.captureError(source, operationName, lastError, severity, {
+        this.captureError(source, operationName, lastError, severity, {
           ...context,
           attempt,
           maxRetries: this.retryConfig.maxRetries

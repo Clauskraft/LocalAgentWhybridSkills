@@ -18,14 +18,6 @@ export interface ShellOptions {
   shell?: "powershell" | "bash" | "cmd" | "auto";
 }
 
-function getDefaultShell(): string {
-  const platform = os.platform();
-  if (platform === "win32") {
-    return "powershell.exe";
-  }
-  return "/bin/bash";
-}
-
 function getShellCommand(shell: "powershell" | "bash" | "cmd" | "auto"): { cmd: string; args: string[] } {
   switch (shell) {
     case "powershell":

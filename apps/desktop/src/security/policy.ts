@@ -1,5 +1,4 @@
 import path from "node:path";
-import os from "node:os";
 
 export type RiskLevel = "low" | "medium" | "high" | "critical";
 

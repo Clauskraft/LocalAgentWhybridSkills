@@ -1,16 +1,11 @@
 import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import fs from "node:fs";
 import { ConfigStore } from "../config/configStore.js";
 import { HyperLog } from "../logging/hyperlog.js";
 import { bootstrap, startOllama, isOllamaRunning, type BootstrapResult, type CheckResult } from "../startup/bootstrap.js";
-import { MCP_SERVER_CATALOG, getServersByCategory, getPopularServers, searchServers, getServerById, getAllCategories, getCategoryLabel, type McpServerDefinition, type McpCategory } from "../mcp/serverCatalog.js";
+import { MCP_SERVER_CATALOG, getServersByCategory, getPopularServers, searchServers, getServerById, getAllCategories, getCategoryLabel, type McpCategory } from "../mcp/serverCatalog.js";
 import { getIntegrationManager } from "../config/integrationConfig.js";
-
-// ES Module __dirname polyfill
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // ============================================================================
 // CHAT MAIN PROCESS
@@ -910,7 +905,6 @@ function setupIpcHandlers(): void {
 
   ipcMain.handle("chat:updateIntegration", (_event, data: { integration: string; config: Record<string, unknown> }) => {
     const manager = getIntegrationManager("./config");
-    const currentConfig = manager.getConfig();
     
     // Update specific integration
     const updates: Record<string, unknown> = {};

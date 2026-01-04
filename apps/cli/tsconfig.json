@@ -16,7 +16,7 @@
     "sourceMap": true,
     "types": ["node"],
     "paths": {
-      "@local-agent/config-utils": ["../shared/config-utils/index.ts"]
+      "@local-agent/config-utils": ["../../shared/config-utils/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

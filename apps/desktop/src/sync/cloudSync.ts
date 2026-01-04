@@ -52,7 +52,6 @@ interface SyncResult {
   errors: string[];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyStore = Store<any>;
 
 class CloudSyncService {

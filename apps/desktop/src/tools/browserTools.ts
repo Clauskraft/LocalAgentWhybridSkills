@@ -9,50 +9,6 @@ export interface BrowserResult {
   error?: string;
 }
 
-// Find Chrome/Edge executable
-function findBrowserExecutable(): string | null {
-  const platform = os.platform();
-
-  if (platform === "win32") {
-    const candidates = [
-      "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-      "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-      "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-      "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"
-    ];
-
-    for (const candidate of candidates) {
-      try {
-        require("node:fs").accessSync(candidate);
-        return candidate;
-      } catch {
-        // try next
-      }
-    }
-  } else if (platform === "darwin") {
-    return "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-  } else {
-    // Linux
-    const candidates = [
-      "/usr/bin/google-chrome",
-      "/usr/bin/chromium",
-      "/usr/bin/chromium-browser",
-      "/snap/bin/chromium"
-    ];
-
-    for (const candidate of candidates) {
-      try {
-        require("node:fs").accessSync(candidate);
-        return candidate;
-      } catch {
-        // try next
-      }
-    }
-  }
-
-  return null;
-}
-
 export async function openUrl(
   url: string,
   ctx: PolicyContext,

@@ -416,7 +416,6 @@ function ReposSettings({
 
   useEffect(() => {
     refreshCloud();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.backendUrl]);
 
   return (

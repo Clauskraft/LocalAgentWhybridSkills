@@ -48,6 +48,7 @@ For any release task PR:
 Kickoff is considered complete when:
 
 - A GitHub Project exists for the release (Backlog/Ready/In Progress/In Review/Done/Blocked).
+- If Projects are not available, a GitHub **Milestone** named **“Final Release”** exists and all release issues are assigned to it.
 - **Rest backlog** is captured as issues using the “🚢 Final Release Task” template.
 - All P0 items are labeled and placed in **Ready** with clear acceptance + verification steps.
 - Release Captain confirms scope policy (what counts as “in” for final release).

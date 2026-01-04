@@ -1,7 +1,5 @@
 import fs from "node:fs/promises";
-import fsSync from "node:fs";
 import path from "node:path";
-import os from "node:os";
 import type { HyperLog } from "../logging/hyperlog.js";
 import {
   evaluateFileReadPolicy,
@@ -179,7 +177,7 @@ export async function listDirectory(
   dirPath: string,
   ctx: PolicyContext,
   log: HyperLog,
-  options: { recursive?: boolean; maxDepth?: number } = {}
+  _options: { recursive?: boolean; maxDepth?: number } = {}
 ): Promise<{ entries?: DirectoryEntry[]; error?: string }> {
   const absPath = path.resolve(dirPath);
 
@@ -241,8 +239,8 @@ export async function listDirectory(
 
 export async function getFileInfo(
   filePath: string,
-  ctx: PolicyContext,
-  log: HyperLog
+  _ctx: PolicyContext,
+  _log: HyperLog
 ): Promise<{ info?: FileInfo; error?: string }> {
   const absPath = path.resolve(filePath);
 

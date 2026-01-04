@@ -5,7 +5,6 @@
 import { spawn, exec } from "node:child_process";
 import { promisify } from "node:util";
 import os from "node:os";
-import fs from "node:fs/promises";
 import path from "node:path";
 
 const execAsync = promisify(exec);
@@ -471,10 +470,6 @@ function getCachedCheck(key: string): CheckResult | null {
   return null;
 }
 
-function setCachedCheck(key: string, result: CheckResult): void {
-  checkCache.set(key, { result, timestamp: Date.now() });
-}
-
 // Sprint 27: Parallel health checks
 async function runParallelChecks(_cfg: OllamaConfig): Promise<CheckResult[]> {
   const checks = await Promise.allSettled([
@@ -608,12 +603,6 @@ export interface DegradedModeOptions {
   fallbackModel: string;
   skipOptionalChecks: boolean;
 }
-
-const DEFAULT_DEGRADED_OPTIONS: DegradedModeOptions = {
-  allowOfflineMode: true,
-  fallbackModel: "phi3:mini",
-  skipOptionalChecks: true,
-};
 
 // Sprint 34: Pre-warm Ollama model
 export async function prewarmModel(model: string, host: string = "http://localhost:11434"): Promise<boolean> {
