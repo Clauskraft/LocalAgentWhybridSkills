@@ -79,6 +79,13 @@ export interface SCA01API {
     }>;
   };
   mcp: {
+    getMcpServers: () => Promise<unknown[]>;
+    getMcpCatalog: () => Promise<unknown[]>;
+    installMcpFromCatalog: (serverId: string) => Promise<unknown>;
+    removeMcpServer: (name: string) => Promise<boolean>;
+    autoSetupMcp: (opts?: { includeAuth?: boolean }) => Promise<unknown>;
+
+    // Aliases
     getServers: () => Promise<unknown[]>;
     getCatalog: () => Promise<unknown[]>;
     installFromCatalog: (serverId: string) => Promise<unknown>;
@@ -165,6 +172,14 @@ const api: SCA01API = {
     getStats: () => ipcRenderer.invoke("perf-get-stats"),
   },
   mcp: {
+    // Preferred method names (match SettingsModal + window.chat compatibility)
+    getMcpServers: () => ipcRenderer.invoke("mcp-get-servers"),
+    getMcpCatalog: () => ipcRenderer.invoke("mcp-get-catalog"),
+    installMcpFromCatalog: (serverId: string) => ipcRenderer.invoke("mcp-install-from-catalog", serverId),
+    removeMcpServer: (name: string) => ipcRenderer.invoke("mcp-remove-server", name),
+    autoSetupMcp: (opts?: { includeAuth?: boolean }) => ipcRenderer.invoke("mcp-auto-setup", opts),
+
+    // Aliases (kept for internal callers)
     getServers: () => ipcRenderer.invoke("mcp-get-servers"),
     getCatalog: () => ipcRenderer.invoke("mcp-get-catalog"),
     installFromCatalog: (serverId: string) => ipcRenderer.invoke("mcp-install-from-catalog", serverId),
