@@ -128,7 +128,7 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
   if (cfg.corsOrigins.length > 0) {
     await app.register(cors, {
       origin: cfg.corsOrigins,
-      methods: ["GET", "POST", "OPTIONS"],
+      methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
       credentials: true,
     });
