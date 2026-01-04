@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "start": "node server.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:smoke": "playwright test tests/e2e/smoke.spec.ts",
     "test:smoke:ci": "playwright test tests/e2e/smoke.spec.ts --project=chromium"

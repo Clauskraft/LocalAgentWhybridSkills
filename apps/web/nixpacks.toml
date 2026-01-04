@@ -1,12 +1,9 @@
-# Nixpacks configuration for Railway
-# Fixes cache locking issue
+# Nixpacks configuration for Railway Web UI
 
 [phases.setup]
 nixPkgs = ["nodejs_20", "npm-9_x"]
 
 [phases.install]
-# IMPORTANT: Railway/Nixpacks often runs with NODE_ENV=production during build,
-# which omits devDependencies. We need devDependencies for the TypeScript build (tsc).
 cmds = ["npm ci --include=dev --prefer-offline --no-audit"]
 cacheDirectories = []
 
@@ -15,11 +12,12 @@ cmds = ["npm run build"]
 cacheDirectories = []
 
 [start]
-cmd = "node build/server/httpServer.js"
+cmd = "npm start"
 
 [variables]
 NPM_CONFIG_CACHE = "/tmp/.npm"
 NPM_CONFIG_PRODUCTION = "false"
-# Ensure even implicit `npm ci` in build phase includes devDependencies (tsc).
 NPM_CONFIG_INCLUDE = "dev"
 NPM_CONFIG_OMIT = ""
+
+
