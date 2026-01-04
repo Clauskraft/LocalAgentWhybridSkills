@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 
 .PHONY: mvp test lint audit release dev dev-ui clean
+.PHONY: docs-sanity
 
 # Build
 mvp:
@@ -26,6 +27,10 @@ test:
 # Linting
 lint:
 	npm run lint
+
+# Docs sanity checks (prevent drift in README/docs references)
+docs-sanity:
+	npm run docs:sanity
 
 # Security audit
 audit:

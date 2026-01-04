@@ -1,0 +1,21 @@
+{
+  "name": "local-agent",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "desktop": "npm --prefix sca-01-phase2 run dev:ui",
+    "desktop:build": "npm --prefix sca-01-phase2 run build",
+    "desktop:test": "npm --prefix sca-01-phase2 run test",
+    "cloud": "npm --prefix sca-01-phase3 run dev:server",
+    "cloud:build": "npm --prefix sca-01-phase3 run build",
+    "cloud:test": "npm --prefix sca-01-phase3 run test",
+    "cli": "npm --prefix sca-01-phase1 run dev -- run",
+    "cli:doctor": "npm --prefix sca-01-phase1 run dev -- doctor",
+    "install:all": "npm --prefix sca-01-phase1 install && npm --prefix sca-01-phase2 install && npm --prefix sca-01-phase3 install"
+  }
+}
+
+

@@ -88,10 +88,12 @@ export interface IntegrationStatus {
 
 export class IntegrationConfigManager {
   private config: IntegrationConfig = {};
+  private readonly configDir: string;
   private readonly configPath: string;
 
   public constructor(configDir: string = "./config") {
-    this.configPath = path.resolve(configDir, "integrations.json");
+    this.configDir = path.resolve(configDir);
+    this.configPath = path.join(this.configDir, "integrations.json");
     this.load();
   }
 
@@ -312,6 +314,23 @@ export class IntegrationConfigManager {
           env.TWITTER_BEARER_TOKEN = this.config.twitter.bearerToken;
           if (this.config.twitter.apiKey) env.TWITTER_API_KEY = this.config.twitter.apiKey;
           if (this.config.twitter.apiSecret) env.TWITTER_API_SECRET = this.config.twitter.apiSecret;
+        }
+        break;
+
+      case "widgetdc-core":
+      case "widgettdc-core":
+        // Ensure WidgetDC/WidgetTDC server processes can resolve the same config root.
+        env.SCA_CONFIG_DIR = this.configDir;
+
+        // Optional: also pass through resolved settings so stdio servers can run without reading JSON directly.
+        if (this.config.widgetdc?.cyberstreams?.enabled && this.config.widgetdc.cyberstreams.serverPath) {
+          env.WIDGETDC_CYBERSTREAMS_SERVER_PATH = this.config.widgetdc.cyberstreams.serverPath;
+        }
+        if (this.config.widgetdc?.cockpit?.enabled && this.config.widgetdc.cockpit.url) {
+          env.WIDGETDC_COCKPIT_URL = this.config.widgetdc.cockpit.url;
+        }
+        if (this.config.widgetdc?.cloudflare?.enabled && this.config.widgetdc.cloudflare.workerUrl) {
+          env.WIDGETDC_WORKER_URL = this.config.widgetdc.cloudflare.workerUrl;
         }
         break;
     }

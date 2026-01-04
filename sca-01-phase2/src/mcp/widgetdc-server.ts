@@ -151,10 +151,70 @@ async function runNativeWidgetdcMcpServer(): Promise<void> {
 
   const server = new McpServer({ name: "sca-widgetdc-native", version: "0.0.0" });
 
+  // Status tool (useful for debugging from the UI).
+  server.tool("widgetdc.status", "Get the resolved WidgetDC integration status", {}, async () => {
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              mode: "native-http",
+              cockpitUrl: cockpitUrl ?? null,
+              workerUrl: workerUrl ?? null,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  });
+  // Alias for naming consistency with "WidgetTDC" phrasing used in some docs/conversations.
+  server.tool("widgettdc.status", "Alias of widgetdc.status", {}, async () => {
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              mode: "native-http",
+              cockpitUrl: cockpitUrl ?? null,
+              workerUrl: workerUrl ?? null,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  });
+
   if (cockpitUrl) {
     server.tool(
       "widgetdc.cockpit.request",
       "Perform a safe HTTP request against the configured WidgetDC Cockpit base URL",
+      {
+        path: z.string(),
+        method: z.enum(["GET", "POST"]).optional(),
+        query: z.record(z.string()).optional(),
+        body: z.unknown().optional(),
+      },
+      async (args) =>
+        httpRequestTool({
+          baseUrl: cockpitUrl,
+          label: "cockpit",
+          path: args.path,
+          method: args.method,
+          query: args.query,
+          body: args.body,
+        })
+    );
+
+    // WidgetTDC alias (native HTTP mode only).
+    server.tool(
+      "widgettdc.cockpit.request",
+      "Alias of widgetdc.cockpit.request",
       {
         path: z.string(),
         method: z.enum(["GET", "POST"]).optional(),
@@ -177,6 +237,27 @@ async function runNativeWidgetdcMcpServer(): Promise<void> {
     server.tool(
       "widgetdc.worker.request",
       "Perform a safe HTTP request against the configured WidgetDC Cloudflare Worker base URL",
+      {
+        path: z.string(),
+        method: z.enum(["GET", "POST"]).optional(),
+        query: z.record(z.string()).optional(),
+        body: z.unknown().optional(),
+      },
+      async (args) =>
+        httpRequestTool({
+          baseUrl: workerUrl,
+          label: "worker",
+          path: args.path,
+          method: args.method,
+          query: args.query,
+          body: args.body,
+        })
+    );
+
+    // WidgetTDC alias (native HTTP mode only).
+    server.tool(
+      "widgettdc.worker.request",
+      "Alias of widgetdc.worker.request",
       {
         path: z.string(),
         method: z.enum(["GET", "POST"]).optional(),

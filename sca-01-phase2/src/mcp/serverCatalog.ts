@@ -304,6 +304,18 @@ export const MCP_SERVER_CATALOG: McpServerDefinition[] = [
     tags: ["widgetdc", "core", "tools"],
   },
   {
+    id: "widgettdc-core",
+    name: "WidgetTDC Core (alias)",
+    description: "Alias of WidgetDC Core (proxy MCP or native HTTP mode)",
+    category: "widgetdc",
+    transport: "stdio",
+    command: "node",
+    args: ["./build/mcp/widgetdc-server.js"],
+    documentation: "docs/WIDGETDC.md",
+    icon: "🔧",
+    tags: ["widgettdc", "widgetdc", "core", "tools"],
+  },
+  {
     id: "widgetdc-neo4j",
     name: "WidgetDC Neo4j",
     description: "Neo4j graph database for WidgetDC",

@@ -117,7 +117,7 @@ describe("widgetdc-server shim (integration)", () => {
           widgetdc: {
             cyberstreams: { enabled: false, serverPath: "" },
             cockpit: { enabled: true, url: cockpitUrl },
-            cloudflare: { enabled: false, workerUrl: "" },
+            cloudflare: { enabled: true, workerUrl: cockpitUrl },
           },
         },
         null,
@@ -139,10 +139,35 @@ describe("widgetdc-server shim (integration)", () => {
       await client.connect();
       const tools = await client.listTools();
       expect(tools.tools.some((t) => t.name === "widgetdc.cockpit.request")).toBe(true);
+      expect(tools.tools.some((t) => t.name === "widgettdc.cockpit.request")).toBe(true);
+      expect(tools.tools.some((t) => t.name === "widgetdc.worker.request")).toBe(true);
+      expect(tools.tools.some((t) => t.name === "widgettdc.worker.request")).toBe(true);
+      expect(tools.tools.some((t) => t.name === "widgetdc.status")).toBe(true);
+      expect(tools.tools.some((t) => t.name === "widgettdc.status")).toBe(true);
 
       const res = await client.callTool("widgetdc.cockpit.request", { path: "/ping", method: "GET" });
       expect(res.isError).toBeFalsy();
       expect(JSON.stringify(res.content)).toContain("pong");
+
+      const resAlias = await client.callTool("widgettdc.cockpit.request", { path: "/ping", method: "GET" });
+      expect(resAlias.isError).toBeFalsy();
+      expect(JSON.stringify(resAlias.content)).toContain("pong");
+
+      const resWorker = await client.callTool("widgetdc.worker.request", { path: "/ping", method: "GET" });
+      expect(resWorker.isError).toBeFalsy();
+      expect(JSON.stringify(resWorker.content)).toContain("pong");
+
+      const resWorkerAlias = await client.callTool("widgettdc.worker.request", { path: "/ping", method: "GET" });
+      expect(resWorkerAlias.isError).toBeFalsy();
+      expect(JSON.stringify(resWorkerAlias.content)).toContain("pong");
+
+      const status = await client.callTool("widgetdc.status", {});
+      expect(status.isError).toBeFalsy();
+      expect(JSON.stringify(status.content)).toContain("native-http");
+
+      // Safety: no traversal
+      const traversal = await client.callTool("widgetdc.cockpit.request", { path: "/../x", method: "GET" });
+      expect(traversal.isError).toBeTruthy();
     } finally {
       await client.close();
       await new Promise<void>((resolve) => server.close(() => resolve()));

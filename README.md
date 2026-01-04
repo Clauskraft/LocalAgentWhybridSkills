@@ -2,6 +2,18 @@
 
 A completion engine that takes partial implementations and drives them to "Definition of Done" with security-by-design principles.
 
+## Why the repo has “phase” folders
+
+`sca-01-phase1/2/3` started as **implementation phases**, but they also became **separate deployable packages** (CLI, Desktop app, Cloud API). That naming is historically accurate but confusing.
+
+**Rule of thumb:** think in **products**, not phases:
+
+- **Desktop Agent** (Electron UI): `sca-01-phase2/`
+- **Cloud API** (Railway): `sca-01-phase3/`
+- **CLI runtime** (local dev / minimal): `sca-01-phase1/`
+
+To make this easier, you can now start the products from the repo root with simple commands (see below).
+
 ## 🏗️ Architecture
 
 ```
@@ -48,26 +60,29 @@ A completion engine that takes partial implementations and drives them to "Defin
 - [Ollama](https://ollama.ai) installed and running
 - Git
 
-### Phase 1: CLI (Simplest)
+### Start Desktop Agent (recommended)
 
 ```bash
-cd sca-01-phase1
 npm install
-npm run build
-npm run sca -- doctor  # Check Ollama connection
-npm run sca -- run     # Run agent
+npm run desktop
 ```
 
-### Phase 2: Desktop App
+### Start Cloud API locally (Phase 3 backend)
 
 ```bash
-cd sca-01-phase2
 npm install
-npm run build
-npm run dev:ui         # Launch Desktop App (Electron + auto-port Vite renderer)
+npm run cloud
 ```
 
-### Phase 3: Cloud Server
+### Start CLI runtime (minimal)
+
+```bash
+npm install
+npm run cli:doctor
+npm run cli
+```
+
+## Cloud (production)
 
 Already deployed at: `https://sca-01-phase3-production.up.railway.app`
 
