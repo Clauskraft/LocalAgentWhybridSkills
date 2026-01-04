@@ -10,7 +10,8 @@ const indexPath = path.join(distDir, "index.html");
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);
 const host = process.env.HOST ?? "0.0.0.0";
 
-const MIME: Record<string, string> = {
+/** @type {Record<string, string>} */
+const MIME = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -24,7 +25,7 @@ const MIME: Record<string, string> = {
   ".woff2": "font/woff2",
 };
 
-function safePath(urlPath: string): string {
+function safePath(urlPath) {
   const decoded = decodeURIComponent(urlPath.split("?")[0] ?? "/");
   const cleaned = decoded.replace(/\0/g, "");
   const joined = path.normalize(path.join(distDir, cleaned));
@@ -32,7 +33,11 @@ function safePath(urlPath: string): string {
   return joined;
 }
 
-async function sendFile(res: http.ServerResponse, filePath: string): Promise<boolean> {
+/**
+ * @param {import("node:http").ServerResponse} res
+ * @param {string} filePath
+ */
+async function sendFile(res, filePath) {
   try {
     const stat = await fs.stat(filePath);
     if (!stat.isFile()) return false;
