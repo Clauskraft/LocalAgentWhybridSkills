@@ -1,4 +1,4 @@
-# SCA-01 Phase 1 (MVP)
+# SCA-01 CLI Runtime (MVP)
 
 Local-first agent runtime for SCA-01 ("The Finisher"):
 
@@ -15,7 +15,7 @@ Local-first agent runtime for SCA-01 ("The Finisher"):
 ## Quick Start
 
 ```bash
-cd sca-01-phase1
+cd apps/cli
 npm install
 
 # Verify Ollama connectivity
@@ -68,7 +68,7 @@ The agent tries these paths in order:
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                     User Surfaces                            │
-│  CLI (sca)  │  Desktop UI (Phase 2)  │  Cloud API (Phase 3)  │
+│  CLI (sca)  │      Desktop UI        │      Cloud API        │
 └──────────────────────────┬───────────────────────────────────┘
                            │
 ┌──────────────────────────▼───────────────────────────────────┐

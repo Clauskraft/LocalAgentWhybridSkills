@@ -8,16 +8,16 @@
 .env* @Clauskraft
 **/security/** @Clauskraft
 **/auth/** @Clauskraft
-sca-01-phase3/src/routes/auth* @Clauskraft
+services/cloud/src/routes/auth* @Clauskraft
 
 # CI/CD configuration
 .github/** @Clauskraft
 
 # Desktop agent core
-sca-01-phase2/src/tools/** @Clauskraft
-sca-01-phase2/src/security/** @Clauskraft
+apps/desktop/src/tools/** @Clauskraft
+apps/desktop/src/security/** @Clauskraft
 
 # Cloud infrastructure
-sca-01-phase3/** @Clauskraft
+services/cloud/** @Clauskraft
 railway.toml @Clauskraft
 

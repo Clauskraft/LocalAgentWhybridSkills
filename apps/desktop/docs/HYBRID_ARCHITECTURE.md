@@ -504,7 +504,7 @@ railway init
 railway add --plugin postgresql
 
 # 5. Deploy
-cd sca-01-phase3
+cd services/cloud
 railway up
 
 # 6. Set environment variables

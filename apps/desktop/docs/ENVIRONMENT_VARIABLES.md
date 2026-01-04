@@ -1,4 +1,4 @@
-# Environment Variables (Phase 2)
+# Environment Variables (Desktop)
 
 This repo uses **two different runtime contexts**:
 
@@ -7,8 +7,7 @@ This repo uses **two different runtime contexts**:
 
 ## Browser / Vite (Renderer) variables
 
-- **`VITE_BACKEND_URL`**: Optional Phase 3 backend base URL used when running the renderer in a normal browser (no Electron IPC).
-  - **Example**: `https://sca-01-phase3-production.up.railway.app`
+- **`VITE_BACKEND_URL`**: Optional cloud backend base URL used when running the renderer in a normal browser (no Electron IPC).
   - **Notes**:
     - Do **not** put secrets in `VITE_` variables (they are bundled into the browser build).
     - If `useCloud` is enabled in Settings and `VITE_BACKEND_URL` is empty, chat will fail with a clear error.
@@ -16,7 +15,7 @@ This repo uses **two different runtime contexts**:
 ## Electron (Main) variables
 
 - **`SCA_USE_CLOUD`**: `true|false` to prefer backend for chat/tool execution.
-- **`SCA_BACKEND_URL`**: Phase 3 backend base URL.
+- **`SCA_BACKEND_URL`**: Cloud backend base URL (Railway URL).
 - **`OLLAMA_HOST`**: Ollama host URL (default `http://localhost:11434`).
 - **`OLLAMA_MODEL`**: Default Ollama model name.
 
@@ -31,7 +30,7 @@ These are read by the policy engine. Defaults are conservative.
 
 ## Desktop integrations (MCP servers)
 
-Phase 2 can launch additional MCP servers (stdio) from the UI catalog. Some of them are configured via `config/integrations.json` (copy from `config/integrations.example.json`).
+The desktop app can launch additional MCP servers (stdio) from the UI catalog. Some of them are configured via `config/integrations.json` (copy from `config/integrations.example.json`).
 
 - **`SCA_CONFIG_DIR`**: Directory containing `integrations.json` (default `./config`).
 

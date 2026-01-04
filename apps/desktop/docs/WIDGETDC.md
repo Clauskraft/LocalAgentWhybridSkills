@@ -1,6 +1,6 @@
-# WidgetDC Integration (Phase 2)
+# WidgetDC Integration (Desktop)
 
-This document describes how **SCA-01 Phase 2** integrates with **WidgetDC** via MCP.
+This document describes how the **SCA-01 desktop app** integrates with **WidgetDC** via MCP.
 
 ## Overview
 
@@ -38,7 +38,7 @@ That entrypoint supports **two modes**, chosen at runtime:
 
 ### What happens
 
-- Phase 2 spawns `node <serverPath>` and **fully forwards stdio**, because MCP speaks over stdio.
+- The desktop app spawns `node <serverPath>` and **fully forwards stdio**, because MCP speaks over stdio.
 
 ## Mode B: Native HTTP mode (cockpit/worker tools)
 
@@ -73,7 +73,7 @@ Returns one text content block containing JSON with:
 
 ## How to verify (health check)
 
-From `sca-01-phase2/`:
+From `apps/desktop/`:
 
 ```bash
 npm run test -c vitest.config.ts

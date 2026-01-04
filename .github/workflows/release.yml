@@ -43,36 +43,36 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: sca-01-phase2/package-lock.json
+          cache-dependency-path: apps/desktop/package-lock.json
 
       - name: Install dependencies
         run: npm ci --force
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
 
       - name: Build application
         run: npm run build
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
 
       - name: Build Electron (Windows)
         if: matrix.platform == 'win'
         run: npx electron-builder --win --publish always
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
 
       - name: Build Electron (Linux)
         if: matrix.platform == 'linux'
         run: npx electron-builder --linux --publish always
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
 
       - name: Build Electron (macOS)
         if: matrix.platform == 'mac'
         run: npx electron-builder --mac --publish always
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: sca-01-${{ matrix.platform }}
-          path: sca-01-phase2/dist/${{ matrix.artifact }}
+          path: apps/desktop/dist/${{ matrix.artifact }}
           if-no-files-found: ignore
 
   create-release-notes:

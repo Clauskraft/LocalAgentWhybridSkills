@@ -50,7 +50,7 @@ function startOllamaStub(): Promise<{ baseUrl: string; close: () => Promise<void
   });
 }
 
-describe("sca-01-phase3 chat proxy (integration)", () => {
+describe("sca-01-cloud chat proxy (integration)", () => {
   afterEach(() => {
     delete process.env.OLLAMA_HOST;
   });

@@ -5,7 +5,7 @@ version: 2
 updates:
   # Phase 1 (CLI)
   - package-ecosystem: "npm"
-    directory: "/sca-01-phase1"
+    directory: "/apps/cli"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -28,7 +28,7 @@ updates:
 
   # Phase 2 (Desktop)
   - package-ecosystem: "npm"
-    directory: "/sca-01-phase2"
+    directory: "/apps/desktop"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -54,7 +54,7 @@ updates:
 
   # Phase 3 (Cloud)
   - package-ecosystem: "npm"
-    directory: "/sca-01-phase3"
+    directory: "/services/cloud"
     schedule:
       interval: "weekly"
       day: "monday"

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createServer } from "./httpServer.js";
 
-describe("sca-01-phase3 auth (smoke)", () => {
+describe("sca-01-cloud auth (smoke)", () => {
   afterEach(() => {
     delete process.env.DATABASE_URL;
     delete process.env.NODE_ENV;

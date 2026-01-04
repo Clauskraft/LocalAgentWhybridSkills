@@ -44,7 +44,7 @@ export function parseList(value: string | undefined, fallback: string[] = []): s
 }
 
 /**
- * Alias for parseList for backward compatibility with sca-01-phase2
+ * Alias for parseList for backward compatibility with the legacy desktop package naming
  * @deprecated Use parseList instead
  */
 export const parseStringList = parseList;

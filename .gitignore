@@ -47,6 +47,10 @@ tools/rg/
 .serena/
 .cursor/
 
+# Legacy phase folders (local leftovers after migration; never commit)
+sca-01-phase2/
+sca-01-phase3/
+
 # Playwright artifacts (Desktop app)
 apps/desktop/playwright-report/
 apps/desktop/test-results/

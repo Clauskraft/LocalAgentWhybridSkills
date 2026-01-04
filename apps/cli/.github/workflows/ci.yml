@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: sca-01-phase1
+        working-directory: apps/cli
 
     steps:
       - name: Checkout
@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-          cache-dependency-path: sca-01-phase1/package-lock.json
+          cache-dependency-path: apps/cli/package-lock.json
 
       - name: Install
         run: npm ci
@@ -44,6 +44,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-output
-          path: sca-01-phase1/dist
+          path: apps/cli/dist
           retention-days: 7
 

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createServer } from "./httpServer.js";
 
-describe("sca-01-phase3 chat proxy (smoke)", () => {
+describe("sca-01-cloud chat proxy (smoke)", () => {
   afterEach(() => {
     delete process.env.OLLAMA_HOST;
   });

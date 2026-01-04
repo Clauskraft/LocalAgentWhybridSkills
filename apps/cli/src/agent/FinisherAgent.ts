@@ -295,7 +295,7 @@ export class FinisherAgent {
     // Try built versions first
     const candidates = [
       path.resolve(process.cwd(), "build", "mcp", "toolServer.js"),
-      path.resolve(this.cfg.repoRoot, "sca-01-phase1", "build", "mcp", "toolServer.js")
+      path.resolve(this.cfg.repoRoot, "apps", "cli", "build", "mcp", "toolServer.js")
     ];
 
     for (const candidate of candidates) {

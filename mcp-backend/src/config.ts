@@ -39,10 +39,10 @@ export function loadConfig(): McpBackendConfig {
   const ollamaModel = process.env["OLLAMA_MODEL"] ?? "qwen3";
   const maxTurns = parseIntSafe(process.env["SCA_MAX_TURNS"], 16);
 
-  // Default tool server: reuse Local_Agent sca-01-phase1 tool server (TS in dev)
+  // Default tool server: reuse Local_Agent CLI tool server (TS in dev)
   const toolServerPath =
     process.env["SCA_TOOLSERVER_PATH"] ??
-    path.resolve(repoRoot, "sca-01-phase1", "src", "mcp", "toolServer.ts");
+    path.resolve(repoRoot, "apps", "cli", "src", "mcp", "toolServer.ts");
 
   const toolServerCommand = process.env["SCA_TOOLSERVER_CMD"] ?? "npx";
   const toolServerArgs =
@@ -75,13 +75,13 @@ function detectRepoRoot(): string {
   const fromEnv = process.env["SCA_REPO_ROOT"];
   if (fromEnv && fromEnv.trim().length > 0) return path.resolve(fromEnv);
 
-  // Heuristic for monorepo: prefer the nearest directory that contains sca-01-phase1 + mcp-backend.
+  // Heuristic for monorepo: prefer the nearest directory that contains apps/cli + mcp-backend.
   const cwd = process.cwd();
   const candidates = [cwd, path.resolve(cwd, ".."), path.resolve(cwd, "../..")];
   for (const c of candidates) {
-    const hasPhase1 = fs.existsSync(path.join(c, "sca-01-phase1"));
+    const hasCli = fs.existsSync(path.join(c, "apps", "cli"));
     const hasMcpBackend = fs.existsSync(path.join(c, "mcp-backend"));
-    if (hasPhase1 && hasMcpBackend) return c;
+    if (hasCli && hasMcpBackend) return c;
   }
 
   return cwd;

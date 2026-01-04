@@ -1,6 +1,6 @@
-# SCA-01 Phase 2 - Desktop Agent
+# SCA-01 Desktop Agent
 
-Electron desktop application for SCA-01 (Phase 2).
+Electron desktop application for SCA-01.
 
 ## Features
 
@@ -49,7 +49,7 @@ npm run dev -- doctor
 For multi-device usage, run the UI in cloud mode and point it at the Railway backend:
 
 - Set `SCA_USE_CLOUD=true`
-- Set `SCA_BACKEND_URL=https://sca-01-phase3-production.up.railway.app`
+- Set `SCA_BACKEND_URL` to your deployed cloud backend (Railway URL)
 - Ensure the Railway backend has `OLLAMA_HOST` configured to a non-local Ollama instance (reachable from Railway)
 
 In cloud mode, chat requests are made from the Electron **main process** to the cloud backend (`/api/chat`) via IPC, to avoid browser CORS issues.
@@ -67,7 +67,7 @@ In cloud mode, chat requests are made from the Electron **main process** to the 
 ## Project Structure
 
 ```
-sca-01-phase2/
+apps/desktop/
 ├── src/
 │   ├── agent/
 │   │   └── DesktopAgent.ts     # Main agent logic
@@ -111,7 +111,7 @@ sca-01-phase2/
 ```bash
 # Cloud mode (recommended for multi-device)
 SCA_USE_CLOUD=true
-SCA_BACKEND_URL=https://sca-01-phase3-production.up.railway.app
+SCA_BACKEND_URL=
 
 # Local/remote Ollama (used only when SCA_USE_CLOUD=false)
 OLLAMA_HOST=
@@ -128,7 +128,7 @@ For the full list (including WidgetDC variables), see `docs/ENVIRONMENT_VARIABLE
 
 ## Health Check
 
-- Cloud backend: `GET https://sca-01-phase3-production.up.railway.app/health`
+- Cloud backend: `GET $SCA_BACKEND_URL/health`
 - Local sanity: `npm run lint` and `npm run test`
 
 ## Cloud Sync

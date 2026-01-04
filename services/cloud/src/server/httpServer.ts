@@ -179,7 +179,7 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
     return {
       status: "ok",
       timestamp: new Date().toISOString(),
-      service: "sca-01-phase3",
+      service: "sca-01-cloud",
       version: "0.3.0",
     };
   });
@@ -257,12 +257,12 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
 
     if (dbRequired && !process.env.DATABASE_URL) {
       reply.code(503);
-      return { status: "degraded", error: "DATABASE_URL not set", service: "sca-01-phase3", timestamp: new Date().toISOString() };
+      return { status: "degraded", error: "DATABASE_URL not set", service: "sca-01-cloud", timestamp: new Date().toISOString() };
     }
 
     if (dbRequired && migrationsStatus === "running") {
       reply.code(503);
-      return { status: "degraded", error: "migrations in progress", service: "sca-01-phase3", timestamp: new Date().toISOString() };
+      return { status: "degraded", error: "migrations in progress", service: "sca-01-cloud", timestamp: new Date().toISOString() };
     }
 
     if (dbRequired && migrationsStatus === "error") {
@@ -270,7 +270,7 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
       return {
         status: "degraded",
         error: `migrations failed: ${migrationsError ?? "unknown"}`,
-        service: "sca-01-phase3",
+        service: "sca-01-cloud",
         timestamp: new Date().toISOString(),
       };
     }
@@ -279,10 +279,10 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
       if (process.env.DATABASE_URL) {
         await initializeDatabase(); // connectivity check
       }
-      return { status: "ready", timestamp: new Date().toISOString(), db: !!process.env.DATABASE_URL, service: "sca-01-phase3" };
+      return { status: "ready", timestamp: new Date().toISOString(), db: !!process.env.DATABASE_URL, service: "sca-01-cloud" };
     } catch (err) {
       reply.code(503);
-      return { status: "degraded", error: (err as Error).message, service: "sca-01-phase3", timestamp: new Date().toISOString() };
+      return { status: "degraded", error: (err as Error).message, service: "sca-01-cloud", timestamp: new Date().toISOString() };
     }
   });
 

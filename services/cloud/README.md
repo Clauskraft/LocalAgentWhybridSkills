@@ -1,4 +1,4 @@
-# SCA-01 Phase 3 - Cloud API
+# SCA-01 Cloud API
 
 Cloud-hosted API server for SCA-01, deployed on Railway with PostgreSQL.
 
@@ -7,7 +7,7 @@ Cloud-hosted API server for SCA-01, deployed on Railway with PostgreSQL.
 ## Quick Start
 
 ```bash
-cd sca-01-phase3
+cd services/cloud
 npm install
 npm run build
 npm start
@@ -245,7 +245,7 @@ CREATE TABLE messages (
 ## Project Structure
 
 ```
-sca-01-phase3/
+services/cloud/
 ├── src/
 │   ├── auth/
 │   │   └── jwtAuth.ts          # JWT service

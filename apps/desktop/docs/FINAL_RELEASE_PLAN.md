@@ -1,6 +1,6 @@
-# Final Release Plan (Phase 2)
+# Final Release Plan (Desktop)
 
-This is the concrete checklist to ship a **final Phase 2 release** to GitHub Releases with reproducible builds and clear gates.
+This is the concrete checklist to ship a **desktop release** to GitHub Releases with reproducible builds and clear gates.
 
 ## Goals for “Final”
 
@@ -17,7 +17,7 @@ This is the concrete checklist to ship a **final Phase 2 release** to GitHub Rel
 
 ## Local gates (developer machine)
 
-Run from `sca-01-phase2/`:
+Run from `apps/desktop/`:
 
 ### Quality
 
@@ -83,7 +83,7 @@ They expect `GH_TOKEN` or `GITHUB_TOKEN` set in the environment and will:
 
 ## Auto-updater milestone (decide before “final”)
 
-Phase 2 includes `electron-updater`, but it may be disabled in the main process pending module-loading fixes.
+The desktop app includes `electron-updater`, but it may be disabled in the main process pending module-loading fixes.
 
 Pick one before final:
 
