@@ -13,7 +13,6 @@ import { notionRoutes } from "../routes/notionRoutes.js";
 import { executionRoutes } from "../routes/executionRoutes.js";
 import { registerGitHubRoutes } from "../routes/githubRoutes.js";
 import { registerRepoRoutes } from "../routes/repoRoutes.js";
-import fs from "node:fs/promises";
 
 type MigrationsStatus = "not_started" | "running" | "ok" | "error";
 let migrationsStatus: MigrationsStatus = "not_started";

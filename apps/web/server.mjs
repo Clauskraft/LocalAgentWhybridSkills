@@ -89,7 +89,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, host, () => {
-  // eslint-disable-next-line no-console
   console.log(`web-ui listening on http://${host}:${port}`);
 });
 
