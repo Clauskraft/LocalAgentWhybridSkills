@@ -16,6 +16,9 @@ export interface UISettings {
   safeDirs?: string[];
 }
 
+// Backwards-compatible name used by other modules/types.
+export type SettingsState = UISettings;
+
 const DEFAULT_SETTINGS: UISettings = {
   ollamaHost: 'http://localhost:11434',
   model: 'qwen3:8b',

@@ -682,7 +682,8 @@ function MCPSettings() {
 
   // NOTE: window.chat is provided by Electron preload. Some TS setups may not pick up global.d.ts reliably,
   // so we access it via a safe cast to keep the renderer typecheck clean.
-  const chat = (window as unknown as { chat?: any }).chat as
+  const mcp = ((window as unknown as { sca01?: any }).sca01?.mcp ??
+    (window as unknown as { chat?: any }).chat) as
     | {
         getMcpServers?: () => Promise<
           Array<{ id: string; name: string; type: string; endpoint: string; enabled: boolean }>
@@ -705,7 +706,7 @@ function MCPSettings() {
 
   async function refreshInstalled() {
     try {
-      const list = (await chat?.getMcpServers?.()) ?? [];
+      const list = (await mcp?.getMcpServers?.()) ?? [];
       // Only show custom services as MCP servers (ConfigStore also contains Ollama Local, etc.)
       setInstalled(list.filter((s) => s.type === "custom"));
     } catch {
@@ -723,7 +724,7 @@ function MCPSettings() {
     setBusy(serverId);
     setNotice(null);
     try {
-      const res = await chat?.installMcpFromCatalog?.(serverId);
+      const res = await mcp?.installMcpFromCatalog?.(serverId);
       if (!res) {
         setNotice("MCP install API ikke tilgængelig (preload/IPC).");
         return;
@@ -747,7 +748,7 @@ function MCPSettings() {
     setBusy(name);
     setNotice(null);
     try {
-      await chat?.removeMcpServer?.(name);
+      await mcp?.removeMcpServer?.(name);
       await refreshInstalled();
       setNotice("Fjernet ✅");
     } finally {
@@ -759,7 +760,7 @@ function MCPSettings() {
     setBusy("auto");
     setNotice(null);
     try {
-      const res = await chat?.autoSetupMcp?.({ includeAuth });
+      const res = await mcp?.autoSetupMcp?.({ includeAuth });
       if (!res?.success) {
         setNotice("Auto-opsæt fejlede.");
         return;

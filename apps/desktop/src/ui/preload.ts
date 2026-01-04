@@ -78,6 +78,13 @@ export interface SCA01API {
       }>;
     }>;
   };
+  mcp: {
+    getServers: () => Promise<unknown[]>;
+    getCatalog: () => Promise<unknown[]>;
+    installFromCatalog: (serverId: string) => Promise<unknown>;
+    removeServer: (name: string) => Promise<boolean>;
+    autoSetup: (opts?: { includeAuth?: boolean }) => Promise<unknown>;
+  };
   getPendingApprovals: () => Promise<ApprovalRequest[]>;
   getApprovalHistory: (limit: number) => Promise<ApprovalRequest[]>;
   approveRequest: (id: string) => Promise<boolean>;
@@ -156,6 +163,13 @@ const api: SCA01API = {
   },
   perf: {
     getStats: () => ipcRenderer.invoke("perf-get-stats"),
+  },
+  mcp: {
+    getServers: () => ipcRenderer.invoke("mcp-get-servers"),
+    getCatalog: () => ipcRenderer.invoke("mcp-get-catalog"),
+    installFromCatalog: (serverId: string) => ipcRenderer.invoke("mcp-install-from-catalog", serverId),
+    removeServer: (name: string) => ipcRenderer.invoke("mcp-remove-server", name),
+    autoSetup: (opts?: { includeAuth?: boolean }) => ipcRenderer.invoke("mcp-auto-setup", opts),
   },
   getPendingApprovals: () => ipcRenderer.invoke("get-pending-approvals"),
   getApprovalHistory: (limit: number) => ipcRenderer.invoke("get-approval-history", limit),
