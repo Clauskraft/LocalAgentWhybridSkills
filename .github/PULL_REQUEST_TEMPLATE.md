@@ -18,19 +18,24 @@
 ## Testing
 <!-- Describe the tests you ran -->
 
-- [ ] I have run `npm run test` in affected packages
-- [ ] I have run `npm run lint` in affected packages
-- [ ] I have tested manually on my device
+- [ ] I have run tests in affected packages (prefer `make mvp` / `make release` where available)
+- [ ] I have run lint in affected packages
+- [ ] I have tested manually (if applicable)
+
+## How to Verify
+<!-- Paste exact commands / steps a reviewer can run to verify the change -->
 
 ## Checklist
 <!-- Mark completed items with an x -->
 
 - [ ] My code follows the project's TypeScript strict standards
-- [ ] I have added/updated documentation as needed
+- [ ] I have added/updated documentation as needed (incl. Quick Start / Env Vars / Health Check when relevant)
 - [ ] I have added tests covering my changes
+- [ ] New API/worker functions have at least one integration test and one smoke test
 - [ ] All new and existing tests pass
 - [ ] No secrets or credentials are committed
 - [ ] Security implications have been considered
+- [ ] If env vars changed, I updated the relevant `.env.example`
 
 ## Screenshots (if applicable)
 <!-- Add screenshots to help explain your changes -->

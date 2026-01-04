@@ -655,7 +655,6 @@ async function main(): Promise<void> {
   await registerGitHubRoutes(server, log);
   console.log("✅ GitHub routes registered");
 
-  
   try {
     await server.listen({ port, host });
     console.log(`🚀 SCA-01 Cloud Server running at http://${host}:${port}`);
@@ -704,5 +703,3 @@ function sanitizeHost(host: string | undefined): string | null {
   if (h === "localhost" || h === "127.0.0.1" || h === "::1") return null;
   return host;
 }
-
-
