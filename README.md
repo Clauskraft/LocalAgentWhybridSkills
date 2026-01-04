@@ -81,6 +81,10 @@ npm install
 npm run cloud
 ```
 
+## Workflow
+
+We use a **branch → PR → merge** workflow. See `docs/WORKFLOW.md`.
+
 ### Start CLI runtime (minimal)
 
 ```bash
