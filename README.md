@@ -48,6 +48,7 @@ To make this easier, you can now start the products from the repo root with simp
 |-----------|-------------|--------|
 | [apps/cli](./apps/cli/) | CLI MVP with MCP tools | ✅ Complete |
 | [apps/desktop](./apps/desktop/) | Desktop app with full system access | ✅ Complete |
+| [apps/web](./apps/web/) | Web UI (Open WebUI-style) for Cloud sessions | ✅ MVP |
 | [services/cloud](./services/cloud/) | Cloud API on Railway | ✅ Deployed |
 | [sca-01-mobile](./sca-01-mobile/) | Android/iOS app with Expo | ✅ Complete |
 
@@ -64,6 +65,13 @@ To make this easier, you can now start the products from the repo root with simp
 ```bash
 npm install
 npm run desktop
+```
+
+### Start Web UI (Open WebUI-style)
+
+```bash
+npm install
+npm run web
 ```
 
 ### Start Cloud API locally

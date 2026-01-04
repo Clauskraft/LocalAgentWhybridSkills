@@ -9,12 +9,16 @@
     "desktop": "npm --prefix apps/desktop run dev:ui",
     "desktop:build": "npm --prefix apps/desktop run build",
     "desktop:test": "npm --prefix apps/desktop run test",
+    "web": "npm --prefix apps/web run dev -- --host 127.0.0.1 --port 5174 --strictPort",
+    "web:build": "npm --prefix apps/web run build",
+    "web:test": "npm --prefix apps/web run typecheck && npm --prefix apps/web run lint",
+    "web:smoke": "npm --prefix apps/web run test:smoke",
     "cloud": "npm --prefix services/cloud run dev:server",
     "cloud:build": "npm --prefix services/cloud run build",
     "cloud:test": "npm --prefix services/cloud run test",
     "cli": "npm --prefix apps/cli run dev -- run",
     "cli:doctor": "npm --prefix apps/cli run dev -- doctor",
-    "install:all": "npm --prefix apps/cli install && npm --prefix apps/desktop install && npm --prefix services/cloud install"
+    "install:all": "npm --prefix apps/cli install && npm --prefix apps/desktop install && npm --prefix apps/web install && npm --prefix services/cloud install"
   }
 }
 
