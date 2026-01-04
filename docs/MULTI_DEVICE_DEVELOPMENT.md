@@ -52,9 +52,9 @@ graph TB
 
 ### Current Implementation Status (Phase 2)
 
-Phase 2 contains an `electron-updater` implementation (`sca-01-phase2/src/updater/autoUpdater.ts`), but **it is currently disabled** in the Electron main process due to an ESM/CJS loading issue:
+The desktop app contains an `electron-updater` implementation (`apps/desktop/src/updater/autoUpdater.ts`), but **it is currently disabled** in the Electron main process due to an ESM/CJS loading issue:
 
-- `sca-01-phase2/src/ui/main.ts` has `initUpdater` commented out with a TODO.
+- `apps/desktop/src/ui/main.ts` has `initUpdater` commented out with a TODO.
 
 Until that TODO is resolved, updates are done via manual install (or release artifacts).
 
@@ -89,7 +89,7 @@ Until that TODO is resolved, updates are done via manual install (or release art
 git clone https://github.com/Clauskraft/LocalAgentWhybridSkills.git
 
 # Install and run (desktop dev)
-cd sca-01-phase2
+cd apps/desktop
 npm ci --force
 npm run dev:ui
 
@@ -121,7 +121,7 @@ npm run dev
 $env:GH_TOKEN = "<github_token>"
 
 # Run release script
-cd sca-01-phase2
+cd apps/desktop
 .\scripts\release.ps1 -VersionBump patch
 ```
 

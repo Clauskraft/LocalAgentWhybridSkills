@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import type { Message } from '../App';
+import { IconBolt, IconPlug, IconSettings, IconShield } from './icons';
 
 interface MessageBubbleProps {
   message: Message;
@@ -18,7 +19,7 @@ export const MessageBubble = memo(function MessageBubble({ message }: MessageBub
     ? 'bg-tdc-blue' 
     : 'bg-tdc-purple';
 
-  const avatarIcon = isUser ? '👤' : isSystem ? '⚙️' : isTool ? '🔧' : '⚡';
+  const avatarIcon = isUser ? <IconShield className="w-4 h-4" /> : isSystem ? <IconSettings className="w-4 h-4" /> : isTool ? <IconPlug className="w-4 h-4" /> : <IconBolt className="w-4 h-4" />;
   const roleName = isUser ? 'Dig' : isSystem ? 'System' : isTool ? 'Tool' : 'SCA-01';
 
   return (
@@ -47,7 +48,7 @@ export const MessageBubble = memo(function MessageBubble({ message }: MessageBub
         {message.toolCalls?.map((tc, i) => (
           <div key={i} className="mt-3 p-3 bg-bg-tertiary border border-border-primary rounded-lg">
             <div className="flex items-center gap-2 text-tdc-blue font-semibold text-sm mb-2">
-              🔧 {tc.name}
+              <IconPlug className="w-4 h-4" /> {tc.name}
             </div>
             <pre className="text-xs text-text-secondary bg-bg-primary p-2 rounded overflow-x-auto">
               {JSON.stringify(tc.arguments, null, 2)}
@@ -96,7 +97,7 @@ function formatContent(content: string): React.ReactNode {
               onClick={() => navigator.clipboard.writeText(code.trim())}
               className="absolute top-2 right-2 px-2 py-1 text-xs bg-bg-hover text-text-muted rounded opacity-0 group-hover/code:opacity-100 hover:text-text-primary transition-all"
             >
-              📋 Kopiér
+              Kopiér
             </button>
           </div>
         );

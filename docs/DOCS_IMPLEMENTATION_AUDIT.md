@@ -5,7 +5,7 @@ This document validates **documentation claims** against the **current implement
 ## Scope
 
 - Root docs: `README.md`, `docs/*.md`
-- Phases: `sca-01-phase{1,2,3,4}/README.md` + relevant `docs/`
+- Packages: `apps/*/README.md`, `services/*/README.md`, plus relevant `docs/`
 - Shared packages: `shared/*/README.md`
 - CI: `.github/workflows/*.yml`
 
@@ -13,17 +13,17 @@ This document validates **documentation claims** against the **current implement
 
 ### P0 (Onboarding breakage)
 - **Phase 2 docs mention non-existent scripts** (`dev:chat`, `dev:cockpit`).
-  - **Reality**: Phase 2 uses `npm run dev:ui` (auto-port launcher) and `npm start` for packaged run.
-  - **Fix**: update root `README.md` + `sca-01-phase2/README.md` to reference `dev:ui` and remove/mark legacy scripts.
+  - **Reality**: the desktop app uses `npm run dev:ui` (auto-port launcher) and `npm start` for packaged run.
+  - **Fix**: update root `README.md` + `apps/desktop/README.md` to reference `dev:ui` and remove/mark legacy scripts.
 
 ### P1 (Incorrect / inconsistent details)
 - **Root env var drift**: root README listed Phase 2 env vars that are not implemented.
-  - **Reality**: Phase 2 uses `SCA_ALLOW_WRITE`, `SCA_ALLOW_EXEC`, `SCA_FULL_ACCESS`, `SCA_AUTO_APPROVE`, limits, theme, and cloud flags (see `sca-01-phase2/src/defaultConfig.ts`).
+  - **Reality**: the desktop app uses `SCA_ALLOW_WRITE`, `SCA_ALLOW_EXEC`, `SCA_FULL_ACCESS`, `SCA_AUTO_APPROVE`, limits, theme, and cloud flags (see `apps/desktop/src/defaultConfig.ts`).
   - **Fix**: update root `README.md` to match Phase 2 env vars.
 
 - **Phase 3 port mismatch**: docs mention `:3000` and `:8787`.
-  - **Reality**: `sca-01-phase3/src/server/httpServer.ts` defaults to `8787` in dev; `PORT` env overrides (Railway typically sets `PORT=3000`).
-  - **Fix**: update `sca-01-phase3/README.md` to reflect default + override behavior consistently.
+  - **Reality**: `services/cloud/src/server/httpServer.ts` defaults to `8787` in dev; `PORT` env overrides (Railway typically sets `PORT=3000`).
+  - **Fix**: update `services/cloud/README.md` to reflect default + override behavior consistently.
 
 - **Phase 4 roadmap drift**: docs list “HTTP transport support” as TODO.
   - **Reality**: Phase 4 implements HTTP transport + `mesh ping` / enhanced `mesh status`.

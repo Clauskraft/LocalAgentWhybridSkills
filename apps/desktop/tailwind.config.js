@@ -29,6 +29,11 @@ export default {
         'border-secondary': '#3F3F46',
         // App accent color used across UI (buttons, focus rings, active states)
         'accent': '#E20074',
+        'accent-hover': '#B8005D',
+        'accent-soft': 'rgba(226, 0, 116, 0.14)',
+        'success': '#22C55E',
+        'warning': '#F59E0B',
+        'error': '#EF4444',
       },
       fontFamily: {
         sans: ['Inter', 'Segoe UI', 'system-ui', '-apple-system', 'sans-serif'],

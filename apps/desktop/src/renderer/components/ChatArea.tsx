@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, memo, useCallback } from 'react';
 import type { Message } from '../App';
 import { MessageBubble } from './MessageBubble';
 import { WelcomeScreen } from './WelcomeScreen';
+import { IconChevronDown, IconPlug, IconSend, IconShield } from './icons';
 
 interface ChatAreaProps {
   messages: Message[];
@@ -79,13 +80,15 @@ export const ChatArea = memo(function ChatArea({
         <div className="relative">
           <button
             onClick={() => setShowModelDropdown(!showModelDropdown)}
-            className="flex items-center gap-2 px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg hover:bg-bg-hover transition-colors"
+            className="btn btn-secondary px-3 py-2"
           >
             <div>
               <div className="font-semibold text-sm">{currentModel}</div>
               <div className="text-xs text-text-muted">{security.useCloud ? 'Cloud' : 'Ollama'}</div>
             </div>
-            <span className="text-text-muted">▼</span>
+            <span className="text-text-muted">
+              <IconChevronDown className="w-4 h-4" />
+            </span>
           </button>
 
           {showModelDropdown && (
@@ -100,9 +103,7 @@ export const ChatArea = memo(function ChatArea({
                     // TODO: Update model
                     setShowModelDropdown(false);
                   }}
-                  className={`px-3 py-2 cursor-pointer hover:bg-bg-hover ${
-                    model === currentModel ? 'bg-accent text-white' : ''
-                  }`}
+                  className={`px-3 py-2 cursor-pointer hover:bg-bg-hover ${model === currentModel ? 'bg-accent-soft text-text-primary' : ''}`}
                 >
                   {model}
                 </div>
@@ -114,7 +115,7 @@ export const ChatArea = memo(function ChatArea({
                 }}
                 className="px-3 py-2 text-sm text-text-muted border-t border-border-primary cursor-pointer hover:bg-bg-hover"
               >
-                ⚙️ Flere modeller...
+                Flere modeller…
               </div>
             </div>
           )}
@@ -122,17 +123,15 @@ export const ChatArea = memo(function ChatArea({
 
         {/* Status */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded-md text-sm">
+          <div className="badge">
             <span className={security.fullAccess ? 'text-warning' : 'text-text-muted'}>
-              {security.fullAccess ? '⚠️' : '🔒'}
+              <IconShield className="w-4 h-4" />
             </span>
             <span className="text-text-secondary">
               {security.fullAccess ? 'Full access' : 'Safe mode'}
             </span>
             <span className="text-text-muted">·</span>
-            <span className="text-text-muted">
-              {security.safeDirsCount} safe dirs
-            </span>
+            <span className="text-text-muted">{security.safeDirsCount} safe dirs</span>
             <span className="text-text-muted">·</span>
             <span className={security.autoApprove ? 'text-warning' : 'text-text-muted'}>
               {security.autoApprove ? 'Auto-approve' : 'Manual approve'}
@@ -140,19 +139,18 @@ export const ChatArea = memo(function ChatArea({
           </div>
           <button
             onClick={() => onOpenSettings('mcp')}
-            className="px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded-md text-sm text-text-secondary hover:bg-bg-hover transition-colors"
+            className="btn btn-secondary px-3 py-1.5"
           >
-            🔌 MCP
+            <IconPlug className="w-4 h-4" /> MCP
           </button>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-tertiary border border-border-primary rounded-md text-sm">
-            <span className={
-              ollamaStatus === 'online' ? 'text-success' :
-              ollamaStatus === 'offline' ? 'text-error' : 'text-warning'
-            }>
-              {ollamaStatus === 'online' ? '🟢' : ollamaStatus === 'offline' ? '🔴' : '🟡'}
-            </span>
+          <div className="badge">
+            <span
+              className={`inline-block w-2 h-2 rounded-full ${
+                ollamaStatus === 'online' ? 'bg-success' : ollamaStatus === 'offline' ? 'bg-error' : 'bg-warning'
+              }`}
+            />
             <span className="text-text-secondary">
-              {ollamaStatus === 'online' ? 'Online' : ollamaStatus === 'offline' ? 'Offline' : 'Tjekker...'}
+              {ollamaStatus === 'online' ? 'Online' : ollamaStatus === 'offline' ? 'Offline' : 'Tjekker…'}
             </span>
           </div>
         </div>
@@ -217,26 +215,26 @@ export const ChatArea = memo(function ChatArea({
               <div className="flex gap-2">
                 <button
                   onClick={() => onOpenSettings('mcp')}
-                  className="w-9 h-9 rounded-lg bg-bg-tertiary text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors flex items-center justify-center"
+                  className="icon-btn"
                   title="MCP Tools"
                 >
-                  🔌
+                  <IconPlug className="w-4 h-4" />
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={!input.trim() || isLoading}
-                  className="w-9 h-9 rounded-lg bg-accent text-white hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                  className="icon-btn bg-accent text-white border-transparent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Send (Enter)"
                 >
-                  ➤
+                  <IconSend className="w-4 h-4" />
                 </button>
               </div>
             </div>
             
             <div className="flex gap-2 pt-2 mt-2 border-t border-border-primary">
-              <ToolButton icon="📎" label="Vedhæft fil" onClick={() => {}} />
-              <ToolButton icon="🔧" label="Tools" onClick={() => onOpenSettings('mcp')} />
-              <ToolButton icon="📝" label="System Prompt" onClick={() => onOpenSettings('prompts')} />
+              <ToolButton icon={<span className="inline-flex items-center justify-center"><IconPlug className="w-4 h-4" /></span>} label="MCP" onClick={() => onOpenSettings('mcp')} />
+              <ToolButton icon={<span className="inline-flex items-center justify-center"><IconSend className="w-4 h-4" /></span>} label="Send" onClick={handleSubmit} />
+              <ToolButton icon={<span className="inline-flex items-center justify-center"><IconChevronDown className="w-4 h-4" /></span>} label="Prompts" onClick={() => onOpenSettings('prompts')} />
             </div>
           </div>
           
@@ -275,7 +273,7 @@ function ToolButton({
   label, 
   onClick 
 }: { 
-  icon: string; 
+  icon: React.ReactNode; 
   label: string; 
   onClick: () => void;
 }) {

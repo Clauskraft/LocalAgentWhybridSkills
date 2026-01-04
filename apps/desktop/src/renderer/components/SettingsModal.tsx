@@ -2,6 +2,7 @@ import React, { memo, useEffect, useId, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { MCP_SERVER_CATALOG } from '../../mcp/serverCatalog';
+import { IconBolt, IconPlug, IconSettings, IconShield, IconX } from './icons';
 
 interface Settings {
   ollamaHost: string;
@@ -25,14 +26,14 @@ interface SettingsModalProps {
 }
 
 const TABS = [
-  { id: 'general', icon: '⚙️', label: 'Generelt' },
-  { id: 'repos', icon: '🗂️', label: 'Repos' },
-  { id: 'models', icon: '🤖', label: 'Modeller' },
-  { id: 'mcp', icon: '🔌', label: 'MCP Servere' },
-  { id: 'prompts', icon: '📝', label: 'System Prompts' },
-  { id: 'security', icon: '🔐', label: 'Sikkerhed' },
-  { id: 'perf', icon: '📈', label: 'Performance' },
-  { id: 'theme', icon: '🎨', label: 'Theme' },
+  { id: 'general', icon: <IconSettings className="w-4 h-4" />, label: 'Generelt' },
+  { id: 'repos', icon: <IconShield className="w-4 h-4" />, label: 'Repos' },
+  { id: 'models', icon: <IconBolt className="w-4 h-4" />, label: 'Modeller' },
+  { id: 'mcp', icon: <IconPlug className="w-4 h-4" />, label: 'MCP Servere' },
+  { id: 'prompts', icon: <IconSettings className="w-4 h-4" />, label: 'System Prompts' },
+  { id: 'security', icon: <IconShield className="w-4 h-4" />, label: 'Sikkerhed' },
+  { id: 'perf', icon: <IconBolt className="w-4 h-4" />, label: 'Performance' },
+  { id: 'theme', icon: <IconSettings className="w-4 h-4" />, label: 'Theme' },
 ];
 
 export const SettingsModal = memo(function SettingsModal({
@@ -52,16 +53,17 @@ export const SettingsModal = memo(function SettingsModal({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
       <div className="bg-bg-secondary border border-border-primary rounded-2xl w-[700px] max-w-[90vw] max-h-[85vh] overflow-hidden flex flex-col animate-slide-up">
         {/* Header */}
         <div className="px-6 py-4 border-b border-border-primary flex items-center justify-between">
           <h2 className="text-lg font-semibold">Indstillinger</h2>
           <button
             onClick={onClose}
-            className="text-2xl text-text-muted hover:text-text-primary transition-colors"
+            className="icon-btn w-9 h-9"
+            aria-label="Luk"
           >
-            ×
+            <IconX className="w-4 h-4" />
           </button>
         </div>
 
@@ -76,12 +78,13 @@ export const SettingsModal = memo(function SettingsModal({
                 className={`
                   w-full text-left px-3 py-2 rounded-md text-sm mb-0.5
                   transition-colors flex items-center gap-2
-                  ${activeTab === tab.id 
-                    ? 'bg-accent text-white' 
+                  ${activeTab === tab.id
+                    ? 'bg-bg-active text-text-primary border border-border-secondary'
                     : 'text-text-secondary hover:bg-bg-hover'}
                 `}
               >
-                {tab.icon} {tab.label}
+                <span className={activeTab === tab.id ? "text-accent" : "text-text-muted"}>{tab.icon}</span>
+                {tab.label}
               </button>
             ))}
           </nav>
@@ -768,8 +771,8 @@ function PromptsSettings({
           className="form-input font-mono text-sm"
           placeholder="Indtast system prompt..."
         />
-        <button className="mt-3 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors">
-          💾 Gem Prompt
+        <button className="btn btn-primary mt-3">
+          Gem prompt
         </button>
       </Section>
     </div>
@@ -794,7 +797,7 @@ function SecuritySettings({
             className="w-4 h-4 rounded border-border-primary"
           />
           <span className="text-sm">
-            Fuld system-adgang <span className="text-warning">(⚠️ Farligt)</span>
+            Fuld system-adgang <span className="text-warning">(farligt)</span>
           </span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer mt-2">
@@ -805,7 +808,7 @@ function SecuritySettings({
             className="w-4 h-4 rounded border-border-primary"
           />
           <span className="text-sm">
-            Auto-godkend alle operationer <span className="text-warning">(⚠️ Farligt)</span>
+            Auto-godkend alle operationer <span className="text-warning">(farligt)</span>
           </span>
         </label>
       </Section>
@@ -819,9 +822,7 @@ function SecuritySettings({
         />
       </Section>
 
-      <button className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors">
-        💾 Gem Sikkerhed
-      </button>
+      <button className="btn btn-primary">Gem sikkerhed</button>
     </div>
   );
 }
@@ -867,7 +868,7 @@ function ThemeSettings({
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="mb-6">
-      <h3 className="text-sm font-semibold text-accent mb-4">{title}</h3>
+      <h3 className="text-sm font-semibold text-text-primary mb-4">{title}</h3>
       {children}
     </div>
   );

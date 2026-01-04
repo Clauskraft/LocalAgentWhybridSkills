@@ -2,15 +2,15 @@
 
 A completion engine that takes partial implementations and drives them to "Definition of Done" with security-by-design principles.
 
-## Why the repo has “phase” folders
+## Why the repo used to have “phase” folders
 
-`sca-01-phase1/2/3` started as **implementation phases**, but they also became **separate deployable packages** (CLI, Desktop app, Cloud API). That naming is historically accurate but confusing.
+The project started as **implementation phases**, but those phases also became **separate deployable packages** (CLI, Desktop app, Cloud API). That naming was historically accurate but confusing, so the deployable packages now live under `apps/` and `services/`.
 
 **Rule of thumb:** think in **products**, not phases:
 
-- **Desktop Agent** (Electron UI): `sca-01-phase2/`
-- **Cloud API** (Railway): `sca-01-phase3/`
-- **CLI runtime** (local dev / minimal): `sca-01-phase1/`
+- **Desktop Agent** (Electron UI): `apps/desktop/`
+- **Cloud API** (Railway): `services/cloud/`
+- **CLI runtime** (local dev / minimal): `apps/cli/`
 
 To make this easier, you can now start the products from the repo root with simple commands (see below).
 
@@ -22,9 +22,8 @@ To make this easier, you can now start the products from the repo root with simp
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐         │
-│  │   Phase 1   │    │   Phase 2   │    │   Phase 3   │         │
-│  │    CLI      │    │   Desktop   │    │    Cloud    │         │
-│  │   (MVP)     │◄──►│  (Electron) │◄──►│  (Railway)  │         │
+│  │     CLI     │    │   Desktop   │    │    Cloud    │         │
+│  │   (local)   │◄──►│  (Electron) │◄──►│  (Railway)  │         │
 │  └─────────────┘    └─────────────┘    └─────────────┘         │
 │        │                  │                   ▲                 │
 │        │                  │                   │                 │
@@ -47,9 +46,9 @@ To make this easier, you can now start the products from the repo root with simp
 
 | Component | Description | Status |
 |-----------|-------------|--------|
-| [sca-01-phase1](./sca-01-phase1/) | CLI MVP with MCP tools | ✅ Complete |
-| [sca-01-phase2](./sca-01-phase2/) | Desktop app with full system access | ✅ Complete |
-| [sca-01-phase3](./sca-01-phase3/) | Cloud API on Railway | ✅ Deployed |
+| [apps/cli](./apps/cli/) | CLI MVP with MCP tools | ✅ Complete |
+| [apps/desktop](./apps/desktop/) | Desktop app with full system access | ✅ Complete |
+| [services/cloud](./services/cloud/) | Cloud API on Railway | ✅ Deployed |
 | [sca-01-mobile](./sca-01-mobile/) | Android/iOS app with Expo | ✅ Complete |
 
 ## 🚀 Quick Start
@@ -67,7 +66,7 @@ npm install
 npm run desktop
 ```
 
-### Start Cloud API locally (Phase 3 backend)
+### Start Cloud API locally
 
 ```bash
 npm install
@@ -84,12 +83,7 @@ npm run cli
 
 ## Cloud (production)
 
-Already deployed at: `https://sca-01-phase3-production.up.railway.app`
-
-```bash
-# Test health
-curl https://sca-01-phase3-production.up.railway.app/health
-```
+See `services/cloud/README.md` for the current production URL and health check command.
 
 ### Mobile App
 
@@ -176,7 +170,6 @@ NOTION_DATABASE_ID=xxx
 
 ## 🔗 Links
 
-- **Cloud API:** `https://sca-01-phase3-production.up.railway.app`
 - **GitHub:** `https://github.com/Clauskraft/LocalAgentWhybridSkills`
 
 ## 📄 License

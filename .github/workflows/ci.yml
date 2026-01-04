@@ -25,53 +25,57 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-          cache-dependency-path: sca-01-phase2/package-lock.json
+          cache-dependency-path: apps/desktop/package-lock.json
 
       - name: Install dependencies (Phase 1)
         run: npm ci
-        working-directory: sca-01-phase1
+        working-directory: apps/cli
 
       - name: Install dependencies (Phase 2)
         run: npm ci --force
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
 
       - name: Lint Phase 1
         run: npm run lint
-        working-directory: sca-01-phase1
+        working-directory: apps/cli
         continue-on-error: true
 
       - name: Lint Phase 2
         run: npm run lint
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
       
       - name: Typecheck Phase 2 (noEmit)
         run: npm run typecheck
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
+
+      - name: Docs sanity (Phase 2)
+        run: make docs-sanity
+        working-directory: apps/desktop
 
       - name: Build Phase 1
         run: npm run build
-        working-directory: sca-01-phase1
+        working-directory: apps/cli
 
       - name: Build Phase 2
         run: npm run build
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
 
       - name: Test Phase 1
         run: npm run test
-        working-directory: sca-01-phase1
+        working-directory: apps/cli
         continue-on-error: true
 
       - name: Test Phase 2
         run: npm run test
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
 
       - name: Install Playwright browsers (Phase 2)
         run: npx playwright install --with-deps chromium
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
 
       - name: Playwright smoke (Phase 2, chromium)
         run: npm run test:smoke:ci
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
 
   api-phase3:
     runs-on: ubuntu-latest
@@ -99,31 +103,31 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: sca-01-phase3/package-lock.json
+          cache-dependency-path: services/cloud/package-lock.json
 
       - name: Install dependencies (Phase 3)
         run: npm ci
-        working-directory: sca-01-phase3
+        working-directory: services/cloud
 
       - name: Lint Phase 3
         run: npm run lint
-        working-directory: sca-01-phase3
+        working-directory: services/cloud
 
       - name: Build Phase 3
         run: npm run build
-        working-directory: sca-01-phase3
+        working-directory: services/cloud
 
       - name: Run migrations (dev)
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sca01
         run: npm run db:migrate:dev
-        working-directory: sca-01-phase3
+        working-directory: services/cloud
 
       - name: Test Phase 3
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sca01
         run: npm run test
-        working-directory: sca-01-phase3
+        working-directory: services/cloud
 
   phase4-mesh:
     runs-on: ubuntu-latest
@@ -192,12 +196,12 @@ jobs:
 
       - name: Audit Phase 1
         run: npm audit --audit-level=high
-        working-directory: sca-01-phase1
+        working-directory: apps/cli
         continue-on-error: true
 
       - name: Audit Phase 2
         run: npm audit --audit-level=high
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
 
   build-check:
     needs: lint-and-test
@@ -216,15 +220,15 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: sca-01-phase2/package-lock.json
+          cache-dependency-path: apps/desktop/package-lock.json
 
       - name: Install dependencies
         run: npm ci --force
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
 
       - name: Build TypeScript
         run: npm run build
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
 
       - name: Verify Electron can start (headless)
         if: runner.os == 'Linux'
@@ -232,6 +236,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y xvfb
           xvfb-run --auto-servernum npm run start -- --version || echo "Electron check complete"
-        working-directory: sca-01-phase2
+        working-directory: apps/desktop
         continue-on-error: true
 

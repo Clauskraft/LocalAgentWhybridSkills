@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-bg-primary text-text-primary font-sans antialiased overflow-hidden h-screen m-0 p-0;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border-secondary rounded;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-text-muted;
+  }
+}
+
+@layer components {
+  /* ========== Form controls ========== */
+  .form-input {
+    @apply w-full bg-bg-tertiary text-text-primary placeholder:text-text-muted;
+    @apply border border-border-primary rounded-lg px-3 py-2;
+    @apply transition-colors;
+  }
+
+  .form-input:focus {
+    /*
+      Avoid `@apply ring-accent/border-accent` because Tailwind's class resolver can
+      fail hard in dev-server contexts, which blocks the Vite page from rendering.
+    */
+    --tw-ring-color: rgba(226, 0, 116, var(--tw-ring-opacity));
+    border-color: theme('colors.accent');
+    @apply outline-none ring-2 ring-opacity-60;
+  }
+
+  .form-input:disabled {
+    @apply opacity-60 cursor-not-allowed;
+  }
+
+  /* ========== Enterprise UI primitives ========== */
+  .card {
+    @apply bg-bg-secondary border border-border-primary rounded-xl;
+  }
+
+  .kbd {
+    @apply text-[11px] font-mono text-text-muted;
+    @apply bg-bg-elevated border border-border-primary rounded px-1.5 py-0.5;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs;
+    @apply bg-bg-tertiary border border-border-primary text-text-secondary;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply rounded-lg px-3 py-2 text-sm font-medium;
+    @apply transition-colors;
+    @apply focus:outline-none;
+  }
+
+  .btn:focus-visible {
+    --tw-ring-color: rgba(226, 0, 116, var(--tw-ring-opacity));
+    @apply ring-2 ring-opacity-60;
+  }
+
+  .btn-primary {
+    @apply bg-accent text-white;
+    @apply hover:bg-accent-hover;
+  }
+
+  .btn-secondary {
+    @apply bg-bg-tertiary border border-border-primary text-text-primary;
+    @apply hover:bg-bg-hover;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-text-secondary;
+    @apply hover:bg-bg-hover hover:text-text-primary;
+  }
+
+  .btn-danger {
+    @apply bg-bg-tertiary border border-border-primary text-text-secondary;
+    @apply hover:bg-error hover:text-white;
+  }
+
+  .btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .icon-btn {
+    @apply w-9 h-9 inline-flex items-center justify-center;
+    @apply rounded-lg bg-bg-tertiary border border-border-primary text-text-secondary;
+    @apply hover:bg-bg-hover hover:text-text-primary transition-colors;
+    @apply focus:outline-none;
+  }
+
+  .icon-btn:focus-visible {
+    --tw-ring-color: rgba(226, 0, 116, var(--tw-ring-opacity));
+    @apply ring-2 ring-opacity-60;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(90deg, theme('colors.text-primary'), theme('colors.accent'));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  @keyframes sca-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .animate-fade-in {
+    animation: sca-fade-in 180ms ease-out both;
+  }
+
+  @keyframes sca-slide-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-slide-up {
+    animation: sca-slide-up 220ms ease-out both;
+  }
+}

@@ -19,7 +19,8 @@ logs/
 .env.*
 
 # Local key material (generated at runtime; never commit)
-sca-01-phase3/config/keys/jwt-key.json
+services/cloud/config/keys/jwt-key.json
+apps/desktop/config/.encryption-key
 
 # IDE
 .vscode/*
@@ -46,9 +47,9 @@ tools/rg/
 .serena/
 .cursor/
 
-# Playwright artifacts (Phase 2)
-sca-01-phase2/playwright-report/
-sca-01-phase2/test-results/
+# Playwright artifacts (Desktop app)
+apps/desktop/playwright-report/
+apps/desktop/test-results/
 
 # Phase 4 local registry artifacts (generated at runtime/tests)
 sca-01-phase4/.agent-registry.json
