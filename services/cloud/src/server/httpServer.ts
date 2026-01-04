@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
+import fastifyStatic from "@fastify/static";
 import { z } from "zod";
 import { getAuthService, TokenPayload } from "../auth/jwtAuth.js";
 import { HyperLog } from "../logging/hyperlog.js";
@@ -14,6 +15,7 @@ import { executionRoutes } from "../routes/executionRoutes.js";
 import { registerGitHubRoutes } from "../routes/githubRoutes.js";
 import { registerRepoRoutes } from "../routes/repoRoutes.js";
 import fs from "node:fs/promises";
+import path from "node:path";
 
 type MigrationsStatus = "not_started" | "running" | "ok" | "error";
 let migrationsStatus: MigrationsStatus = "not_started";
@@ -654,6 +656,9 @@ async function main(): Promise<void> {
   // Register GitHub sync routes (JWT-protected)
   await registerGitHubRoutes(server, log);
   console.log("✅ GitHub routes registered");
+
+  // Serve Web UI (if build artifacts exist at ./public)
+  await maybeRegisterWebUi(server, log);
   
   try {
     await server.listen({ port, host });
@@ -702,5 +707,51 @@ function sanitizeHost(host: string | undefined): string | null {
   const h = host.trim().toLowerCase();
   if (h === "localhost" || h === "127.0.0.1" || h === "::1") return null;
   return host;
+}
+
+async function maybeRegisterWebUi(server: ReturnType<typeof Fastify>, log: HyperLog): Promise<void> {
+  const publicDir = path.resolve(process.cwd(), "public");
+
+  try {
+    await fs.access(publicDir);
+  } catch {
+    return;
+  }
+
+  await server.register(fastifyStatic, {
+    root: publicDir,
+    prefix: "/",
+    decorateReply: false,
+  });
+
+  // SPA fallback: serve index.html for non-file GET routes that aren't API endpoints.
+  server.get("/*", async (request: { url?: string; method?: string; headers: { accept?: string } }, reply: { callNotFound: () => unknown; type: (t: string) => { send: (v: unknown) => unknown } }) => {
+    const url = request.url ?? "/";
+
+    // Never hijack API/tool endpoints
+    if (
+      url.startsWith("/api") ||
+      url.startsWith("/auth") ||
+      url.startsWith("/mcp") ||
+      url.startsWith("/health") ||
+      url.startsWith("/ready")
+    ) {
+      return reply.callNotFound();
+    }
+
+    // Only serve HTML for browser navigations
+    if (request.method !== "GET") return reply.callNotFound();
+    if (url.includes(".")) return reply.callNotFound();
+
+    const accept = String(request.headers.accept ?? "");
+    if (!accept.includes("text/html")) return reply.callNotFound();
+
+    const indexPath = path.join(publicDir, "index.html");
+    const html = await fs.readFile(indexPath, "utf8");
+    return reply.type("text/html").send(html);
+  });
+
+  log.info("webui.static", "Web UI enabled", { publicDir });
+  console.log("✅ Web UI served from /");
 }
 

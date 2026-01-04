@@ -11,7 +11,14 @@ cmds = ["npm ci --include=dev --prefer-offline --no-audit"]
 cacheDirectories = []
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = [
+  # Build the Web UI and copy it into this service so Fastify can serve it from "/"
+  "npm --prefix ../../apps/web ci --include=dev --prefer-offline --no-audit",
+  "npm --prefix ../../apps/web run build",
+  "rm -rf public && mkdir -p public && cp -R ../../apps/web/dist/. public/",
+  # Build the API server
+  "npm run build"
+]
 cacheDirectories = []
 
 [start]

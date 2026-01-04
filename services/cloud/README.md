@@ -4,6 +4,8 @@ Cloud-hosted API server for SCA-01, deployed on Railway with PostgreSQL.
 
 **Live URL:** `https://sca-01-phase3-production.up.railway.app`
 
+**Web UI (prod):** served from `/` on the same Railway service (same-origin).
+
 ## Quick Start
 
 ```bash
@@ -111,6 +113,14 @@ curl http://127.0.0.1:8787/health
 2. Add PostgreSQL plugin
 3. Set environment variables
 4. Deploy automatically
+
+#### Web UI hosting
+
+This service also builds and serves the web UI (`apps/web`) from `/` during the Railway build.
+That means:
+
+- No separate frontend service is required
+- No CORS is required for the web UI in production (same-origin)
 
 ### Environment Variables
 
