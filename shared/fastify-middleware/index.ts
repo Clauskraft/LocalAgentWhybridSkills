@@ -5,10 +5,21 @@
  * Note: Services must install @fastify/cors and @fastify/rate-limit dependencies
  */
 
-import type { FastifyPluginOptions } from "fastify";
+import { createRequire } from "node:module";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 // Support both Fastify v4 and v5 - use any to avoid version conflicts
 type AnyFastifyInstance = any;
+type FastifyPluginOptions = any;
+
+function requireFromCwd(specifier: string): any {
+  // Resolve from the consuming service's working directory so we pick up that service's node_modules.
+  // This is important in CI where we do NOT install dependencies at the monorepo root.
+  const cwdPkg = path.join(process.cwd(), "package.json");
+  const require = createRequire(pathToFileURL(cwdPkg));
+  return require(specifier);
+}
 
 export interface MiddlewareConfig {
   cors?: {
@@ -37,9 +48,13 @@ export async function registerMiddleware(
 ): Promise<void> {
   // CORS
   if (config.cors?.enabled && config.cors.origins && config.cors.origins.length > 0) {
-    // Dynamic import to avoid requiring dependencies in shared package
-    const cors = (await import("@fastify/cors")).default;
-    await app.register(cors, {
+    // IMPORTANT (monorepo CI): avoid TS module resolution for @fastify/* from this shared folder.
+    // Use runtime require so the consuming service's node_modules are used.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const cors = requireFromCwd("@fastify/cors");
+    // Prefer the CommonJS export (fastify-plugin wrapped). Some packages also set `.default` to the raw fn.
+    const plugin = typeof cors === "function" ? cors : cors?.default;
+    await app.register(plugin, {
       origin: config.cors.origins,
       methods: config.cors.methods ?? ["GET", "POST", "OPTIONS"],
       allowedHeaders: config.cors.allowedHeaders ?? ["Content-Type", "Authorization"],
@@ -49,9 +64,10 @@ export async function registerMiddleware(
 
   // Rate limiting
   if (config.rateLimit?.enabled) {
-    // Dynamic import to avoid requiring dependencies in shared package
-    const rateLimit = (await import("@fastify/rate-limit")).default;
-    await app.register(rateLimit, {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const rateLimit = requireFromCwd("@fastify/rate-limit");
+    const plugin = typeof rateLimit === "function" ? rateLimit : rateLimit?.default;
+    await app.register(plugin, {
       max: config.rateLimit.max ?? 60,
       timeWindow: config.rateLimit.timeWindow ?? "1 minute",
       ...(config.rateLimit.keyGenerator && { keyGenerator: config.rateLimit.keyGenerator }),
