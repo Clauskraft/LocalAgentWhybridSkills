@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { ApiClient } from "../lib/api";
 import { clearTokens, loadTokens, saveTokens, type StoredTokens } from "../lib/tokenStore";
 
@@ -34,7 +34,7 @@ export function AuthProvider(props: { children: React.ReactNode }) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  function persistTokens(tokens: StoredTokens | null) {
+  const persistTokens = useCallback((tokens: StoredTokens | null) => {
     if (!tokens) {
       clearTokens();
       api.setTokens(null);
@@ -42,9 +42,9 @@ export function AuthProvider(props: { children: React.ReactNode }) {
     }
     saveTokens(tokens);
     api.setTokens(tokens);
-  }
+  }, [api]);
 
-  async function bootstrap() {
+  const bootstrap = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -78,9 +78,9 @@ export function AuthProvider(props: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [api, persistTokens]);
 
-  async function login(email: string, password: string) {
+  const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -95,9 +95,9 @@ export function AuthProvider(props: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [api, persistTokens]);
 
-  async function register(email: string, password: string, displayName?: string) {
+  const register = useCallback(async (email: string, password: string, displayName?: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -112,15 +112,18 @@ export function AuthProvider(props: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [api, persistTokens]);
 
-  function logout() {
+  const logout = useCallback(() => {
     persistTokens(null);
     setUser(null);
     setError(null);
-  }
+  }, [persistTokens]);
 
-  const value: AuthState = { user, loading, error, api, login, register, logout, bootstrap };
+  const value: AuthState = useMemo(
+    () => ({ user, loading, error, api, login, register, logout, bootstrap }),
+    [user, loading, error, api, login, register, logout, bootstrap]
+  );
   return <Ctx.Provider value={value}>{props.children}</Ctx.Provider>;
 }
 

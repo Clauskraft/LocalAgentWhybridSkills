@@ -9,6 +9,7 @@ const indexPath = path.join(distDir, "index.html");
 
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);
 const host = process.env.HOST ?? "0.0.0.0";
+const cloudApiBaseUrl = (process.env.CLOUD_API_BASE_URL ?? "https://sca-01-phase3-production.up.railway.app").replace(/\/+$/, "");
 
 /** @type {Record<string, string>} */
 const MIME = {
@@ -24,6 +25,62 @@ const MIME = {
   ".map": "application/json; charset=utf-8",
   ".woff2": "font/woff2",
 };
+
+/**
+ * Reverse-proxy /auth/* and /api/* to the Cloud API.
+ *
+ * @param {import("node:http").IncomingMessage} req
+ * @param {import("node:http").ServerResponse} res
+ */
+async function proxyToCloud(req, res) {
+  const method = req.method ?? "GET";
+  const url = req.url ?? "/";
+  const upstreamUrl = `${cloudApiBaseUrl}${url}`;
+
+  /** @type {Record<string, string>} */
+  const headers = {};
+  for (const [k, v] of Object.entries(req.headers)) {
+    if (!v) continue;
+    if (k.toLowerCase() === "host") continue;
+    // node:http can provide string|string[], normalize to string
+    headers[k] = Array.isArray(v) ? v.join(",") : String(v);
+  }
+
+  let bodyBuf;
+  if (method !== "GET" && method !== "HEAD") {
+    bodyBuf = await new Promise((resolve, reject) => {
+      const chunks = [];
+      req.on("data", (c) => chunks.push(c));
+      req.on("end", () => resolve(Buffer.concat(chunks)));
+      req.on("error", reject);
+    });
+  }
+
+  let upstreamRes;
+  try {
+    upstreamRes = await fetch(upstreamUrl, {
+      method,
+      headers,
+      body: bodyBuf,
+    });
+  } catch (e) {
+    res.statusCode = 502;
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.end(JSON.stringify({ error: "upstream_unreachable", details: e instanceof Error ? e.message : String(e) }));
+    return;
+  }
+
+  res.statusCode = upstreamRes.status;
+  // Pass through common headers
+  upstreamRes.headers.forEach((value, key) => {
+    const lower = key.toLowerCase();
+    if (lower === "transfer-encoding") return;
+    res.setHeader(key, value);
+  });
+
+  const buf = Buffer.from(await upstreamRes.arrayBuffer());
+  res.end(buf);
+}
 
 function safePath(urlPath) {
   const decoded = decodeURIComponent(urlPath.split("?")[0] ?? "/");
@@ -64,6 +121,12 @@ const server = http.createServer(async (req, res) => {
       res.statusCode = 200;
       res.setHeader("Content-Type", "application/json; charset=utf-8");
       res.end(JSON.stringify({ status: "ok" }));
+      return;
+    }
+
+    // Reverse proxy API routes to Cloud (same-origin for the browser)
+    if (url.startsWith("/auth/") || url.startsWith("/api/") || url === "/auth" || url === "/api") {
+      await proxyToCloud(req, res);
       return;
     }
 

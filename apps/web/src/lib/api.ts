@@ -41,10 +41,19 @@ export class ApiClient {
     });
 
     const text = await res.text().catch(() => "");
-    const json = text ? (JSON.parse(text) as unknown) : null;
+    let json: unknown = null;
+    if (text) {
+      try {
+        json = JSON.parse(text) as unknown;
+      } catch {
+        json = null;
+      }
+    }
 
     if (!res.ok) {
-      const err = (json && typeof json === "object" ? (json as Record<string, unknown>).error : null) ?? res.statusText;
+      const err =
+        (json && typeof json === "object" ? (json as Record<string, unknown>).error : null) ??
+        (text || res.statusText);
       const e = new Error(String(err));
       (e as Error & { status?: number }).status = res.status;
       throw e;

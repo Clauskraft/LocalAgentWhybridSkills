@@ -13,6 +13,7 @@
     "web:build": "npm --prefix apps/web run build",
     "web:test": "npm --prefix apps/web run typecheck && npm --prefix apps/web run lint",
     "web:smoke": "npm --prefix apps/web run test:smoke",
+    "web:prod": "pwsh -NoProfile -File tools/web/run-web-prod.ps1",
     "cloud": "npm --prefix services/cloud run dev:server",
     "cloud:build": "npm --prefix services/cloud run build",
     "cloud:test": "npm --prefix services/cloud run test",
