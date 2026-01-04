@@ -37,6 +37,9 @@ contextBridge.exposeInMainWorld("chat", {
   getMcpServers: () => ipcRenderer.invoke("chat:getMcpServers"),
   addMcpServer: (server: unknown) => ipcRenderer.invoke("chat:addMcpServer", server),
   removeMcpServer: (name: string) => ipcRenderer.invoke("chat:removeMcpServer", name),
+  getMcpCatalog: () => ipcRenderer.invoke("chat:getMcpCatalog"),
+  installMcpFromCatalog: (serverId: string) => ipcRenderer.invoke("chat:installMcpFromCatalog", serverId),
+  autoSetupMcp: (opts?: { includeAuth?: boolean }) => ipcRenderer.invoke("chat:autoSetupMcp", opts),
   
   // Files
   attachFile: () => ipcRenderer.invoke("chat:attachFile"),

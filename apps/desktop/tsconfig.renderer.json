@@ -7,7 +7,7 @@
     "types": ["vite/client", "react", "react-dom"],
     "allowImportingTsExtensions": true
   },
-  "include": ["src/renderer/**/*.ts", "src/renderer/**/*.tsx"],
+  "include": ["src/renderer/**/*.ts", "src/renderer/**/*.tsx", "src/renderer/**/*.d.ts"],
   "exclude": ["node_modules", "build"]
 }
 

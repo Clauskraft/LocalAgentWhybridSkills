@@ -675,6 +675,121 @@ function ModelsSettings({
 
 function MCPSettings() {
   const [query, setQuery] = useState('');
+  const [installed, setInstalled] = useState<Array<{ id: string; name: string; type: string; endpoint: string; enabled: boolean }>>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [includeAuth, setIncludeAuth] = useState(false);
+
+  // NOTE: window.chat is provided by Electron preload. Some TS setups may not pick up global.d.ts reliably,
+  // so we access it via a safe cast to keep the renderer typecheck clean.
+  const chat = (window as unknown as { chat?: any }).chat as
+    | {
+        getMcpServers?: () => Promise<
+          Array<{ id: string; name: string; type: string; endpoint: string; enabled: boolean }>
+        >;
+        installMcpFromCatalog?: (serverId: string) => Promise<{
+          success: boolean;
+          error?: string;
+          requiresAuth?: boolean;
+          authEnvVar?: string;
+        }>;
+        removeMcpServer?: (name: string) => Promise<boolean>;
+        autoSetupMcp?: (opts?: { includeAuth?: boolean }) => Promise<{
+          success: boolean;
+          installed: string[];
+          skipped: Array<{ id: string; name: string; reason: string; authEnvVar?: string }>;
+          requiresAuth: Array<{ id: string; name: string; authEnvVar?: string }>;
+        }>;
+      }
+    | undefined;
+
+  async function refreshInstalled() {
+    try {
+      const list = (await chat?.getMcpServers?.()) ?? [];
+      // Only show custom services as MCP servers (ConfigStore also contains Ollama Local, etc.)
+      setInstalled(list.filter((s) => s.type === "custom"));
+    } catch {
+      setInstalled([]);
+    }
+  }
+
+  useEffect(() => {
+    void refreshInstalled();
+  }, []);
+
+  const isInstalled = (name: string) => installed.some((s) => s.name === name);
+
+  async function install(serverId: string) {
+    setBusy(serverId);
+    setNotice(null);
+    try {
+      const res = await chat?.installMcpFromCatalog?.(serverId);
+      if (!res) {
+        setNotice("MCP install API ikke tilgængelig (preload/IPC).");
+        return;
+      }
+      if (!res.success) {
+        setNotice(res.error ?? "Installering fejlede");
+        return;
+      }
+      if (res.requiresAuth && res.authEnvVar) {
+        setNotice(`Installeret. Kræver env var: ${res.authEnvVar}`);
+      } else {
+        setNotice("Installeret ✅");
+      }
+      await refreshInstalled();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function remove(name: string) {
+    setBusy(name);
+    setNotice(null);
+    try {
+      await chat?.removeMcpServer?.(name);
+      await refreshInstalled();
+      setNotice("Fjernet ✅");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function autoSetup() {
+    setBusy("auto");
+    setNotice(null);
+    try {
+      const res = await chat?.autoSetupMcp?.({ includeAuth });
+      if (!res?.success) {
+        setNotice("Auto-opsæt fejlede.");
+        return;
+      }
+      const installedCount = res.installed.length;
+      const skippedAuth = res.skipped.filter((s) => s.reason === "requires_auth");
+      const authEnvVars = (res.requiresAuth ?? [])
+        .map((s) => s.authEnvVar)
+        .filter((v): v is string => typeof v === "string" && v.length > 0);
+      const uniqueEnvVars = Array.from(new Set(authEnvVars));
+
+      const msg = (() => {
+        if (!includeAuth && skippedAuth.length) {
+          return `Auto-opsæt færdig ✅ Installeret: ${installedCount}. Skippede (kræver auth): ${skippedAuth
+            .map((s) => s.name)
+            .join(", ")}.`;
+        }
+        if (includeAuth && uniqueEnvVars.length) {
+          return `Auto-opsæt færdig ✅ Installeret: ${installedCount}. Næste: sæt credentials env vars for auth-servere: ${uniqueEnvVars.join(
+            ", "
+          )}.`;
+        }
+        return `Auto-opsæt færdig ✅ Installeret: ${installedCount}.`;
+      })();
+      setNotice(msg);
+      await refreshInstalled();
+    } finally {
+      setBusy(null);
+    }
+  }
 
   const normalized = query.trim().toLowerCase();
   const catalog = MCP_SERVER_CATALOG.filter((s) => {
@@ -693,16 +808,67 @@ function MCPSettings() {
   return (
     <div className="space-y-6">
       <Section title="Konfigurerede MCP Servere">
+        {notice ? (
+          <div className="p-3 rounded-lg border border-border-primary bg-bg-tertiary text-sm text-text-secondary">
+            {notice}
+          </div>
+        ) : null}
+
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="text-sm text-text-secondary">
+            <div>Auto-opsæt installerer anbefalede MCP servere.</div>
+            <label className="mt-2 flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={includeAuth}
+                onChange={(e) => setIncludeAuth(e.target.checked)}
+                className="w-4 h-4 rounded border-border-primary"
+              />
+              <span className="text-sm">Inkludér auth-servere (GitHub/Brave/Postgres) og vis credential-guide</span>
+            </label>
+          </div>
+          <button
+            onClick={() => void autoSetup()}
+            disabled={busy === "auto"}
+            className="px-3 py-2 text-sm bg-accent text-white rounded hover:bg-accent-hover disabled:opacity-60"
+          >
+            {busy === "auto" ? "Opsætter…" : "Auto-opsæt MCP"}
+          </button>
+        </div>
+
         <div className="p-3 bg-bg-tertiary border border-border-primary rounded-lg flex items-center gap-3">
           <div className="w-2.5 h-2.5 rounded-full bg-success" />
           <div className="flex-1">
             <div className="font-semibold text-sm">SCA-01 Tools</div>
-            <div className="text-xs text-text-muted">stdio • Lokal</div>
+            <div className="text-xs text-text-muted">stdio • Lokal (built-in)</div>
           </div>
-          <button className="px-2 py-1 text-sm bg-bg-secondary border border-border-primary rounded hover:bg-bg-hover">
-            Rediger
-          </button>
         </div>
+
+        {installed.length === 0 ? (
+          <div className="text-sm text-text-muted mt-3">Ingen ekstra MCP servere installeret endnu.</div>
+        ) : (
+          <div className="space-y-2 mt-3">
+            {installed.map((s) => (
+              <div
+                key={s.id}
+                className="p-3 bg-bg-tertiary border border-border-primary rounded-lg flex items-center gap-3"
+              >
+                <div className="w-2.5 h-2.5 rounded-full bg-success" />
+                <div className="flex-1">
+                  <div className="font-semibold text-sm">{s.name}</div>
+                  <div className="text-xs text-text-muted">{s.endpoint}</div>
+                </div>
+                <button
+                  onClick={() => void remove(s.name)}
+                  disabled={busy === s.name}
+                  className="px-3 py-1 text-sm bg-bg-secondary border border-border-primary rounded hover:bg-bg-hover disabled:opacity-60"
+                >
+                  {busy === s.name ? "…" : "Fjern"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </Section>
 
       <Section title="📚 MCP Server Library">
@@ -720,6 +886,7 @@ function MCPSettings() {
           {catalog.map((s) => (
             <div
               key={s.id}
+              onClick={() => void install(s.id)}
               className="p-3 bg-bg-tertiary border border-border-primary rounded-lg flex items-center gap-3 cursor-pointer hover:border-accent transition-colors"
             >
               <div className="w-10 h-10 bg-bg-secondary rounded-lg flex items-center justify-center text-xl">
@@ -732,7 +899,7 @@ function MCPSettings() {
                 </div>
               </div>
               <button className="px-3 py-1 text-sm bg-accent text-white rounded hover:bg-accent-hover">
-                + Tilføj
+                {isInstalled(s.name) ? "Installeret" : busy === s.id ? "…" : "+ Tilføj"}
               </button>
             </div>
           ))}

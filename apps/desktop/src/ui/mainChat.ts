@@ -863,6 +863,61 @@ function setupIpcHandlers(): void {
     };
   });
 
+  ipcMain.handle("chat:autoSetupMcp", (_event, opts?: { includeAuth?: boolean }) => {
+    const includeAuth = opts?.includeAuth === true;
+
+    const existing = configStore.getServices();
+    const existingNames = new Set(existing.map((s) => s.name));
+
+    // Start with built-in tools, then popular catalog servers.
+    const targets = [
+      getServerById("sca-01-tools"),
+      ...getPopularServers(),
+    ].filter(Boolean);
+
+    /** @type {string[]} */
+    const installed = [];
+    /** @type {Array<{ id: string; name: string; reason: string; authEnvVar?: string }>} */
+    const skipped = [];
+    /** @type {Array<{ id: string; name: string; authEnvVar?: string }>} */
+    const requiresAuth = [];
+
+    for (const server of targets) {
+      if (!server) continue;
+
+      if (server.requiresAuth) {
+        requiresAuth.push({ id: server.id, name: server.name, authEnvVar: server.authEnvVar });
+      }
+
+      if (server.requiresAuth && !includeAuth) {
+        skipped.push({ id: server.id, name: server.name, reason: "requires_auth", authEnvVar: server.authEnvVar });
+        continue;
+      }
+
+      if (existingNames.has(server.name)) {
+        skipped.push({ id: server.id, name: server.name, reason: "already_installed", authEnvVar: server.authEnvVar });
+        continue;
+      }
+
+      let command = server.command ?? "";
+      if (server.args) command += " " + server.args.join(" ");
+
+      configStore.addService({
+        name: server.name,
+        type: "custom",
+        endpoint: server.url ?? command,
+        enabled: true
+      });
+      existingNames.add(server.name);
+      installed.push(server.name);
+
+    }
+
+    log.info("mcp.autosetup", "Auto-setup completed", { installedCount: installed.length, skippedCount: skipped.length });
+
+    return { success: true, installed, skipped, requiresAuth };
+  });
+
   // Files
   ipcMain.handle("chat:attachFile", async () => {
     const result = await dialog.showOpenDialog(mainWindow!, {
