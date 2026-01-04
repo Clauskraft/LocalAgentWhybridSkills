@@ -1,0 +1,112 @@
+name: 🚢 Final Release Task
+description: A scoped, verifiable task required to ship the final release
+title: "[RELEASE]: "
+labels: ["triage"]
+assignees:
+  - Clauskraft
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This template is for **final release execution** work: small, scoped, verifiable tasks.
+        Rule of thumb: **1 issue = 1 PR**.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which area owns the change?
+      options:
+        - Cloud API (services/cloud)
+        - Web UI (apps/web)
+        - Desktop (apps/desktop)
+        - CLI (apps/cli)
+        - Infra/Build/CI
+        - Security
+        - Docs
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: P0 blocks the final release.
+      options:
+        - P0 (release blocker)
+        - P1 (must-have for release quality)
+        - P2 (nice-to-have; do only if time permits)
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal / Problem
+      description: What must be true when this is done?
+      placeholder: |
+        Example: Cloud auth smoke test fails on Windows; fix so `make mvp` passes.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope (in / out)
+      description: Keep it tight so agents don't drift.
+      placeholder: |
+        In scope:
+        - ...
+
+        Out of scope:
+        - ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Bullet list. Should be testable/verifiable.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification steps
+      description: Exact commands/steps to verify. Prefer make targets (`make mvp`, `make release`, `make audit`) where available.
+      render: shell
+      placeholder: |
+        # Example:
+        # make mvp
+        # cd services/cloud && npm test
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes / Context / Links
+      description: Add relevant links (PRs, docs, logs).
+
+  - type: checkboxes
+    id: dod
+    attributes:
+      label: Definition of Done (release-grade)
+      options:
+        - label: 1 issue = 1 PR (or explain why not)
+          required: true
+        - label: No secrets/credentials committed; env changes captured in `.env.example` where relevant
+          required: true
+        - label: New API/worker functions have at least one integration test and one smoke test (or N/A)
+          required: true
+        - label: Includes “How to verify” steps in PR
+          required: true
+
+

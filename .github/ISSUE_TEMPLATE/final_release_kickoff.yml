@@ -1,0 +1,39 @@
+name: 🧭 Final Release Kickoff
+description: Create the release board, capture rest-backlog, and prepare execution
+title: "[KICKOFF]: Final Release"
+labels: ["triage"]
+assignees:
+  - Clauskraft
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue is the **single kickoff checklist** for final release execution.
+        Reference: `docs/FINAL_RELEASE.md`
+
+  - type: checkboxes
+    id: kickoff
+    attributes:
+      label: Kickoff checklist
+      options:
+        - label: Create GitHub Project board “Final Release” with columns Backlog / Ready / In Progress / In Review / Done / Blocked
+          required: true
+        - label: Capture the rest-backlog as issues using “🚢 Final Release Task”
+          required: true
+        - label: Label + prioritize all items as P0/P1/P2 and assign area owners
+          required: true
+        - label: Move all P0 items to Ready with clear acceptance criteria + verification steps
+          required: true
+        - label: Confirm scope policy is Feature Freeze (no new features outside backlog without Release Captain approval)
+          required: true
+        - label: Confirm merge gates via PR template (tests, env.example updates, how-to-verify)
+          required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes / Links
+      description: Link the GitHub Project and any key issues here.
+
+
