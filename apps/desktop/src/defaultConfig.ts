@@ -24,7 +24,8 @@ export const DEFAULT_ENV = {
   // UI
   SCA_THEME: "dark",
 
-  // Cloud (disabled by default)
-  SCA_USE_CLOUD: "false",
-  SCA_BACKEND_URL: "https://backend-production-d3da.up.railway.app",
+  // Cloud (enabled by default)
+  // NOTE: This must point at the Phase 3 Cloud API (Fastify) that serves /health, /auth/* and /api/*.
+  SCA_USE_CLOUD: "true",
+  SCA_BACKEND_URL: "https://sca-01-phase3-production.up.railway.app",
 };

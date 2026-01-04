@@ -279,6 +279,23 @@ export async function loadUnifiedConfig(
     cfg = finalCfgParsed.data;
   }
 
+  // Normalize cloud defaults (production baseline).
+  // - If backendUrl is missing or points at an old default, replace with the current default.
+  // - Prefer cloud mode by default.
+  const CURRENT_BACKEND = "https://sca-01-phase3-production.up.railway.app";
+  const LEGACY_BACKEND = "https://backend-production-d3da.up.railway.app";
+  const backendTrimmed = (cfg.backendUrl ?? "").trim();
+  const shouldUpdateBackend = backendTrimmed.length === 0 || backendTrimmed === LEGACY_BACKEND;
+  if (shouldUpdateBackend || cfg.useCloud !== true) {
+    cfg = {
+      ...cfg,
+      useCloud: true,
+      backendUrl: shouldUpdateBackend ? CURRENT_BACKEND : cfg.backendUrl,
+      lastModified: nowIso(),
+    };
+    didMigrate = true;
+  }
+
   const finalSecretsParsed = ZUnifiedSecrets.safeParse(secrets);
   secrets = finalSecretsParsed.success ? finalSecretsParsed.data : getDefaultUnifiedSecrets();
 

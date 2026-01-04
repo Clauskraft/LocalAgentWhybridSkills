@@ -33,7 +33,7 @@ import { MCP_SERVER_CATALOG, getPopularServers, getServerById } from "../mcp/ser
 
 import type { ApprovalRequest } from "../approval/approvalQueue.js";
 
-const DEFAULT_RAILWAY_BACKEND = "https://backend-production-d3da.up.railway.app";
+const DEFAULT_RAILWAY_BACKEND = "https://sca-01-phase3-production.up.railway.app";
 
 // ES Module __dirname polyfill
 const __filename = fileURLToPath(import.meta.url);
@@ -243,8 +243,23 @@ async function ensureConnectivityOnStartup(): Promise<void> {
   const cloudBackend = (runtimeCfg.backendUrl ?? "").trim() || DEFAULT_RAILWAY_BACKEND;
   const cloudOk = await ping(`${cloudBackend.replace(/\/+$/, "")}/health`, 2500);
 
-  // If user explicitly wants cloud and it's reachable, keep it.
-  if (runtimeCfg.useCloud && cloudOk) return;
+  // If user wants cloud, we do NOT auto-switch to local Ollama.
+  // Cloud mode is the intended default for production.
+  if (runtimeCfg.useCloud) {
+    // Ensure backendUrl is set to a usable default
+    if ((runtimeCfg.backendUrl ?? "").trim() !== cloudBackend) {
+      runtimeCfg = { ...runtimeCfg, backendUrl: cloudBackend };
+      if (unifiedCfg) {
+        unifiedCfg = { ...unifiedCfg, backendUrl: cloudBackend };
+        await persistUnifiedToDisk();
+      }
+    }
+
+    // If cloud is reachable, we're done. If not reachable, keep cloud and let UI show Offline.
+    if (cloudOk) return;
+    log?.warn("startup.cloud.unreachable", "Cloud backend not reachable; staying in cloud mode", { cloudBackend });
+    return;
+  }
 
   const { host, port, baseUrl } = parseOllamaHost(runtimeCfg.ollamaHost);
   const localOk = await ping(`${baseUrl}/api/version`, 2500);
@@ -703,14 +718,15 @@ async function setupIpc(): Promise<void> {
     return { success: true, server, requiresAuth: server.requiresAuth, authEnvVar: server.authEnvVar };
   });
 
-  ipcMain.handle("mcp-auto-setup", (_event: unknown, opts?: { includeAuth?: boolean }) => {
+  function doMcpAutoSetup(includeAuth: boolean) {
     if (!mcpConfigStore) return { success: false, installed: [], skipped: [], requiresAuth: [] };
-    const includeAuth = opts?.includeAuth === true;
 
     const existing = mcpConfigStore.getServices();
     const existingNames = new Set(existing.map((s) => s.name));
 
-    const targets = [getServerById("sca-01-tools"), ...getPopularServers()].filter(Boolean);
+    // Always include WidgetDC Core + SCA-01 Tools in default setup (critical for this repo).
+    const widgetdcCore = getServerById("widgetdc-core");
+    const targets = [getServerById("sca-01-tools"), widgetdcCore, ...getPopularServers()].filter(Boolean);
 
     const installed: string[] = [];
     const skipped: Array<{ id: string; name: string; reason: string; authEnvVar?: string }> = [];
@@ -749,7 +765,23 @@ async function setupIpc(): Promise<void> {
     log?.info("mcp.autosetup", "Auto-setup completed", { installedCount: installed.length, skippedCount: skipped.length });
 
     return { success: true, installed, skipped, requiresAuth };
+  }
+
+  ipcMain.handle("mcp-auto-setup", (_event: unknown, opts?: { includeAuth?: boolean }) => {
+    return doMcpAutoSetup(opts?.includeAuth === true);
   });
+
+  // Default baseline: Cloud mode + MCP auto-setup (includes WidgetDC Core).
+  // Idempotent: only runs if no custom MCP services exist yet.
+  try {
+    const services = mcpConfigStore?.getServices() ?? [];
+    const hasCustom = services.some((s) => s.type === "custom");
+    if (!hasCustom) {
+      doMcpAutoSetup(false);
+    }
+  } catch {
+    // ignore default setup failures; user can retry from Settings -> MCP
+  }
 
   ipcMain.handle("perf-get-stats", () => {
     return getPerfStats();

@@ -28,8 +28,8 @@ const DEFAULT_SETTINGS: UISettings = {
   autoApprove: false,
   theme: 'dark',
   // Browser/dev mode fallback can be configured via VITE_BACKEND_URL
-  backendUrl: resolveBackendUrl(undefined) ?? 'https://backend-production-d3da.up.railway.app',
-  useCloud: false,
+  backendUrl: resolveBackendUrl(undefined) ?? 'https://sca-01-phase3-production.up.railway.app',
+  useCloud: true,
 };
 
 export function useSettings() {
