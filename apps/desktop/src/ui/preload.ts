@@ -120,31 +120,11 @@ const api: SCA01API = {
         safeDirs: (cfg as { safeDirs?: string[] })?.safeDirs ?? [],
       };
     },
+    // Connectivity check (cloud /health or local Ollama /api/version) via main process to avoid CORS from file://
     checkOllama: async () => {
       try {
-        const cfg = await ipcRenderer.invoke("get-config");
-        const useCloud = (cfg as { useCloud?: boolean })?.useCloud ?? false;
-        const backendUrl = (cfg as { backendUrl?: string })?.backendUrl ?? "";
-
-        // In cloud mode, validate the configured cloud backend instead of a local Ollama instance.
-        if (useCloud) {
-          const backend = backendUrl.trim();
-          if (!backend) return false;
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 4000);
-          const res = await fetch(`${backend.replace(/\/+$/, "")}/health`, { signal: controller.signal });
-          clearTimeout(timeout);
-          return res.ok;
-        }
-
-        const host = (cfg as { ollamaHost?: string })?.ollamaHost ?? "http://localhost:11434";
-        const base = host.trim().replace(/\/+$/, "");
-        if (!base) return false;
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 4000);
-        const res = await fetch(`${base}/api/version`, { signal: controller.signal });
-        clearTimeout(timeout);
-        return res.ok;
+        const res = await ipcRenderer.invoke("chat-check-connectivity");
+        return !!(res as { ok?: boolean })?.ok;
       } catch {
         return false;
       }

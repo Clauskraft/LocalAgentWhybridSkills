@@ -550,6 +550,17 @@ async function chatGetModels() {
 function setupChatIpc(): void {
   ipcMain.handle("chat-send-message", (_event: unknown, payload: Parameters<typeof chatSendMessage>[0]) => chatSendMessage(payload));
   ipcMain.handle("chat-get-models", () => chatGetModels());
+  ipcMain.handle("chat-check-connectivity", async () => {
+    const backend = (runtimeCfg.backendUrl ?? "").trim() || DEFAULT_RAILWAY_BACKEND;
+    if (runtimeCfg.useCloud) {
+      const ok = await ping(`${backend.replace(/\/+$/, "")}/health`, 2500);
+      return { ok, mode: "cloud", url: `${backend.replace(/\/+$/, "")}/health` };
+    }
+    const host = runtimeCfg.ollamaHost.trim().replace(/\/+$/, "");
+    if (!host) return { ok: false, mode: "ollama", url: "" };
+    const ok = await ping(`${host}/api/version`, 2500);
+    return { ok, mode: "ollama", url: `${host}/api/version` };
+  });
   ipcMain.handle("chat-update-settings", async (_event: unknown, partial: Record<string, unknown>) => {
     const next = { ...runtimeCfg };
 
