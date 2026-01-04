@@ -39,7 +39,7 @@ test.describe('Smoke Tests', () => {
   });
 
   test('header actions are visible', async ({ page }) => {
-    await expect(page.getByRole('button', { name: /MCP/i })).toBeVisible();
+    await expect(page.locator('header').getByRole('button', { name: /^MCP$/i })).toBeVisible();
     await expect(page.getByText(/Online|Offline|Tjekker/i)).toBeVisible();
   });
 
@@ -64,8 +64,8 @@ test.describe('Smoke Tests', () => {
   });
 
   test('model dropdown toggles', async ({ page }) => {
-    // Open model dropdown (button that contains current model and "Ollama" label)
-    await page.getByRole('button', { name: /Ollama/i }).click();
+    // Open model dropdown (button that contains current model and Cloud/Ollama label)
+    await page.locator('header').getByRole('button', { name: /Cloud|Ollama/i }).click();
     await expect(page.getByText('Vælg model', { exact: true })).toBeVisible();
   });
 
