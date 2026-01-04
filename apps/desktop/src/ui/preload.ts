@@ -13,7 +13,17 @@ export interface SCA01API {
   getConfig: () => Promise<Record<string, unknown>>;
   runAgent: (goal: string) => Promise<{ result?: string; error?: string }>;
   chat: {
-    getConfig: () => Promise<{ ollamaHost: string; model: string; theme?: string; backendUrl?: string; useCloud?: boolean; safeDirs?: string[] }>;
+    getConfig: () => Promise<{
+      ollamaHost: string;
+      model: string;
+      maxTurns: number;
+      fullAccess: boolean;
+      autoApprove: boolean;
+      theme?: string;
+      backendUrl?: string;
+      useCloud?: boolean;
+      safeDirs?: string[];
+    }>;
     checkOllama: () => Promise<boolean>;
     sendMessage: (payload: {
       messages: Array<{ role: string; content: string }>;
@@ -86,7 +96,10 @@ const api: SCA01API = {
       const cfg = await ipcRenderer.invoke("get-config");
       return {
         ollamaHost: (cfg as { ollamaHost?: string })?.ollamaHost ?? "http://localhost:11434",
-        model: (cfg as { ollamaModel?: string })?.ollamaModel ?? "qwen2.5-coder:7b",
+        model: (cfg as { ollamaModel?: string })?.ollamaModel ?? "qwen3:8b",
+        maxTurns: (cfg as { maxTurns?: number })?.maxTurns ?? 20,
+        fullAccess: (cfg as { fullAccess?: boolean })?.fullAccess ?? false,
+        autoApprove: (cfg as { autoApprove?: boolean })?.autoApprove ?? false,
         theme: (cfg as { theme?: string })?.theme ?? "dark",
         backendUrl: (cfg as { backendUrl?: string })?.backendUrl ?? "",
         useCloud: (cfg as { useCloud?: boolean })?.useCloud ?? false,
@@ -103,13 +116,20 @@ const api: SCA01API = {
         if (useCloud) {
           const backend = backendUrl.trim();
           if (!backend) return false;
-          const res = await fetch(`${backend.replace(/\/+$/, "")}/health`);
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 4000);
+          const res = await fetch(`${backend.replace(/\/+$/, "")}/health`, { signal: controller.signal });
+          clearTimeout(timeout);
           return res.ok;
         }
 
         const host = (cfg as { ollamaHost?: string })?.ollamaHost ?? "http://localhost:11434";
-        if (!host) return false;
-        const res = await fetch(`${host.replace(/\/+$/, "")}/api/version`);
+        const base = host.trim().replace(/\/+$/, "");
+        if (!base) return false;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4000);
+        const res = await fetch(`${base}/api/version`, { signal: controller.signal });
+        clearTimeout(timeout);
         return res.ok;
       } catch {
         return false;

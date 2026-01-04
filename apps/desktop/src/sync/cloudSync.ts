@@ -4,7 +4,13 @@
  */
 import Store from "electron-store";
 
-const API_BASE_URL = "https://sca-01-phase3-production.up.railway.app";
+function resolveCloudBaseUrl(): string {
+  const raw = (process.env["SCA_BACKEND_URL"] ?? "").trim();
+  if (raw) return raw.replace(/\/+$/, "");
+  return "https://backend-production-d3da.up.railway.app";
+}
+
+const API_BASE_URL = resolveCloudBaseUrl();
 
 interface CloudAuthTokens {
   accessToken: string;

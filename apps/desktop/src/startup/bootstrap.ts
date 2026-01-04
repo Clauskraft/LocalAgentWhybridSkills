@@ -287,7 +287,7 @@ async function checkNetwork(): Promise<CheckResult> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     
-    await fetch("https://sca-01-phase3-production.up.railway.app/health", {
+    await fetch("https://backend-production-d3da.up.railway.app/health", {
       signal: controller.signal,
     });
     clearTimeout(timeout);

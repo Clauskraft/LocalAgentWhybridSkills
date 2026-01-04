@@ -18,14 +18,14 @@ export interface UISettings {
 
 const DEFAULT_SETTINGS: UISettings = {
   ollamaHost: 'http://localhost:11434',
-  model: 'qwen2.5-coder:7b',
-  maxTurns: 16,
+  model: 'qwen3:8b',
+  maxTurns: 20,
   systemPrompt: '',
   fullAccess: false,
   autoApprove: false,
   theme: 'dark',
   // Browser/dev mode fallback can be configured via VITE_BACKEND_URL
-  backendUrl: resolveBackendUrl(undefined) ?? '',
+  backendUrl: resolveBackendUrl(undefined) ?? 'https://backend-production-d3da.up.railway.app',
   useCloud: false,
 };
 

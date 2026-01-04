@@ -240,7 +240,7 @@ function GeneralSettings({
             type="text"
             value={settings.backendUrl ?? ''}
             onChange={(e) => onUpdate({ backendUrl: e.target.value })}
-            placeholder="https://sca-01-phase3-production.up.railway.app"
+            placeholder="https://backend-production-d3da.up.railway.app"
             className="form-input"
           />
         </FormGroup>

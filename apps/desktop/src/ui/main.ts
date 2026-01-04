@@ -32,7 +32,7 @@ import type { UnifiedConfig, UnifiedSecrets } from "../config/unifiedSchema.js";
 
 import type { ApprovalRequest } from "../approval/approvalQueue.js";
 
-const DEFAULT_RAILWAY_BACKEND = "https://sca-01-phase3-production.up.railway.app";
+const DEFAULT_RAILWAY_BACKEND = "https://backend-production-d3da.up.railway.app";
 
 // ES Module __dirname polyfill
 const __filename = fileURLToPath(import.meta.url);

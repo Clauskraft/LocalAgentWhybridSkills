@@ -26,5 +26,5 @@ export const DEFAULT_ENV = {
 
   // Cloud (disabled by default)
   SCA_USE_CLOUD: "false",
-  SCA_BACKEND_URL: "",
+  SCA_BACKEND_URL: "https://backend-production-d3da.up.railway.app",
 };
