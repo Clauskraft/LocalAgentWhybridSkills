@@ -173,3 +173,12 @@ const api: SCA01API = {
 
 contextBridge.exposeInMainWorld("sca01", api);
 
+// Compatibility bridge for MCP UI (SettingsModal expects window.chat.* in the desktop renderer)
+contextBridge.exposeInMainWorld("chat", {
+  getMcpServers: () => ipcRenderer.invoke("mcp-get-servers"),
+  getMcpCatalog: () => ipcRenderer.invoke("mcp-get-catalog"),
+  installMcpFromCatalog: (serverId: string) => ipcRenderer.invoke("mcp-install-from-catalog", serverId),
+  removeMcpServer: (name: string) => ipcRenderer.invoke("mcp-remove-server", name),
+  autoSetupMcp: (opts?: { includeAuth?: boolean }) => ipcRenderer.invoke("mcp-auto-setup", opts),
+});
+

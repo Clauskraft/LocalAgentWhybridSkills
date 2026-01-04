@@ -27,6 +27,8 @@ import {
   type UnifiedConfigPaths,
 } from "../config/unifiedConfig.js";
 import type { UnifiedConfig, UnifiedSecrets } from "../config/unifiedSchema.js";
+import { getConfigStore } from "../config/configStore.js";
+import { MCP_SERVER_CATALOG, getPopularServers, getServerById } from "../mcp/serverCatalog.js";
 // import { initUpdater } from "../updater/autoUpdater.js"; // TODO: Fix ESM/CJS loading issue
 
 import type { ApprovalRequest } from "../approval/approvalQueue.js";
@@ -62,6 +64,9 @@ let cryptoProvider: CryptoProvider | null = null;
 
 let cloudAccessToken: string | null = null;
 let cloudRefreshTokenEncrypted: string | null = null;
+
+// MCP config (used by Settings -> MCP)
+let mcpConfigStore: ReturnType<typeof getConfigStore> | null = null;
 
 type PerfSample = {
   ts: number;
@@ -617,6 +622,8 @@ function setupCloudIpc(): void {
 async function setupIpc(): Promise<void> {
   cryptoProvider = createCryptoProvider();
   const userDataDir = app.getPath("userData");
+  // Keep MCP config alongside other userData-backed config
+  mcpConfigStore = getConfigStore(path.join(userDataDir, "config"));
   unifiedPaths = {
     configPath: path.join(userDataDir, "sca01-config.json"),
     secretsPath: path.join(userDataDir, "sca01-secrets.json"),
@@ -651,6 +658,97 @@ async function setupIpc(): Promise<void> {
   // Get configuration
   ipcMain.handle("get-config", () => {
     return runtimeCfg;
+  });
+
+  // MCP (for SettingsModal MCP tab)
+  ipcMain.handle("mcp-get-servers", () => {
+    return mcpConfigStore?.getServices() ?? [];
+  });
+
+  ipcMain.handle("mcp-get-catalog", () => {
+    return MCP_SERVER_CATALOG;
+  });
+
+  ipcMain.handle("mcp-remove-server", (_event: unknown, name: string) => {
+    if (!mcpConfigStore) return false;
+    const services = mcpConfigStore.getServices();
+    const svc = services.find((s) => s.name === name);
+    if (!svc) return false;
+    return mcpConfigStore.removeService(svc.id);
+  });
+
+  ipcMain.handle("mcp-install-from-catalog", (_event: unknown, serverId: string) => {
+    if (!mcpConfigStore) return { success: false, error: "Config store not initialized" };
+
+    const server = getServerById(serverId);
+    if (!server) return { success: false, error: "Server not found in catalog" };
+
+    const existing = mcpConfigStore.getServices();
+    if (existing.some((s) => s.name === server.name)) {
+      return { success: true, server, alreadyInstalled: true, requiresAuth: server.requiresAuth, authEnvVar: server.authEnvVar };
+    }
+
+    let command = server.command ?? "";
+    if (server.args) command += " " + server.args.join(" ");
+
+    mcpConfigStore.addService({
+      name: server.name,
+      type: "custom",
+      endpoint: server.url ?? command,
+      enabled: true
+    });
+
+    log?.info("mcp.install", `Installed MCP server: ${server.name}`, { serverId });
+
+    return { success: true, server, requiresAuth: server.requiresAuth, authEnvVar: server.authEnvVar };
+  });
+
+  ipcMain.handle("mcp-auto-setup", (_event: unknown, opts?: { includeAuth?: boolean }) => {
+    if (!mcpConfigStore) return { success: false, installed: [], skipped: [], requiresAuth: [] };
+    const includeAuth = opts?.includeAuth === true;
+
+    const existing = mcpConfigStore.getServices();
+    const existingNames = new Set(existing.map((s) => s.name));
+
+    const targets = [getServerById("sca-01-tools"), ...getPopularServers()].filter(Boolean);
+
+    const installed: string[] = [];
+    const skipped: Array<{ id: string; name: string; reason: string; authEnvVar?: string }> = [];
+    const requiresAuth: Array<{ id: string; name: string; authEnvVar?: string }> = [];
+
+    for (const server of targets) {
+      if (!server) continue;
+
+      if (server.requiresAuth) {
+        requiresAuth.push({ id: server.id, name: server.name, authEnvVar: server.authEnvVar });
+      }
+
+      if (server.requiresAuth && !includeAuth) {
+        skipped.push({ id: server.id, name: server.name, reason: "requires_auth", authEnvVar: server.authEnvVar });
+        continue;
+      }
+
+      if (existingNames.has(server.name)) {
+        skipped.push({ id: server.id, name: server.name, reason: "already_installed", authEnvVar: server.authEnvVar });
+        continue;
+      }
+
+      let command = server.command ?? "";
+      if (server.args) command += " " + server.args.join(" ");
+
+      mcpConfigStore.addService({
+        name: server.name,
+        type: "custom",
+        endpoint: server.url ?? command,
+        enabled: true
+      });
+      existingNames.add(server.name);
+      installed.push(server.name);
+    }
+
+    log?.info("mcp.autosetup", "Auto-setup completed", { installedCount: installed.length, skippedCount: skipped.length });
+
+    return { success: true, installed, skipped, requiresAuth };
   });
 
   ipcMain.handle("perf-get-stats", () => {
