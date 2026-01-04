@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import type { Chat } from '../App';
+import { IconChat, IconPlus, IconPlug, IconSettings, IconTrash } from './icons';
 
 interface SidebarProps {
   chats: Chat[];
@@ -36,7 +37,7 @@ export const Sidebar = memo(function Sidebar({
           onClick={onNewChat}
           className="w-full py-3 px-4 bg-accent hover:bg-accent-hover text-white font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors"
         >
-          <span>✨</span>
+          <IconPlus className="w-5 h-5" />
           <span>Ny samtale</span>
           <kbd className="ml-auto text-xs bg-white/20 px-1.5 py-0.5 rounded">Ctrl+N</kbd>
         </button>
@@ -61,7 +62,7 @@ export const Sidebar = memo(function Sidebar({
                     : 'hover:bg-bg-hover'}
                 `}
               >
-                <span className="text-text-muted">💬</span>
+                <IconChat className="w-4 h-4 text-text-muted" />
                 <span className="flex-1 text-sm truncate">{chat.title}</span>
                 <button
                   onClick={(e) => {
@@ -71,7 +72,7 @@ export const Sidebar = memo(function Sidebar({
                   className="opacity-0 group-hover:opacity-100 p-1 hover:bg-bg-tertiary rounded text-text-muted hover:text-text-primary transition-all"
                   title="Slet"
                 >
-                  🗑
+                  <IconTrash className="w-4 h-4" />
                 </button>
               </div>
             ))}
@@ -87,9 +88,8 @@ export const Sidebar = memo(function Sidebar({
 
       {/* Footer */}
       <div className="p-3 border-t border-border-primary space-y-1">
-        <NavItem icon="🔌" label="MCP Servere" onClick={() => onOpenSettings('mcp')} />
-        <NavItem icon="📝" label="System Prompts" onClick={() => onOpenSettings('prompts')} />
-        <NavItem icon="⚙️" label="Indstillinger" onClick={() => onOpenSettings('general')} />
+        <NavItem icon={<IconPlug className="w-4 h-4" />} label="MCP Servere" onClick={() => onOpenSettings('mcp')} />
+        <NavItem icon={<IconSettings className="w-4 h-4" />} label="Indstillinger" onClick={() => onOpenSettings('general')} />
       </div>
     </aside>
   );
@@ -100,7 +100,7 @@ function NavItem({
   label, 
   onClick 
 }: { 
-  icon: string; 
+  icon: React.ReactNode; 
   label: string; 
   onClick: () => void;
 }) {
@@ -109,9 +109,8 @@ function NavItem({
       onClick={onClick}
       className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors text-sm"
     >
-      <span>{icon}</span>
+      <span className="text-text-muted">{icon}</span>
       <span>{label}</span>
     </div>
   );
 }
-

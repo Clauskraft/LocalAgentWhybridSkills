@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import type { Message } from '../App';
+import { IconBolt, IconPlug, IconSettings, IconShield, IconUser, IconCopy } from './icons';
 
 interface MessageBubbleProps {
   message: Message;
@@ -18,14 +19,14 @@ export const MessageBubble = memo(function MessageBubble({ message }: MessageBub
     ? 'bg-tdc-blue' 
     : 'bg-tdc-purple';
 
-  const avatarIcon = isUser ? '👤' : isSystem ? '⚙️' : isTool ? '🔧' : '⚡';
+  const AvatarIcon = isUser ? IconUser : isSystem ? IconSettings : isTool ? IconPlug : IconBolt;
   const roleName = isUser ? 'Dig' : isSystem ? 'System' : isTool ? 'Tool' : 'SCA-01';
 
   return (
     <div className="flex gap-4 animate-fade-in group">
       {/* Avatar */}
       <div className={`w-8 h-8 rounded-md ${avatarBg} flex items-center justify-center text-white flex-shrink-0`}>
-        {avatarIcon}
+        <AvatarIcon className="w-5 h-5" />
       </div>
 
       {/* Content */}
@@ -47,7 +48,7 @@ export const MessageBubble = memo(function MessageBubble({ message }: MessageBub
         {message.toolCalls?.map((tc, i) => (
           <div key={i} className="mt-3 p-3 bg-bg-tertiary border border-border-primary rounded-lg">
             <div className="flex items-center gap-2 text-tdc-blue font-semibold text-sm mb-2">
-              🔧 {tc.name}
+              <IconPlug className="w-4 h-4" /> {tc.name}
             </div>
             <pre className="text-xs text-text-secondary bg-bg-primary p-2 rounded overflow-x-auto">
               {JSON.stringify(tc.arguments, null, 2)}
@@ -85,18 +86,18 @@ function formatContent(content: string): React.ReactNode {
         return (
           <div key={i} className="relative my-3 group/code">
             {lang && (
-              <div className="absolute top-0 left-0 px-2 py-1 text-xs text-text-muted bg-bg-elevated rounded-tl-lg">
+              <div className="absolute top-0 left-0 px-2 py-1 text-xs text-text-muted bg-bg-elevated rounded-tl-lg border-r border-b border-border-primary">
                 {lang}
               </div>
             )}
-            <pre className="bg-bg-primary p-4 rounded-lg overflow-x-auto text-sm font-mono">
+            <pre className="bg-bg-primary p-4 rounded-lg overflow-x-auto text-sm font-mono border border-border-primary">
               <code>{code.trim()}</code>
             </pre>
             <button
               onClick={() => navigator.clipboard.writeText(code.trim())}
-              className="absolute top-2 right-2 px-2 py-1 text-xs bg-bg-hover text-text-muted rounded opacity-0 group-hover/code:opacity-100 hover:text-text-primary transition-all"
+              className="absolute top-2 right-2 px-2 py-1 text-xs bg-bg-hover text-text-muted rounded opacity-0 group-hover/code:opacity-100 hover:text-text-primary transition-all flex items-center gap-1"
             >
-              📋 Kopiér
+              <IconCopy className="w-3 h-3" /> Kopiér
             </button>
           </div>
         );
@@ -127,7 +128,7 @@ function formatInline(text: string): React.ReactNode {
   return parts.map((part, i) => {
     if (part.startsWith('`') && part.endsWith('`')) {
       return (
-        <code key={i} className="px-1.5 py-0.5 bg-bg-tertiary rounded text-sm font-mono">
+        <code key={i} className="px-1.5 py-0.5 bg-bg-tertiary rounded text-sm font-mono text-accent">
           {part.slice(1, -1)}
         </code>
       );
@@ -139,4 +140,3 @@ function formatInline(text: string): React.ReactNode {
     return part;
   });
 }
-

@@ -22,14 +22,16 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
+import { IconBolt, IconPlug, IconSettings, IconShield, IconX, IconPlus } from './icons';
+
 const TABS = [
-  { id: 'general', icon: '⚙️', label: 'Generelt' },
-  { id: 'repos', icon: '🗂️', label: 'Repos' },
-  { id: 'models', icon: '🤖', label: 'Modeller' },
-  { id: 'mcp', icon: '🔌', label: 'MCP Servere' },
-  { id: 'prompts', icon: '📝', label: 'System Prompts' },
-  { id: 'security', icon: '🔐', label: 'Sikkerhed' },
-  { id: 'theme', icon: '🎨', label: 'Theme' },
+  { id: 'general', icon: <IconSettings className="w-4 h-4" />, label: 'Generelt' },
+  { id: 'repos', icon: <IconPlug className="w-4 h-4" />, label: 'Repos' },
+  { id: 'models', icon: <IconBolt className="w-4 h-4" />, label: 'Modeller' },
+  { id: 'mcp', icon: <IconPlug className="w-4 h-4" />, label: 'MCP Servere' },
+  { id: 'prompts', icon: <IconSettings className="w-4 h-4" />, label: 'System Prompts' },
+  { id: 'security', icon: <IconShield className="w-4 h-4" />, label: 'Sikkerhed' },
+  { id: 'theme', icon: <IconSettings className="w-4 h-4" />, label: 'Theme' },
 ];
 
 export const SettingsModal = memo(function SettingsModal({
@@ -56,9 +58,9 @@ export const SettingsModal = memo(function SettingsModal({
           <h2 className="text-lg font-semibold">Indstillinger</h2>
           <button
             onClick={onClose}
-            className="text-2xl text-text-muted hover:text-text-primary transition-colors"
+            className="text-text-muted hover:text-text-primary transition-colors p-2 rounded-full hover:bg-bg-tertiary"
           >
-            ×
+            <IconX className="w-5 h-5" />
           </button>
         </div>
 
@@ -627,15 +629,18 @@ function MCPSettings() {
               key={name}
               className="p-3 bg-bg-tertiary border border-border-primary rounded-lg flex items-center gap-3 cursor-pointer hover:border-accent transition-colors"
             >
-              <div className="w-10 h-10 bg-bg-secondary rounded-lg flex items-center justify-center text-xl">
-                {name === 'GitHub' ? '🐙' : name === 'Filesystem' ? '📁' : name === 'Puppeteer' ? '🎭' : '📝'}
+              <div className="w-10 h-10 bg-bg-secondary rounded-lg flex items-center justify-center text-xl text-text-secondary">
+                {name === 'GitHub' ? <IconPlug className="w-5 h-5" /> : 
+                 name === 'Filesystem' ? <IconPlug className="w-5 h-5" /> : 
+                 name === 'Puppeteer' ? <IconPlug className="w-5 h-5" /> : 
+                 <IconPlug className="w-5 h-5" />}
               </div>
               <div className="flex-1">
                 <div className="font-semibold text-sm">{name}</div>
                 <div className="text-xs text-text-muted">Official MCP server</div>
               </div>
-              <button className="px-3 py-1 text-sm bg-accent text-white rounded hover:bg-accent-hover">
-                + Tilføj
+              <button className="px-3 py-1 text-sm bg-accent text-white rounded hover:bg-accent-hover flex items-center gap-1">
+                <IconPlus className="w-3 h-3" /> Tilføj
               </button>
             </div>
           ))}

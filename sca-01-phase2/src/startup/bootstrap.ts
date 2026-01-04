@@ -126,7 +126,7 @@ async function startOllama(config: OllamaConfig): Promise<boolean> {
     const child = spawn(ollamaPath, ["serve"], {
       detached: true,
       stdio: "ignore",
-      shell: true,
+      shell: false,
     });
     
     child.unref();
