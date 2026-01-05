@@ -20,6 +20,10 @@ Use this file for **longer-lived context** that multiple Cursor agents need duri
 
 ## Notes
 
+- **CI status**: ✅ green on `main` (GitHub Actions run `20700894841`)
+  - Fixed `apps/desktop` `package-lock.json` mismatch (CI `npm ci --force`).
+  - Fixed `mcp-backend` build/test under CI (shared middleware module resolution + Vitest aliases + plugin compatibility).
+  - Stabilized desktop Playwright smoke selectors (MCP header button + model dropdown in Cloud/Ollama).
 - Keep this concise. Prefer GitHub issues for actionable work.
 
 
