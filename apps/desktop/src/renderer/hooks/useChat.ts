@@ -105,7 +105,8 @@ export function useChat() {
             // Try "auto" first (cloud server default = omit model), then common fallbacks.
             const candidates = ['', 'qwen3:8b', 'qwen3', 'llama3.1', 'mistral'];
             for (const candidate of candidates) {
-              if (!candidate || candidate === payload.model) continue;
+              // NOTE: empty string means "auto" (omit model in cloud IPC).
+              if (candidate === payload.model) continue;
               try {
                 const retry = await attemptSend(candidate);
                 // Persist the working model for future sends (renderer-side settings)
