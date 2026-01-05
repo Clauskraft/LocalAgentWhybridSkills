@@ -85,6 +85,10 @@ npm run cloud
 
 We use a **branch → PR → merge** workflow. See `docs/WORKFLOW.md`.
 
+## WidgeTDC integration (Enterprise)
+
+See `docs/WIDGETTDC_AGENT_INTEGRATION_SPEC.md` for the **discovery-first** integration contract (HTTP + MCP + SSE/WS) used by external agents and contract-first frontends.
+
 ### Start CLI runtime (minimal)
 
 ```bash
