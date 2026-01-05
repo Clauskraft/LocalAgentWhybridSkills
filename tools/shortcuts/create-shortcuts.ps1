@@ -31,11 +31,17 @@ function New-Shortcut {
 
 function Find-DesktopExe {
   param([string]$RepoRootPath)
-  $dist = Join-Path $RepoRootPath "apps\\desktop\\dist-electron"
-  if (-not (Test-Path $dist)) { return $null }
+  $distRoots = @(
+    (Join-Path $RepoRootPath "apps\\desktop\\dist-electron"),
+    (Join-Path $RepoRootPath "apps\\desktop\\dist-electron2")
+  ) | Where-Object { Test-Path $_ }
+
+  if (-not $distRoots -or $distRoots.Count -eq 0) { return $null }
 
   # Prefer unpacked win output (arm64/x64) and pick the newest app exe at depth 1
-  $candidates = Get-ChildItem -Path $dist -Recurse -Filter *.exe -ErrorAction SilentlyContinue |
+  $candidates = $distRoots | ForEach-Object {
+    Get-ChildItem -Path $_ -Recurse -Filter *.exe -ErrorAction SilentlyContinue
+  } |
     Where-Object {
       $_.FullName -match "win-.*-unpacked" -and
       $_.Name -notin @("chrome_elf.exe","electron.exe","squirrel.exe","update.exe")
