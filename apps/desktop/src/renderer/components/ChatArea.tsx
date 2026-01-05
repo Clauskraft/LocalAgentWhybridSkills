@@ -17,6 +17,7 @@ interface ChatAreaProps {
   };
   onSendMessage: (content: string) => Promise<void>;
   onOpenSettings: (tab: string) => void;
+  onSelectModel: (model: string) => void;
 }
 
 export const ChatArea = memo(function ChatArea({
@@ -27,9 +28,14 @@ export const ChatArea = memo(function ChatArea({
   security,
   onSendMessage,
   onOpenSettings,
+  onSelectModel,
 }: ChatAreaProps) {
   const [input, setInput] = useState('');
   const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const [models, setModels] = useState<string[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [modelsError, setModelsError] = useState<string | null>(null);
+  const [customModel, setCustomModel] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -42,6 +48,39 @@ export const ChatArea = memo(function ChatArea({
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (!showModelDropdown) return;
+
+    let alive = true;
+    const loadModels = async () => {
+      setModelsLoading(true);
+      setModelsError(null);
+      try {
+        const api = (window as any).sca01?.chat;
+        const list = await api?.getModels?.();
+        const names = Array.isArray(list) ? list.map((m: any) => String(m?.name ?? "")).filter(Boolean) : [];
+
+        // Fallback: if cloud model list isn't exposed, show a small, safe default list + allow custom entry.
+        const fallback = ['qwen3:8b', 'qwen3', 'llama3.1', 'mistral', 'codellama'];
+        const merged = Array.from(new Set([currentModel, ...names, ...fallback].filter(Boolean)));
+        if (alive) setModels(merged);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Kunne ikke hente modeller";
+        if (alive) {
+          setModels([currentModel, 'qwen3:8b', 'qwen3', 'llama3.1', 'mistral', 'codellama'].filter(Boolean));
+          setModelsError(msg);
+        }
+      } finally {
+        if (alive) setModelsLoading(false);
+      }
+    };
+
+    loadModels();
+    return () => {
+      alive = false;
+    };
+  }, [showModelDropdown, currentModel]);
 
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || isLoading) return;
@@ -96,18 +135,73 @@ export const ChatArea = memo(function ChatArea({
               <div className="px-3 py-2 text-xs text-text-muted border-b border-border-primary">
                 Vælg model
               </div>
-              {['qwen3', 'llama3.1', 'mistral', 'codellama'].map((model) => (
-                <div
-                  key={model}
-                  onClick={() => {
-                    // TODO: Update model
-                    setShowModelDropdown(false);
-                  }}
-                  className={`px-3 py-2 cursor-pointer hover:bg-bg-hover ${model === currentModel ? 'bg-accent-soft text-text-primary' : ''}`}
-                >
-                  {model}
+              {modelsError && (
+                <div className="px-3 py-2 text-xs text-warning border-b border-border-primary">
+                  {security.useCloud
+                    ? "Cloud: model-list ikke tilgængelig. Indtast modelnavn manuelt."
+                    : "Kunne ikke hente Ollama-modeller. Vælg/indtast manuelt."}
                 </div>
-              ))}
+              )}
+              {modelsLoading ? (
+                <div className="px-3 py-2 text-sm text-text-muted">Loader…</div>
+              ) : (
+                models.map((model) => (
+                  <div
+                    key={model}
+                    onClick={() => {
+                      onSelectModel(model);
+                      setCustomModel("");
+                      setShowModelDropdown(false);
+                    }}
+                    className={`px-3 py-2 cursor-pointer hover:bg-bg-hover ${model === currentModel ? 'bg-accent-soft text-text-primary' : ''}`}
+                  >
+                    {model}
+                  </div>
+                ))
+              )}
+
+              <div className="px-3 py-2 border-t border-border-primary">
+                <input
+                  type="text"
+                  value={customModel}
+                  onChange={(e) => setCustomModel(e.target.value)}
+                  placeholder="Indtast model…"
+                  className="form-input text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const next = customModel.trim();
+                      if (!next) return;
+                      onSelectModel(next);
+                      setShowModelDropdown(false);
+                    }
+                  }}
+                />
+                <div className="mt-2 flex gap-2">
+                  <button
+                    className="btn btn-secondary px-2 py-1 text-xs"
+                    onClick={() => {
+                      const next = customModel.trim();
+                      if (!next) return;
+                      onSelectModel(next);
+                      setShowModelDropdown(false);
+                    }}
+                  >
+                    Brug
+                  </button>
+                  <button
+                    className="btn btn-secondary px-2 py-1 text-xs"
+                    onClick={() => {
+                      setModelsError(null);
+                      setModelsLoading(true);
+                      // Trigger reload by toggling dropdown state
+                      setShowModelDropdown(false);
+                      setTimeout(() => setShowModelDropdown(true), 0);
+                    }}
+                  >
+                    Opdatér
+                  </button>
+                </div>
+              </div>
               <div
                 onClick={() => {
                   onOpenSettings('models');

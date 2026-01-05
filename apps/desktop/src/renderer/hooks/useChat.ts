@@ -87,7 +87,38 @@ export function useChat() {
       };
 
       if (api?.sendMessage) {
-        const resp = await api.sendMessage(payload);
+        const attemptSend = async (model: string) => {
+          return await api.sendMessage({ ...payload, model });
+        };
+
+        let resp: any;
+        try {
+          resp = await attemptSend(payload.model);
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+
+          // Best-effort cloud fallback: if model is missing upstream, try a safer default and persist it.
+          const modelMissing =
+            /model/i.test(msg) && /not found/i.test(msg) && (payload.useCloud || /Cloud chat failed/i.test(msg));
+
+          if (modelMissing) {
+            const candidates = ['qwen3:8b', 'qwen3', 'llama3.1', 'mistral'];
+            for (const candidate of candidates) {
+              if (!candidate || candidate === payload.model) continue;
+              try {
+                const retry = await attemptSend(candidate);
+                // Persist the working model for future sends (renderer-side settings)
+                api?.updateSettings?.({ model: candidate });
+                resp = retry;
+                break;
+              } catch {
+                // keep trying candidates
+              }
+            }
+          }
+
+          if (!resp) throw e;
+        }
         if (resp?.content) {
           const assistantMsg = createMessage('assistant', resp.content);
           assistantMsg.toolCalls = resp?.toolCalls;

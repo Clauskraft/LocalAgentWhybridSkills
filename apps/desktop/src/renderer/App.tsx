@@ -83,6 +83,7 @@ export function App() {
         }}
         onSendMessage={handleSendMessage}
         onOpenSettings={openSettings}
+        onSelectModel={(model) => updateSettings({ model })}
       />
 
       {/* Settings Modal */}
