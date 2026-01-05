@@ -276,3 +276,25 @@ jobs:
         working-directory: apps/desktop
         continue-on-error: true
 
+  benchmark:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run ROMA Bridge Benchmarks
+        run: |
+          mkdir -p benchmark-results
+          docker compose -f ci-bench.yml up --exit-code-from benchmark-runner
+          docker compose -f ci-bench.yml down
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.sha }}
+          path: benchmark-results/
+

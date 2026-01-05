@@ -13,6 +13,9 @@ import { notionRoutes } from "../routes/notionRoutes.js";
 import { executionRoutes } from "../routes/executionRoutes.js";
 import { registerGitHubRoutes } from "../routes/githubRoutes.js";
 import { registerRepoRoutes } from "../routes/repoRoutes.js";
+// Import clients
+import { getRomaClient } from "../../mcp-backend/src/agent/romaBridge.ts";
+import { getSearchClient } from "../../mcp-backend/src/agent/searchBridge.ts";
 
 type MigrationsStatus = "not_started" | "running" | "ok" | "error";
 let migrationsStatus: MigrationsStatus = "not_started";
@@ -146,7 +149,7 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
     (request as unknown as { requestId: string }).requestId = reqId;
     reply.header("x-request-id", reqId);
     // Debug: log every incoming request
-    console.log(`📥 ${request.method} ${request.url} from ${request.ip}`);
+    log.debug("http.request", `${request.method} ${request.url} from ${request.ip}`);
   });
 
   // Auth decorator
@@ -426,9 +429,190 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
             },
             required: ["url"]
           }
+        },
+        {
+          name: "roma.plan",
+          description: "Plan a complex task using hierarchical reasoning",
+          inputSchema: {
+            type: "object",
+            properties: {
+              goal: { type: "string", description: "The goal to plan for" },
+              context: { type: "object", description: "Additional context" },
+              strategy: { type: "string", enum: ["react", "cot", "code_act"], description: "Planning strategy" }
+            },
+            required: ["goal"]
+          }
+        },
+        {
+          name: "roma.act",
+          description: "Execute a planned task with tools",
+          inputSchema: {
+            type: "object",
+            properties: {
+              task: { type: "string", description: "The task to execute" },
+              context: { type: "object", description: "Execution context" },
+              tools: { type: "array", description: "Available tools" }
+            },
+            required: ["task"]
+          }
+        },
+        {
+          name: "search.query",
+          description: "Search documents using hybrid retrieval",
+          inputSchema: {
+            type: "object",
+            properties: {
+              query: { type: "string", description: "Search query" },
+              limit: { type: "integer", description: "Maximum results", default: 10 },
+              filters: { type: "object", description: "Search filters" },
+              context: { type: "object", description: "Additional context" }
+            },
+            required: ["query"]
+          }
+        },
+        {
+          name: "search.upsert",
+          description: "Add or update documents in search index",
+          inputSchema: {
+            type: "object",
+            properties: {
+              documents: { type: "array", items: { type: "object" }, description: "Documents to upsert" },
+              index_name: { type: "string", description: "Index name", default: "global_agent_docs" }
+            },
+            required: ["documents"]
+          }
         }
       ]
     };
+  });
+
+  // Back-compat alias routes for legacy /api/mcp/* paths
+  app.get("/api/mcp/tools", { preHandler: [verifyJwt as never] }, async (request) => {
+    // Delegate to the canonical route implementation
+    const user = (request as { user: TokenPayload }).user;
+    if (!user.scopes.includes("tools:read")) {
+      throw { statusCode: 403, message: "Insufficient permissions" };
+    }
+    log.info("mcp.tools.list.alias", "Tools listed via legacy path", { agentId: user.agentId });
+    return {
+      tools: [
+        {
+          name: "read_file",
+          description: "Read a file from the server filesystem",
+          inputSchema: {
+            type: "object",
+            properties: { path: { type: "string", description: "File path" } },
+            required: ["path"]
+          }
+        },
+        {
+          name: "write_file",
+          description: "Write content to a file",
+          inputSchema: {
+            type: "object",
+            properties: { path: { type: "string", description: "File path" }, content: { type: "string", description: "File content" } },
+            required: ["path", "content"]
+          }
+        },
+        {
+          name: "run_command",
+          description: "Execute a shell command (restricted)",
+          inputSchema: {
+            type: "object",
+            properties: { command: { type: "string", description: "Command to run" }, cwd: { type: "string", description: "Working directory" } },
+            required: ["command"]
+          }
+        },
+        {
+          name: "http_request",
+          description: "Make an HTTP request",
+          inputSchema: {
+            type: "object",
+            properties: {
+              url: { type: "string", description: "URL to request" },
+              method: { type: "string", enum: ["GET", "POST", "PUT", "DELETE"] },
+              headers: { type: "object" },
+              body: { type: "string" }
+            },
+            required: ["url"]
+          }
+        },
+        {
+          name: "roma.plan",
+          description: "Plan a complex task using hierarchical reasoning",
+          inputSchema: {
+            type: "object",
+            properties: {
+              goal: { type: "string", description: "The goal to plan for" },
+              context: { type: "object", description: "Additional context" },
+              strategy: { type: "string", enum: ["react", "cot", "code_act"], description: "Planning strategy" }
+            },
+            required: ["goal"]
+          }
+        },
+        {
+          name: "roma.act",
+          description: "Execute a planned task with tools",
+          inputSchema: {
+            type: "object",
+            properties: {
+              task: { type: "string", description: "The task to execute" },
+              context: { type: "object", description: "Execution context" },
+              tools: { type: "array", description: "Available tools" }
+            },
+            required: ["task"]
+          }
+        },
+        {
+          name: "search.query",
+          description: "Search documents using hybrid retrieval",
+          inputSchema: {
+            type: "object",
+            properties: {
+              query: { type: "string", description: "Search query" },
+              limit: { type: "integer", description: "Maximum results", default: 10 },
+              filters: { type: "object", description: "Search filters" },
+              context: { type: "object", description: "Additional context" }
+            },
+            required: ["query"]
+          }
+        },
+        {
+          name: "search.upsert",
+          description: "Add or update documents in search index",
+          inputSchema: {
+            type: "object",
+            properties: {
+              documents: { type: "array", items: { type: "object" }, description: "Documents to upsert" },
+              index_name: { type: "string", description: "Index name", default: "global_agent_docs" }
+            },
+            required: ["documents"]
+          }
+        }
+      ]
+    };
+  });
+
+  // Back-compat POST /api/mcp/tools/call alias
+  app.post("/api/mcp/tools/call", { preHandler: [verifyJwt as never] }, async (request, reply) => {
+    const user = (request as { user: TokenPayload }).user;
+    if (!user.scopes.includes("tools:call")) {
+      throw { statusCode: 403, message: "Insufficient permissions" };
+    }
+    const parseResult = ToolCallSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({ error: "Invalid tool call format" });
+    }
+    const { name, arguments: args } = parseResult.data;
+    log.info("mcp.tools.call.alias", `Tool called via legacy path: ${name}`, { agentId: user.agentId, tool: name });
+    try {
+      const result = await executeToolCall(name, args ?? {}, log);
+      return { content: [{ type: "text", text: JSON.stringify(result) }], isError: false };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Tool execution failed";
+      log.error("mcp.tools.error.alias", msg, { tool: name });
+      return { content: [{ type: "text", text: msg }], isError: true };
+    }
   });
 
   // Call tool
@@ -567,13 +751,53 @@ async function executeToolCall(
       });
       
       const text = await response.text();
-      return { 
-        status: response.status, 
-        headers: Object.fromEntries(response.headers), 
-        body: text 
+      return {
+        status: response.status,
+        headers: Object.fromEntries(response.headers),
+        body: text
       };
     }
-    
+
+    case "roma.plan": {
+      const goal = args.goal as string;
+      const context = args.context as Record<string, unknown> | undefined;
+      const strategy = args.strategy as "react" | "cot" | "code_act" | undefined;
+
+      const romaClient = getRomaClient();
+      const result = await romaClient.plan({ goal, context, strategy });
+      return result;
+    }
+
+    case "roma.act": {
+      const task = args.task as string;
+      const context = args.context as Record<string, unknown> | undefined;
+      const tools = args.tools as Array<Record<string, unknown>> | undefined;
+
+      const romaClient = getRomaClient();
+      const result = await romaClient.act({ task, context, tools });
+      return result;
+    }
+
+    case "search.query": {
+      const query = args.query as string;
+      const limit = args.limit as number | undefined;
+      const filters = args.filters as Record<string, unknown> | undefined;
+      const context = args.context as Record<string, unknown> | undefined;
+
+      const searchClient = getSearchClient();
+      const result = await searchClient.query({ query, limit, filters, context });
+      return result;
+    }
+
+    case "search.upsert": {
+      const documents = args.documents as Array<Record<string, unknown>>;
+      const index_name = args.index_name as string | undefined;
+
+      const searchClient = getSearchClient();
+      const result = await searchClient.upsert({ documents, index_name });
+      return result;
+    }
+
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
@@ -605,7 +829,11 @@ async function handleMcpMethod(
           { name: "read_file", description: "Read file", inputSchema: { type: "object", properties: { path: { type: "string" } }, required: ["path"] } },
           { name: "write_file", description: "Write file", inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } },
           { name: "run_command", description: "Run command", inputSchema: { type: "object", properties: { command: { type: "string" } }, required: ["command"] } },
-          { name: "http_request", description: "HTTP request", inputSchema: { type: "object", properties: { url: { type: "string" } }, required: ["url"] } }
+          { name: "http_request", description: "HTTP request", inputSchema: { type: "object", properties: { url: { type: "string" } }, required: ["url"] } },
+          { name: "roma.plan", description: "Plan complex tasks", inputSchema: { type: "object", properties: { goal: { type: "string" }, context: { type: "object" }, strategy: { type: "string", enum: ["react", "cot", "code_act"] } }, required: ["goal"] } },
+          { name: "roma.act", description: "Execute planned tasks", inputSchema: { type: "object", properties: { task: { type: "string" }, context: { type: "object" }, tools: { type: "array" } }, required: ["task"] } },
+          { name: "search.query", description: "Search documents", inputSchema: { type: "object", properties: { query: { type: "string" }, limit: { type: "integer" }, filters: { type: "object" }, context: { type: "object" } }, required: ["query"] } },
+          { name: "search.upsert", description: "Upsert documents", inputSchema: { type: "object", properties: { documents: { type: "array", items: { type: "object" } }, index_name: { type: "string" } }, required: ["documents"] } }
         ]
       };
     

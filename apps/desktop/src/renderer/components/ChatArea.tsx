@@ -2,7 +2,11 @@ import { useState, useRef, useEffect, memo, useCallback } from 'react';
 import type { Message } from '../App';
 import { MessageBubble } from './MessageBubble';
 import { WelcomeScreen } from './WelcomeScreen';
-import { IconChevronDown, IconPlug, IconSend, IconShield } from './icons';
+import { SmartSuggestions } from './SmartSuggestions';
+import { MultiModalInput } from './MultiModalInput';
+import { NeuralVisualizer } from './NeuralVisualizer';
+import { PredictiveInterface } from './PredictiveInterface';
+import { IconChevronDown, IconPlug, IconSend, IconShield, IconBolt } from './icons';
 
 interface ChatAreaProps {
   messages: Message[];
@@ -36,6 +40,7 @@ export const ChatArea = memo(function ChatArea({
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsError, setModelsError] = useState<string | null>(null);
   const [customModel, setCustomModel] = useState("");
+  const [showNeuralVisualizer, setShowNeuralVisualizer] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -100,10 +105,48 @@ export const ChatArea = memo(function ChatArea({
     }
   }, [handleSubmit]);
 
+  // LOOP 8: Predictive Interface Handler
+  const handlePredictionSelect = useCallback((prediction: any) => {
+    if (prediction.type === 'text') {
+      setInput(prediction.content);
+      inputRef.current?.focus();
+    } else if (prediction.type === 'action' && prediction.action) {
+      prediction.action();
+    }
+  }, []);
+
   const handleQuickStart = useCallback((prompt: string) => {
     setInput(prompt);
     inputRef.current?.focus();
   }, []);
+
+  // LOOP 4: Multi-Modal Input Handlers
+  const handleVoiceInput = useCallback(async (audioBlob: Blob) => {
+    // Simulate voice-to-text processing
+    const formData = new FormData();
+    formData.append('audio', audioBlob);
+
+    try {
+      // In a real implementation, send to speech-to-text service
+      // For now, simulate with a placeholder message
+      await onSendMessage("🎤 [Voice Input Processed] - Audio message received and transcribed");
+    } catch (error) {
+      console.error('Voice input processing failed:', error);
+      await onSendMessage("❌ Failed to process voice input");
+    }
+  }, [onSendMessage]);
+
+  const handleDrawingInput = useCallback(async (imageData: string) => {
+    // Simulate image analysis
+    try {
+      // In a real implementation, send to image analysis service
+      // For now, simulate with a placeholder message
+      await onSendMessage(`🎨 [Drawing Input] - Image data received (${imageData.length} bytes)`);
+    } catch (error) {
+      console.error('Drawing input processing failed:', error);
+      await onSendMessage("❌ Failed to process drawing input");
+    }
+  }, [onSendMessage]);
 
   const autoResize = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const target = e.target;
@@ -116,61 +159,72 @@ export const ChatArea = memo(function ChatArea({
   const displayModel = currentModel?.trim() ? currentModel : "Auto";
 
   return (
-    <main className="flex-1 flex flex-col h-screen bg-bg-primary">
-      {/* Header */}
-      <header className="px-6 py-3 border-b border-border-primary bg-bg-secondary flex items-center justify-between">
-        {/* Model Selector */}
+    <main className="flex-1 flex flex-col h-screen bg-gradient-to-br from-bg-primary via-bg-primary to-bg-secondary/30 relative overflow-hidden">
+      {/* LOOP 1: Glassmorphism Header */}
+      <header className="backdrop-blur-xl bg-white/10 border-b border-white/20 shadow-2xl relative z-10 px-6 py-4 flex items-center justify-between">
+        <div className="absolute inset-0 bg-gradient-to-r from-accent/20 via-transparent to-accent/10 opacity-50 rounded-b-lg" />
+        {/* LOOP 1: Enhanced Model Selector */}
         <div className="relative">
           <button
             onClick={() => setShowModelDropdown(!showModelDropdown)}
-            className="btn btn-secondary px-3 py-2"
+            className="flex items-center gap-3 px-4 py-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl hover:bg-white/10 transition-all duration-200 shadow-lg hover:shadow-xl"
           >
-            <div>
-              <div className="font-semibold text-sm">{displayModel}</div>
-              <div className="text-xs text-text-muted">{security.useCloud ? 'Cloud' : 'Ollama'}</div>
+            <div className="text-left">
+              <div className="font-semibold text-sm text-text-primary">🤖 {displayModel}</div>
+              <div className="text-xs text-accent font-medium">{security.useCloud ? '☁️ Cloud' : '🏠 Local'}</div>
             </div>
-            <span className="text-text-muted">
-              <IconChevronDown className="w-4 h-4" />
-            </span>
+            <IconChevronDown className={`w-4 h-4 text-text-primary transition-transform duration-200 ${showModelDropdown ? 'rotate-180' : ''}`} />
           </button>
 
           {showModelDropdown && (
-            <div className="absolute top-full left-0 mt-2 w-48 bg-bg-secondary border border-border-primary rounded-lg shadow-lg z-50 overflow-hidden">
-              <div className="px-3 py-2 text-xs text-text-muted border-b border-border-primary">
-                Vælg model
+            <div className="absolute top-full left-0 mt-2 w-72 bg-white/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl z-50 overflow-hidden animate-slide-down">
+              <div className="px-4 py-3 text-sm font-medium text-text-primary bg-gradient-to-r from-accent/10 to-transparent">
+                🤖 Choose AI Model
               </div>
               {modelsError && (
-                <div className="px-3 py-2 text-xs text-warning border-b border-border-primary">
-                  {security.useCloud
+                <div className="px-4 py-3 text-sm text-warning bg-warning/10 border-b border-border-primary/30">
+                  ⚠️ {security.useCloud
                     ? "Cloud: model-list ikke tilgængelig. Indtast modelnavn manuelt."
                     : "Kunne ikke hente Ollama-modeller. Vælg/indtast manuelt."}
                 </div>
               )}
               {modelsLoading ? (
-                <div className="px-3 py-2 text-sm text-text-muted">Loader…</div>
+                <div className="px-4 py-3 text-sm text-text-muted flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                  Loading models...
+                </div>
               ) : (
-                models.map((model) => (
-                  <div
-                    key={model}
-                    onClick={() => {
-                      onSelectModel(model);
-                      setCustomModel("");
-                      setShowModelDropdown(false);
-                    }}
-                    className={`px-3 py-2 cursor-pointer hover:bg-bg-hover ${model === currentModel ? 'bg-accent-soft text-text-primary' : ''}`}
-                  >
-                    {model?.trim() ? model : "Auto (server default)"}
-                  </div>
-                ))
+                <div className="max-h-48 overflow-y-auto">
+                  {models.map((model) => (
+                    <div
+                      key={model}
+                      onClick={() => {
+                        onSelectModel(model);
+                        setCustomModel("");
+                        setShowModelDropdown(false);
+                      }}
+                      className={`px-4 py-3 cursor-pointer transition-all duration-150 hover:bg-accent/10 ${
+                        model === currentModel
+                          ? 'bg-accent text-white shadow-lg'
+                          : 'text-text-primary hover:shadow-md'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${model === currentModel ? 'bg-white' : 'bg-accent'} opacity-60`} />
+                        {model?.trim() ? model : "🎯 Auto (server default)"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
 
-              <div className="px-3 py-2 border-t border-border-primary">
+              <div className="px-4 py-3 border-t border-border-primary/30 bg-bg-tertiary/30">
                 <input
                   type="text"
                   value={customModel}
                   onChange={(e) => setCustomModel(e.target.value)}
-                  placeholder="Indtast model…"
-                  className="form-input text-sm"
+                  placeholder="🎨 Custom model name..."
+                  className="w-full px-3 py-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       const next = customModel.trim();
@@ -180,9 +234,9 @@ export const ChatArea = memo(function ChatArea({
                     }
                   }}
                 />
-                <div className="mt-2 flex gap-2">
+                <div className="mt-3 flex gap-2">
                   <button
-                    className="btn btn-secondary px-2 py-1 text-xs"
+                    className="btn btn-secondary px-3 py-2 text-xs flex-1"
                     onClick={() => {
                       const next = customModel.trim();
                       if (!next) return;
@@ -219,37 +273,61 @@ export const ChatArea = memo(function ChatArea({
           )}
         </div>
 
-        {/* Status */}
+        {/* LOOP 1: Glassmorphism Status */}
         <div className="flex items-center gap-3">
-          <div className="badge">
-            <span className={security.fullAccess ? 'text-warning' : 'text-text-muted'}>
-              <IconShield className="w-4 h-4" />
-            </span>
-            <span className="text-text-secondary">
-              {security.fullAccess ? 'Full access' : 'Safe mode'}
-            </span>
-            <span className="text-text-muted">·</span>
-            <span className="text-text-muted">{security.safeDirsCount} safe dirs</span>
-            <span className="text-text-muted">·</span>
-            <span className={security.autoApprove ? 'text-warning' : 'text-text-muted'}>
-              {security.autoApprove ? 'Auto-approve' : 'Manual approve'}
-            </span>
+          <div className="px-4 py-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg">
+            <div className="flex items-center gap-2">
+              <span className={security.fullAccess ? 'text-warning' : 'text-accent'}>
+                <IconShield className="w-4 h-4" />
+              </span>
+              <span className="text-text-primary text-sm font-medium">
+                {security.fullAccess ? '⚠️ Full access' : '🛡️ Safe mode'}
+              </span>
+              <span className="text-text-muted">·</span>
+              <span className="text-accent text-sm">{security.safeDirsCount} dirs</span>
+              <span className="text-text-muted">·</span>
+              <span className={security.autoApprove ? 'text-warning' : 'text-accent'}>
+                {security.autoApprove ? '🤖 Auto' : '👤 Manual'}
+              </span>
+            </div>
           </div>
+
+          {/* LOOP 6: Neural Visualizer Toggle */}
+          <button
+            onClick={() => setShowNeuralVisualizer(!showNeuralVisualizer)}
+            className={`flex items-center gap-2 px-4 py-2 backdrop-blur-sm border rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl ${
+              showNeuralVisualizer
+                ? 'bg-accent text-white'
+                : 'bg-accent/10 border-accent/20 text-accent hover:bg-accent/20'
+            }`}
+            title="Toggle Neural Network Visualizer"
+          >
+            <IconBolt className="w-4 h-4" />
+            <span className="text-sm font-medium">Neural</span>
+          </button>
+
           <button
             onClick={() => onOpenSettings('mcp')}
-            className="btn btn-secondary px-3 py-1.5"
+            className="flex items-center gap-2 px-4 py-2 bg-accent/10 backdrop-blur-sm border border-accent/20 rounded-xl hover:bg-accent/20 transition-all duration-200 shadow-lg hover:shadow-xl"
           >
-            <IconPlug className="w-4 h-4" /> MCP
+            <IconPlug className="w-4 h-4 text-accent" />
+            <span className="text-sm font-medium text-accent">MCP</span>
           </button>
-          <div className="badge">
-            <span
-              className={`inline-block w-2 h-2 rounded-full ${
-                ollamaStatus === 'online' ? 'bg-success' : ollamaStatus === 'offline' ? 'bg-error' : 'bg-warning'
-              }`}
-            />
-            <span className="text-text-secondary">
-              {ollamaStatus === 'online' ? 'Online' : ollamaStatus === 'offline' ? 'Offline' : 'Tjekker…'}
-            </span>
+          <div className="px-3 py-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg">
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-block w-3 h-3 rounded-full shadow-lg ${
+                  ollamaStatus === 'online'
+                    ? 'bg-success shadow-success/50 animate-pulse'
+                    : ollamaStatus === 'offline'
+                    ? 'bg-error shadow-error/50'
+                    : 'bg-warning shadow-warning/50 animate-pulse'
+                }`}
+              />
+              <span className="text-sm font-medium text-text-primary">
+                {ollamaStatus === 'online' ? '🟢 Online' : ollamaStatus === 'offline' ? '🔴 Offline' : '🟡 Checking'}
+              </span>
+            </div>
           </div>
         </div>
       </header>
@@ -296,10 +374,33 @@ export const ChatArea = memo(function ChatArea({
         </div>
       )}
 
-      {/* Input Area */}
-      <div className="p-4 bg-bg-primary">
+      {/* LOOP 3: Smart Input Area with AI Suggestions */}
+      <div className="relative p-4 bg-bg-primary">
         <div className="max-w-3xl mx-auto">
-          <div className="bg-bg-secondary border border-border-primary rounded-2xl p-3 focus-within:border-accent transition-colors">
+          {/* LOOP 8: Smart Suggestions and Predictive Interface positioned above input */}
+          <div className="relative mb-2">
+            <SmartSuggestions
+              input={input}
+              onSuggestionClick={(suggestion) => setInput(suggestion)}
+              isLoading={isLoading}
+            />
+            <PredictiveInterface
+              input={input}
+              messages={messages}
+              isLoading={isLoading}
+              onPredictionSelect={handlePredictionSelect}
+            />
+          </div>
+
+          <div className="relative bg-bg-secondary border border-border-primary rounded-2xl p-3 focus-within:border-accent transition-all duration-200 focus-within:shadow-lg focus-within:shadow-accent/20">
+            {/* Multi-Modal Input Controls */}
+            <MultiModalInput
+              onTextInput={setInput}
+              onVoiceInput={handleVoiceInput}
+              onDrawingInput={handleDrawingInput}
+              isLoading={isLoading}
+            />
+
             <div className="flex items-end gap-3">
               <textarea
                 ref={inputRef}
@@ -341,6 +442,13 @@ export const ChatArea = memo(function ChatArea({
           </p>
         </div>
       </div>
+
+      {/* LOOP 6: Neural Network Visualizer */}
+      <NeuralVisualizer
+        isActive={showNeuralVisualizer}
+        inputData={input}
+        outputData={messages[messages.length - 1]?.content}
+      />
     </main>
   );
 });

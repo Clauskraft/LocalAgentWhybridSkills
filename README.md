@@ -60,6 +60,37 @@ To make this easier, you can now start the products from the repo root with simp
 - [Ollama](https://ollama.ai) installed and running
 - Git
 
+### Environment Variables
+
+Copy `.env.example` to `.env` and configure:
+
+```bash
+# Required
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_MODEL=qwen3
+
+# Optional - ROMA Agent Integration
+ROMA_BRIDGE_URL=http://localhost:8808
+ROMA_STRATEGY=react
+
+# Optional - Search Service
+SEARCH_BRIDGE_URL=http://localhost:8810
+OPENSEARCH_URL=http://localhost:9200
+
+# Optional - WidgetDC Integration
+WIDGETDC_COCKPIT_URL=
+WIDGETDC_WORKER_URL=
+```
+
+### Health Check
+
+All services expose health endpoints:
+
+- **Desktop**: `http://localhost:5173/health` (dev) or built app
+- **Cloud API**: `https://your-railway-url/health`
+- **ROMA Bridge**: `http://localhost:8808/health`
+- **Search Service**: `http://localhost:8810/health`
+
 ### Start Desktop Agent (recommended)
 
 ```bash

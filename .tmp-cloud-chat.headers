@@ -1,0 +1,26 @@
+HTTP/1.1 400 Bad Request
+Access-Control-Allow-Credentials: true
+Content-Length: 27
+Content-Security-Policy: default-src 'self';script-src 'self';style-src 'self' 'unsafe-inline';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src-attr 'none';upgrade-insecure-requests
+Content-Type: application/json; charset=utf-8
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin
+Date: Mon, 05 Jan 2026 08:09:02 GMT
+Origin-Agent-Cluster: ?1
+Referrer-Policy: no-referrer
+Server: railway-edge
+Strict-Transport-Security: max-age=15552000; includeSubDomains
+Vary: Origin
+X-Content-Type-Options: nosniff
+X-Dns-Prefetch-Control: off
+X-Download-Options: noopen
+X-Frame-Options: SAMEORIGIN
+X-Permitted-Cross-Domain-Policies: none
+X-Railway-Edge: railway/europe-west4-drams3a
+X-Railway-Request-Id: R-Tgc040RJaVkLsxss7a6g
+X-Ratelimit-Limit: 60
+X-Ratelimit-Remaining: 58
+X-Ratelimit-Reset: 34
+X-Request-Id: b58682b5-f7b0-4a75-a935-aa73d138a2e2
+X-Xss-Protection: 0
+

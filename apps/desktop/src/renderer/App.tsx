@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
 import { SettingsModal } from './components/SettingsModal';
+import { ImmersiveWorkspace } from './components/ImmersiveWorkspace';
+import { CuttingEdgeFeatures } from './components/CuttingEdgeFeatures';
 import { useChat } from './hooks/useChat';
 import { useSettings } from './hooks/useSettings';
 
@@ -26,6 +28,9 @@ export interface Chat {
 export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [settingsTab, setSettingsTab] = useState<string>('general');
+  const [immersiveMode, setImmersiveMode] = useState(false);
+  const [activePanels, setActivePanels] = useState<Set<string>>(new Set(['chat']));
+  const [cuttingEdgeMode, setCuttingEdgeMode] = useState(false);
   
   const {
     chats,
@@ -53,12 +58,57 @@ export function App() {
     setShowSettings(false);
   }, []);
 
+  // LOOP 5: Panel Management
+  const handlePanelToggle = useCallback((panelId: string, visible: boolean) => {
+    setActivePanels(prev => {
+      const newPanels = new Set(prev);
+      if (visible) {
+        newPanels.add(panelId);
+      } else {
+        newPanels.delete(panelId);
+      }
+      return newPanels;
+    });
+  }, []);
+
+  const toggleImmersiveMode = useCallback(() => {
+    setImmersiveMode(prev => !prev);
+  }, []);
+
+  // LOOP 10: Cutting Edge Features
+  const handleFeatureActivate = useCallback((feature: string, data?: any) => {
+    console.log('Cutting edge feature activated:', feature, data);
+    // Here you could integrate with actual advanced features
+  }, []);
+
+  const toggleCuttingEdgeMode = useCallback(() => {
+    setCuttingEdgeMode(prev => !prev);
+  }, []);
+
   const handleSendMessage = useCallback(async (content: string) => {
     await sendMessage(content, settings);
   }, [sendMessage, settings]);
 
+  const chatAreaContent = (
+    <ChatArea
+      messages={messages}
+      isLoading={isLoading}
+      currentModel={settings.model}
+      ollamaStatus={ollamaStatus}
+      security={{
+        fullAccess: !!settings.fullAccess,
+        autoApprove: !!settings.autoApprove,
+        safeDirsCount: Array.isArray(settings.safeDirs) ? settings.safeDirs.length : 0,
+        useCloud: !!settings.useCloud,
+      }}
+      onSendMessage={handleSendMessage}
+      onOpenSettings={openSettings}
+      onSelectModel={(model) => updateSettings({ model })}
+    />
+  );
+
   return (
-    <div className="flex h-screen bg-bg-primary">
+    <div className="flex h-screen bg-bg-primary holographic-bg animate-holographic-float">
       {/* Sidebar */}
       <Sidebar
         chats={chats}
@@ -70,20 +120,67 @@ export function App() {
       />
 
       {/* Main Content */}
-      <ChatArea
+      {immersiveMode ? (
+        <div className="flex-1 relative">
+          {/* LOOP 5 & 10: Mode Toggles */}
+          <div className="absolute top-4 right-4 z-50 flex gap-2">
+            <button
+              onClick={toggleCuttingEdgeMode}
+              className={`px-3 py-2 backdrop-blur-sm border rounded-lg transition-all duration-200 shadow-lg ${
+                cuttingEdgeMode
+                  ? 'bg-purple-500/20 border-purple-500/30 text-purple-400'
+                  : 'bg-purple-500/10 border-purple-500/20 text-purple-300 hover:bg-purple-500/20'
+              }`}
+              title="Toggle Cutting-Edge Features"
+            >
+              ⚡ Lab
+            </button>
+            <button
+              onClick={toggleImmersiveMode}
+              className="px-3 py-2 bg-accent/20 backdrop-blur-sm border border-accent/30 rounded-lg text-accent hover:bg-accent/30 transition-all duration-200 shadow-lg"
+              title="Exit Immersive Mode"
+            >
+              🎭 Exit Immersive
+            </button>
+          </div>
+
+          <ImmersiveWorkspace onPanelToggle={handlePanelToggle}>
+            {chatAreaContent}
+          </ImmersiveWorkspace>
+        </div>
+      ) : (
+        <div className="flex-1 relative">
+          {/* LOOP 5 & 10: Mode Toggles */}
+          <div className="absolute top-4 right-4 z-50 flex gap-2">
+            <button
+              onClick={toggleCuttingEdgeMode}
+              className={`px-3 py-2 backdrop-blur-sm border rounded-lg transition-all duration-200 shadow-lg ${
+                cuttingEdgeMode
+                  ? 'bg-purple-500/20 border-purple-500/30 text-purple-400'
+                  : 'bg-purple-500/10 border-purple-500/20 text-purple-300 hover:bg-purple-500/20'
+              }`}
+              title="Toggle Cutting-Edge Features"
+            >
+              ⚡ Lab
+            </button>
+            <button
+              onClick={toggleImmersiveMode}
+              className="px-3 py-2 bg-accent/20 backdrop-blur-sm border border-accent/30 rounded-lg text-accent hover:bg-accent/30 transition-all duration-200 shadow-lg"
+              title="Enter Immersive Mode"
+            >
+              🚀 Immersive Mode
+            </button>
+          </div>
+
+          {chatAreaContent}
+        </div>
+      )}
+
+      {/* LOOP 10: Cutting-Edge Features Panel */}
+      <CuttingEdgeFeatures
+        isActive={cuttingEdgeMode}
         messages={messages}
-        isLoading={isLoading}
-        currentModel={settings.model}
-        ollamaStatus={ollamaStatus}
-        security={{
-          fullAccess: !!settings.fullAccess,
-          autoApprove: !!settings.autoApprove,
-          safeDirsCount: Array.isArray(settings.safeDirs) ? settings.safeDirs.length : 0,
-          useCloud: !!settings.useCloud,
-        }}
-        onSendMessage={handleSendMessage}
-        onOpenSettings={openSettings}
-        onSelectModel={(model) => updateSettings({ model })}
+        onFeatureActivate={handleFeatureActivate}
       />
 
       {/* Settings Modal */}

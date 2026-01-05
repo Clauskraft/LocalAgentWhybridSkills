@@ -15,6 +15,7 @@ interface Settings {
   backendUrl?: string;
   useCloud?: boolean;
   safeDirs?: string[];
+  romaStrategy?: 'react' | 'cot' | 'code_act';
 }
 
 interface SettingsModalProps {
@@ -910,15 +911,33 @@ function MCPSettings() {
   );
 }
 
-function PromptsSettings({ 
-  settings, 
-  onUpdate 
-}: { 
-  settings: Settings; 
+function PromptsSettings({
+  settings,
+  onUpdate
+}: {
+  settings: Settings;
   onUpdate: (s: Partial<Settings>) => void;
 }) {
   return (
     <div className="space-y-6">
+      <Section title="🤖 Agent Strategi">
+        <FormGroup label="ROMÅ Planning Strategy">
+          <select
+            value={(settings as any).romaStrategy || 'react'}
+            onChange={(e) => onUpdate({ ...(settings as any), romaStrategy: e.target.value })}
+            className="form-input"
+            aria-label="Vælg ROMÅ strategi"
+          >
+            <option value="react">ReAct (Reasoning + Acting)</option>
+            <option value="cot">Chain-of-Thought (Step-by-step reasoning)</option>
+            <option value="code_act">CodeAct (Code generation focus)</option>
+          </select>
+        </FormGroup>
+        <p className="text-xs text-text-muted mt-1">
+          Vælg hvordan agenten skal planlægge og udføre opgaver. ReAct er standard for balance mellem hastighed og nøjagtighed.
+        </p>
+      </Section>
+
       <Section title="Aktiv System Prompt">
         <FormGroup label="Vælg Prompt">
           <select className="form-input" aria-label="Vælg Prompt">

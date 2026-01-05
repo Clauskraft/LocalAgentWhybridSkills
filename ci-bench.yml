@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  roma-benchmark:
+    build: ./services/roma-bridge
+    ports:
+      - "8809:8000"  # Different port for benchmarks
+    environment:
+      - PORT=8000
+      - ROMA_BENCHMARK_MODE=true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  benchmark-runner:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./services/roma-bridge:/app
+      - ./benchmark-results:/app/results
+    environment:
+      - ROMA_BRIDGE_URL=http://roma-benchmark:8000
+    command: >
+      sh -c "
+        pip install requests &&
+        python -c '
+        import requests
+        import time
+        import json
+
+        # Simple benchmark script
+        results = {}
+
+        # Test health endpoint
+        start = time.time()
+        resp = requests.get(\"http://roma-benchmark:8000/health\")
+        health_time = time.time() - start
+        results[\"health_check\"] = {
+          \"status\": resp.status_code,
+          \"response_time_ms\": round(health_time * 1000, 2)
+        }
+
+        # Test plan endpoint
+        start = time.time()
+        resp = requests.post(\"http://roma-benchmark:8000/plan\",
+          json={\"goal\": \"Test benchmark task\", \"strategy\": \"react\"})
+        plan_time = time.time() - start
+        results[\"plan_endpoint\"] = {
+          \"status\": resp.status_code,
+          \"response_time_ms\": round(plan_time * 1000, 2)
+        }
+
+        # Test act endpoint
+        start = time.time()
+        resp = requests.post(\"http://roma-benchmark:8000/act\",
+          json={\"task\": \"Execute test task\", \"context\": {}})
+        act_time = time.time() - start
+        results[\"act_endpoint\"] = {
+          \"status\": resp.status_code,
+          \"response_time_ms\": round(act_time * 1000, 2)
+        }
+
+        # Save results
+        with open(\"/app/results/benchmark.json\", \"w\") as f:
+          json.dump(results, f, indent=2)
+
+        print(\"Benchmark completed:\", json.dumps(results, indent=2))
+        '
+      "
+    depends_on:
+      roma-benchmark:
+        condition: service_healthy

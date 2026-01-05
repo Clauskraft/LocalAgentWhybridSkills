@@ -609,12 +609,40 @@ function setupChatIpc(): void {
 
 function setupCloudIpc(): void {
   ipcMain.handle("cloud-status", async () => {
-    const backendUrl = (runtimeCfg.backendUrl ?? "").trim();
-    return {
-      backendUrl,
-      encryptionAvailable: safeStorage.isEncryptionAvailable(),
-      loggedIn: typeof cloudRefreshTokenEncrypted === "string" && cloudRefreshTokenEncrypted.length > 0,
-    };
+    // Retry logic with exponential backoff
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const backendUrl = (runtimeCfg.backendUrl ?? "").trim();
+        return {
+          backendUrl,
+          encryptionAvailable: safeStorage.isEncryptionAvailable(),
+          loggedIn: typeof cloudRefreshTokenEncrypted === "string" && cloudRefreshTokenEncrypted.length > 0,
+        };
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        log?.warn("ipc.cloud-status.retry", `Cloud status check failed (attempt ${attempt}/${maxRetries})`, {
+          error: lastError.message,
+          attempt,
+          maxRetries
+        });
+
+        if (attempt < maxRetries) {
+          // Exponential backoff: 100ms, 200ms, 400ms
+          const delay = 100 * Math.pow(2, attempt - 1);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    // All retries failed
+    log?.error("ipc.cloud-status.failed", "Cloud status check failed after all retries", {
+      error: lastError?.message,
+      maxRetries
+    });
+    throw lastError || new Error("Cloud status check failed");
   });
 
   ipcMain.handle("cloud-login", async (_event: unknown, payload: { email: string; password: string }) => {
@@ -896,6 +924,53 @@ export async function startMain(electron: ElectronModule): Promise<void> {
   safeStorage = electron.safeStorage;
 
   await app.whenReady();
+
+  // Setup online/offline event listeners for HyperLog sync
+  const log = new HyperLog("./logs", "desktop-main.jsonl");
+
+  // Setup online/offline status tracking for HyperLog
+  const updateOnlineStatus = async (online: boolean) => {
+    log.setOnlineStatus(online);
+
+    // Set up cloud flush callback when online
+    if (online && runtimeCfg?.backendUrl) {
+      log.setFlushCallback(async (events) => {
+        try {
+          const response = await fetch(`${runtimeCfg.backendUrl}/api/logs/sync`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': cloudAccessToken ? `Bearer ${cloudAccessToken}` : '',
+            },
+            body: JSON.stringify({ events }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to sync logs: ${response.status}`);
+          }
+
+          log.info("log.sync.success", "Logs synced to cloud", { count: events.length });
+        } catch (error) {
+          log.warn("log.sync.failed", "Failed to sync logs to cloud", { error: String(error) });
+          throw error; // Re-throw to keep buffer
+        }
+      });
+    }
+  };
+
+  // Initial online status check using Node.js connectivity
+  const initialOnline = await ping('https://www.google.com', 1000).catch(() => false);
+  await updateOnlineStatus(initialOnline);
+
+  // Periodic connectivity check (since Electron doesn't have online/offline events in main process)
+  let lastOnlineStatus = initialOnline;
+  setInterval(async () => {
+    const online = await ping('https://www.google.com', 1000).catch(() => false);
+    if (online !== lastOnlineStatus) {
+      lastOnlineStatus = online;
+      await updateOnlineStatus(online);
+    }
+  }, 30000); // Check every 30 seconds
 
   await setupIpc();
 
