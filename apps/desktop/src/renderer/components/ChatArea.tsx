@@ -62,13 +62,16 @@ export const ChatArea = memo(function ChatArea({
         const names = Array.isArray(list) ? list.map((m: any) => String(m?.name ?? "")).filter(Boolean) : [];
 
         // Fallback: if cloud model list isn't exposed, show a small, safe default list + allow custom entry.
+        // In cloud mode, include an "Auto" option (empty string) to use server default.
         const fallback = ['qwen3:8b', 'qwen3', 'llama3.1', 'mistral', 'codellama'];
-        const merged = Array.from(new Set([currentModel, ...names, ...fallback].filter(Boolean)));
+        const base = security.useCloud ? [""] : [];
+        const merged = Array.from(new Set([...base, currentModel, ...names, ...fallback].filter((v) => v !== undefined)));
         if (alive) setModels(merged);
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Kunne ikke hente modeller";
         if (alive) {
-          setModels([currentModel, 'qwen3:8b', 'qwen3', 'llama3.1', 'mistral', 'codellama'].filter(Boolean));
+          const base = security.useCloud ? [""] : [];
+          setModels([...base, currentModel, 'qwen3:8b', 'qwen3', 'llama3.1', 'mistral', 'codellama'].filter((v) => v !== undefined));
           setModelsError(msg);
         }
       } finally {
@@ -110,6 +113,7 @@ export const ChatArea = memo(function ChatArea({
   }, []);
 
   const untrusted = detectUntrustedContent(messages);
+  const displayModel = currentModel?.trim() ? currentModel : "Auto";
 
   return (
     <main className="flex-1 flex flex-col h-screen bg-bg-primary">
@@ -122,7 +126,7 @@ export const ChatArea = memo(function ChatArea({
             className="btn btn-secondary px-3 py-2"
           >
             <div>
-              <div className="font-semibold text-sm">{currentModel}</div>
+              <div className="font-semibold text-sm">{displayModel}</div>
               <div className="text-xs text-text-muted">{security.useCloud ? 'Cloud' : 'Ollama'}</div>
             </div>
             <span className="text-text-muted">
@@ -155,7 +159,7 @@ export const ChatArea = memo(function ChatArea({
                     }}
                     className={`px-3 py-2 cursor-pointer hover:bg-bg-hover ${model === currentModel ? 'bg-accent-soft text-text-primary' : ''}`}
                   >
-                    {model}
+                    {model?.trim() ? model : "Auto (server default)"}
                   </div>
                 ))
               )}

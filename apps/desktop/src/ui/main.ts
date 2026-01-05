@@ -479,7 +479,7 @@ async function chatSendMessage(payload: {
   backendUrl?: string;
   useCloud?: boolean;
 }) {
-  const model = payload.model ?? runtimeCfg.ollamaModel;
+  const modelRaw = String(payload.model ?? "").trim();
 
   // Prefer cloud backend if configured
   const backend = payload.backendUrl?.trim();
@@ -487,10 +487,12 @@ async function chatSendMessage(payload: {
     if (!backend) {
       throw new Error("Cloud mode kræver backendUrl (SCA_BACKEND_URL). Ingen localhost fallback er tilladt.");
     }
-    const body = {
-      model,
+    // In cloud mode, allow "server default model" by omitting `model`.
+    // This avoids hard failures when a client-picked model isn't installed upstream.
+    const body: any = {
       messages: payload.messages,
       stream: false,
+      ...(modelRaw ? { model: modelRaw } : {}),
     };
     const res = await fetch(`${backend.replace(/\/+$/, "")}/api/chat`, {
       method: "POST",
@@ -510,6 +512,7 @@ async function chatSendMessage(payload: {
 
   // Fallback to local Ollama
   const host = (payload.host ?? runtimeCfg.ollamaHost).replace(/\/+$/, "");
+  const model = modelRaw || runtimeCfg.ollamaModel;
   const body = {
     model,
     messages: payload.messages,

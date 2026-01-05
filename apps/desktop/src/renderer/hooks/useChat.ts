@@ -102,7 +102,8 @@ export function useChat() {
             /model/i.test(msg) && /not found/i.test(msg) && (payload.useCloud || /Cloud chat failed/i.test(msg));
 
           if (modelMissing) {
-            const candidates = ['qwen3:8b', 'qwen3', 'llama3.1', 'mistral'];
+            // Try "auto" first (cloud server default = omit model), then common fallbacks.
+            const candidates = ['', 'qwen3:8b', 'qwen3', 'llama3.1', 'mistral'];
             for (const candidate of candidates) {
               if (!candidate || candidate === payload.model) continue;
               try {
