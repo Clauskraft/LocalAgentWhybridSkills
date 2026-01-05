@@ -1,0 +1,44 @@
+{
+  "name": "@local-agent/widgetdc-integration",
+  "version": "1.0.0",
+  "description": "Local Agent + WidgetDC unified intelligence platform integration",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:integration": "vitest --config vitest.integration.config.ts",
+    "demo": "tsx demo.ts",
+    "lint": "eslint . --ext .ts,.tsx",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "zod": "^3.22.4",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/ws": "^8.5.8",
+    "tsx": "^4.6.2",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "peerDependencies": {
+    "@local-agent/hyperlog": "^1.0.0",
+    "@local-agent/shared-types": "^1.0.0"
+  },
+  "keywords": [
+    "ai",
+    "osint",
+    "intelligence",
+    "collaboration",
+    "security",
+    "integration",
+    "mcp",
+    "widgetdc",
+    "local-agent"
+  ],
+  "author": "Local Agent + WidgetDC Team",
+  "license": "MIT"
+}
