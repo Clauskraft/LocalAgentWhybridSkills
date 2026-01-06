@@ -54,8 +54,11 @@ export class JwtAuthService {
   // NOTE: Avoid importing KeyLike from jose directly because some jose builds/typings
   // (as seen in Railway) do not export it consistently. We derive the key type from
   // jose functions we actually use instead.
-  private currentKey: Awaited<ReturnType<typeof importJWK>> | null = null;
-  private previousKey: Awaited<ReturnType<typeof importJWK>> | null = null;
+  //
+  // For ES256, SignJWT requires the PRIVATE key, while jwtVerify requires the PUBLIC key.
+  private currentPrivateKey: Awaited<ReturnType<typeof importJWK>> | null = null;
+  private currentPublicKey: Awaited<ReturnType<typeof importJWK>> | null = null;
+  private previousPublicKey: Awaited<ReturnType<typeof importJWK>> | null = null;
   private keyId: string = "";
   private keyPath: string;
   private revokedTokens: Set<string> = new Set();
@@ -78,28 +81,40 @@ export class JwtAuthService {
         const age = Date.now() - stored.createdAt;
         
         if (age < this.config.keyRotationInterval * 1000) {
-          const imported = await importJWK(stored.key, "ES256");
-          this.currentKey = imported;
+          if (stored.privateKey && stored.publicKey) {
+            this.currentPrivateKey = await importJWK(stored.privateKey, "ES256");
+            this.currentPublicKey = await importJWK(stored.publicKey, "ES256");
+          } else {
+            // Legacy format (single key) can't reliably verify ES256 with jose across runtimes; rotate now.
+            throw new Error("legacy_key_format");
+          }
           this.keyId = stored.keyId;
           return;
         }
         
         // Key rotation: keep old key for verification
-        const prevImported = await importJWK(stored.key, "ES256");
-        this.previousKey = prevImported;
+        if (stored.publicKey) {
+          this.previousPublicKey = await importJWK(stored.publicKey, "ES256");
+        } else {
+          // Legacy format: do not attempt to verify with it; rotate immediately.
+          this.previousPublicKey = null;
+        }
       }
     } catch {
       // Generate new key on any error
     }
 
     // Generate new ECDSA key pair
-    const { privateKey } = await generateKeyPair("ES256");
-    this.currentKey = privateKey as Awaited<ReturnType<typeof importJWK>>;
+    const { privateKey, publicKey } = await generateKeyPair("ES256");
+    this.currentPrivateKey = privateKey as Awaited<ReturnType<typeof importJWK>>;
+    this.currentPublicKey = publicKey as Awaited<ReturnType<typeof importJWK>>;
     this.keyId = crypto.randomUUID();
 
-    const jwk = await exportJWK(privateKey);
+    const privateJwk = await exportJWK(privateKey);
+    const publicJwk = await exportJWK(publicKey);
     const keyData = {
-      key: jwk,
+      privateKey: privateJwk,
+      publicKey: publicJwk,
       keyId: this.keyId,
       createdAt: Date.now()
     };
@@ -116,10 +131,10 @@ export class JwtAuthService {
     scopes: string[],
     agentId?: string
   ): Promise<TokenPair> {
-    if (!this.currentKey) {
+    if (!this.currentPrivateKey) {
       await this.initialize();
     }
-    const signingKey = this.currentKey;
+    const signingKey = this.currentPrivateKey;
     if (!signingKey) {
       throw new Error("JWT signing key not available");
     }
@@ -166,15 +181,15 @@ export class JwtAuthService {
   }
 
   async verifyToken(token: string): Promise<TokenPayload | null> {
-    if (!this.currentKey) {
+    if (!this.currentPublicKey) {
       await this.initialize();
     }
 
-    const current = this.currentKey;
+    const current = this.currentPublicKey;
     if (!current) {
       return null;
     }
-    const keys = [current, ...(this.previousKey ? [this.previousKey] : [])];
+    const keys = [current, ...(this.previousPublicKey ? [this.previousPublicKey] : [])];
 
     for (const key of keys) {
       try {
