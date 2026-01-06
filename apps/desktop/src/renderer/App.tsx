@@ -6,10 +6,11 @@ import { ImmersiveWorkspace } from './components/ImmersiveWorkspace';
 import { CuttingEdgeFeatures } from './components/CuttingEdgeFeatures';
 import { PulseDashboard } from './components/PulseDashboard';
 import { PulseCurate } from './components/PulseCurate';
+import { RomaPlanner } from "./components/RomaPlanner";
 import { useChat } from './hooks/useChat';
 import { useSettings } from './hooks/useSettings';
 
-type AppView = 'chat' | 'pulse';
+type AppView = 'chat' | 'pulse' | 'roma';
 
 export interface Message {
   id: string;
@@ -37,6 +38,7 @@ export function App() {
   const [cuttingEdgeMode, setCuttingEdgeMode] = useState(false);
   const [currentView, setCurrentView] = useState<AppView>('chat');
   const [showPulseCurate, setShowPulseCurate] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   const {
     chats,
@@ -104,6 +106,15 @@ export function App() {
     setCurrentView('chat');
   }, []);
 
+  // ROMA Navigation
+  const openRoma = useCallback(() => {
+    setCurrentView("roma");
+  }, []);
+
+  const closeRoma = useCallback(() => {
+    setCurrentView("chat");
+  }, []);
+
   const handlePulseCurate = useCallback(async (topic: string) => {
     await window.electronAPI?.pulse?.addCuration?.(topic);
   }, []);
@@ -127,7 +138,7 @@ export function App() {
   );
 
   return (
-    <div className="flex h-screen bg-bg-primary holographic-bg animate-holographic-float">
+    <div className="flex h-dvh bg-bg-primary holographic-bg animate-holographic-float overflow-hidden">
       {/* Sidebar */}
       <Sidebar
         chats={chats}
@@ -137,11 +148,18 @@ export function App() {
         onDeleteChat={deleteChat}
         onOpenSettings={openSettings}
         onOpenPulse={openPulse}
+        onOpenRoma={openRoma}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapsed={() => setSidebarCollapsed((v) => !v)}
       />
 
       {/* Main Content */}
-      {currentView === 'pulse' ? (
-        <div className="flex-1 relative">
+      {currentView === "roma" ? (
+        <div className="flex-1 relative min-w-0 min-h-0">
+          <RomaPlanner onBack={closeRoma} />
+        </div>
+      ) : currentView === 'pulse' ? (
+        <div className="flex-1 relative min-w-0 min-h-0">
           <PulseDashboard onBack={closePulse} />
           {/* Curate FAB */}
           <button
@@ -153,7 +171,7 @@ export function App() {
           </button>
         </div>
       ) : immersiveMode ? (
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-w-0 min-h-0">
           {/* LOOP 5 & 10: Mode Toggles */}
           <div className="absolute top-4 right-4 z-50 flex gap-2">
             <button
@@ -181,7 +199,7 @@ export function App() {
           </ImmersiveWorkspace>
         </div>
       ) : (
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-w-0 min-h-0">
           {/* LOOP 5 & 10: Mode Toggles */}
           <div className="absolute top-4 right-4 z-50 flex gap-2">
             <button

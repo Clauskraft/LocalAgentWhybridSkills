@@ -159,7 +159,7 @@ export const ChatArea = memo(function ChatArea({
   const displayModel = currentModel?.trim() ? currentModel : "Auto";
 
   return (
-    <main className="flex-1 flex flex-col h-screen bg-gradient-to-br from-bg-primary via-bg-primary to-bg-secondary/30 relative overflow-hidden">
+    <main className="flex-1 flex flex-col h-full min-h-0 bg-gradient-to-br from-bg-primary via-bg-primary to-bg-secondary/30 relative overflow-hidden">
       {/* LOOP 1: Glassmorphism Header */}
       <header className="backdrop-blur-xl bg-white/10 border-b border-white/20 shadow-2xl relative z-10 px-6 py-4 flex items-center justify-between">
         <div className="absolute inset-0 bg-gradient-to-r from-accent/20 via-transparent to-accent/10 opacity-50 rounded-b-lg" />

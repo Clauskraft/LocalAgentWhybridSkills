@@ -1,5 +1,4 @@
-roma_dspy==0.2.0-beta
-uvicorn[standard]==0.24.0
-fastapi==0.104.1
-pydantic==2.5.0
-httpx==0.25.2
+git+https://github.com/sentient-agi/ROMA.git@v0.2.0-beta
+uvicorn[standard]>=0.24.0
+fastapi>=0.104.1
+pydantic>=2.11.0

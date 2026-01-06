@@ -37,6 +37,8 @@ import type { ApprovalRequest } from "../approval/approvalQueue.js";
 let shell: ElectronModule["shell"];
 
 const DEFAULT_RAILWAY_BACKEND = "https://sca-01-phase3-production.up.railway.app";
+const DEFAULT_ROMA_BRIDGE_URL = "http://127.0.0.1:8808";
+const DEFAULT_WIDGETDC_BASE_URL = "http://127.0.0.1:3001";
 
 // ES Module __dirname polyfill
 const __filename = fileURLToPath(import.meta.url);
@@ -164,6 +166,40 @@ function getBackendBaseUrl(): string {
   const raw = (runtimeCfg.backendUrl ?? "").trim();
   if (!raw) throw new Error("Cloud backendUrl is not configured");
   return raw.replace(/\/+$/, "");
+}
+
+function getRomaBaseUrl(): string {
+  // Prefer explicit env var; fall back to runtime config if present; then local docker-compose default.
+  const env = (process.env.ROMA_BRIDGE_URL ?? "").trim();
+  if (env) return env.replace(/\/+$/, "");
+  const cfgVal = (runtimeCfg as unknown as { romaBridgeUrl?: string })?.romaBridgeUrl ?? "";
+  const raw = String(cfgVal ?? "").trim();
+  if (raw) return raw.replace(/\/+$/, "");
+  return DEFAULT_ROMA_BRIDGE_URL;
+}
+
+async function romaRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const base = getRomaBaseUrl();
+  const url = `${base}${path}`;
+  const res = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const txt = await res.text().catch(() => "");
+  let json: any = null;
+  if (txt) {
+    try {
+      json = JSON.parse(txt);
+    } catch {
+      json = null;
+    }
+  }
+  if (!res.ok) {
+    const msg = (json && typeof json === "object" ? (json as any).detail ?? (json as any).error : null) ?? txt ?? res.statusText;
+    throw new Error(`ROMA ${method} ${path} failed: ${res.status} ${String(msg)}`);
+  }
+  return json as T;
 }
 
 function encryptForStorage(value: string): string {
@@ -553,6 +589,78 @@ async function chatGetModels() {
   return (data.models ?? []).map((m) => ({ name: m.name, size: String(m.size ?? "") }));
 }
 
+// ========== ROMA IPC ==========
+type RomaHealth = { status: string; version: string; roma_version?: string | null; roma_available?: boolean };
+
+async function romaHealth(): Promise<RomaHealth> {
+  return romaRequest<RomaHealth>("GET", "/health");
+}
+
+async function romaPlan(payload: { goal: string; context?: Record<string, unknown>; strategy?: string }): Promise<unknown> {
+  return romaRequest("POST", "/plan", payload);
+}
+
+async function romaAct(payload: { task: string; context?: Record<string, unknown>; tools?: unknown[] }): Promise<unknown> {
+  return romaRequest("POST", "/act", payload);
+}
+
+async function romaSchema(which: "plan" | "act"): Promise<unknown> {
+  return romaRequest("GET", which === "plan" ? "/schema/plan" : "/schema/act");
+}
+
+// ========== WidgetDC HTTP MCP (route/tools) ==========
+type WidgetDcToolList = { tools?: unknown[]; count?: number; definitions?: unknown[] };
+
+function getWidgetDcBaseUrl(): string {
+  const env = (process.env.WIDGETDC_MCP_BASE_URL ?? process.env.WIDGETDC_BASE_URL ?? "").trim();
+  if (env) return env.replace(/\/+$/, "");
+  return DEFAULT_WIDGETDC_BASE_URL;
+}
+
+function getWidgetDcAuthHeader(): string | null {
+  const raw = (process.env.WIDGETDC_MCP_TOKEN ?? process.env.WIDGETDC_JWT_TOKEN ?? "").trim();
+  if (!raw) return null;
+  if (raw.toLowerCase().startsWith("bearer ")) return raw;
+  return `Bearer ${raw}`;
+}
+
+async function widgetdcRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const base = getWidgetDcBaseUrl();
+  const url = `${base}${path}`;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const auth = getWidgetDcAuthHeader();
+  if (auth) headers["Authorization"] = auth;
+
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const txt = await res.text().catch(() => "");
+  let json: any = null;
+  if (txt) {
+    try {
+      json = JSON.parse(txt);
+    } catch {
+      json = null;
+    }
+  }
+  if (!res.ok) {
+    const msg = (json && typeof json === "object" ? (json as any).detail ?? (json as any).error : null) ?? txt ?? res.statusText;
+    throw new Error(`WidgetDC ${method} ${path} failed: ${res.status} ${String(msg)}`);
+  }
+  return json as T;
+}
+
+async function widgetdcListTools(): Promise<WidgetDcToolList> {
+  return widgetdcRequest<WidgetDcToolList>("GET", "/api/mcp/tools");
+}
+
+async function widgetdcCallTool(payload: { id?: string; tool: string; payload?: Record<string, unknown> }): Promise<unknown> {
+  const id = payload.id ?? crypto.randomUUID();
+  return widgetdcRequest("POST", "/api/mcp/route", { id, tool: payload.tool, payload: payload.payload ?? {} });
+}
+
 function setupChatIpc(): void {
   ipcMain.handle("chat-send-message", (_event: unknown, payload: Parameters<typeof chatSendMessage>[0]) => chatSendMessage(payload));
   ipcMain.handle("chat-get-models", () => chatGetModels());
@@ -922,6 +1030,16 @@ async function setupIpc(): Promise<void> {
       await shell.openExternal(url);
     }
   });
+
+  // ROMA bridge (local service via docker-compose)
+  ipcMain.handle("roma-health", () => romaHealth());
+  ipcMain.handle("roma-plan", (_event: unknown, payload: Parameters<typeof romaPlan>[0]) => romaPlan(payload));
+  ipcMain.handle("roma-act", (_event: unknown, payload: Parameters<typeof romaAct>[0]) => romaAct(payload));
+  ipcMain.handle("roma-schema", (_event: unknown, which: "plan" | "act") => romaSchema(which));
+
+  // WidgetDC (HTTP MCP endpoints)
+  ipcMain.handle("widgetdc-tools", () => widgetdcListTools());
+  ipcMain.handle("widgetdc-call", (_event: unknown, payload: Parameters<typeof widgetdcCallTool>[0]) => widgetdcCallTool(payload));
 
   // Register Pulse+ IPC handlers
   registerPulseIpcHandlers();

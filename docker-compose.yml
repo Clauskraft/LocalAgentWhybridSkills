@@ -7,6 +7,13 @@ services:
       - "8808:8000"
     environment:
       - PORT=8000
+      # Configure ROMA's DSPy LM (do NOT commit secrets; set in your local .env)
+      # Examples:
+      # - ROMA_MODEL=openrouter/anthropic/claude-3.5-sonnet
+      # - ROMA_MODEL=openai/gpt-4o-mini
+      - ROMA_MODEL=${ROMA_MODEL}
+      - ROMA_TEMPERATURE=${ROMA_TEMPERATURE}
+      - ROMA_MAX_TOKENS=${ROMA_MAX_TOKENS}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

@@ -92,6 +92,16 @@ export interface SCA01API {
     removeServer: (name: string) => Promise<boolean>;
     autoSetup: (opts?: { includeAuth?: boolean }) => Promise<unknown>;
   };
+  roma: {
+    health: () => Promise<{ status: string; version: string; roma_version?: string | null; roma_available?: boolean }>;
+    schema: (which: "plan" | "act") => Promise<unknown>;
+    plan: (payload: { goal: string; context?: Record<string, unknown>; strategy?: string }) => Promise<unknown>;
+    act: (payload: { task: string; context?: Record<string, unknown>; tools?: unknown[] }) => Promise<unknown>;
+  };
+  widgetdc: {
+    listTools: () => Promise<{ tools?: unknown[]; count?: number; definitions?: unknown[] }>;
+    callTool: (payload: { id?: string; tool: string; payload?: Record<string, unknown> }) => Promise<unknown>;
+  };
   getPendingApprovals: () => Promise<ApprovalRequest[]>;
   getApprovalHistory: (limit: number) => Promise<ApprovalRequest[]>;
   approveRequest: (id: string) => Promise<boolean>;
@@ -166,6 +176,16 @@ const api: SCA01API = {
     removeServer: (name: string) => ipcRenderer.invoke("mcp-remove-server", name),
     autoSetup: (opts?: { includeAuth?: boolean }) => ipcRenderer.invoke("mcp-auto-setup", opts),
   },
+  roma: {
+    health: () => ipcRenderer.invoke("roma-health"),
+    schema: (which: "plan" | "act") => ipcRenderer.invoke("roma-schema", which),
+    plan: (payload) => ipcRenderer.invoke("roma-plan", payload),
+    act: (payload) => ipcRenderer.invoke("roma-act", payload),
+  },
+  widgetdc: {
+    listTools: () => ipcRenderer.invoke("widgetdc-tools"),
+    callTool: (payload) => ipcRenderer.invoke("widgetdc-call", payload),
+  },
   getPendingApprovals: () => ipcRenderer.invoke("get-pending-approvals"),
   getApprovalHistory: (limit: number) => ipcRenderer.invoke("get-approval-history", limit),
   approveRequest: (id: string) => ipcRenderer.invoke("approve-request", id),
@@ -226,6 +246,16 @@ contextBridge.exposeInMainWorld("shell", {
 // Combined electronAPI for renderer components
 contextBridge.exposeInMainWorld("electronAPI", {
   pulse: pulseAPI,
+  roma: {
+    health: () => ipcRenderer.invoke("roma-health"),
+    schema: (which: "plan" | "act") => ipcRenderer.invoke("roma-schema", which),
+    plan: (payload: { goal: string; context?: Record<string, unknown>; strategy?: string }) => ipcRenderer.invoke("roma-plan", payload),
+    act: (payload: { task: string; context?: Record<string, unknown>; tools?: unknown[] }) => ipcRenderer.invoke("roma-act", payload),
+  },
+  widgetdc: {
+    listTools: () => ipcRenderer.invoke("widgetdc-tools"),
+    callTool: (payload: { id?: string; tool: string; payload?: Record<string, unknown> }) => ipcRenderer.invoke("widgetdc-call", payload),
+  },
   shell: {
     openExternal: (url: string) => ipcRenderer.invoke("shell-open-external", url),
   },

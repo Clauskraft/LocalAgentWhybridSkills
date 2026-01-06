@@ -6,8 +6,21 @@ import uvicorn
 import os
 from typing import Dict, Any, List, Optional
 
-# ROMA imports will be added once we have the actual implementation
-# from roma_dspy import Executor
+ROMA_AVAILABLE = False
+ROMA_VERSION: Optional[str] = None
+try:
+    # Optional dependency; may be vendored or installed from a private index.
+    from roma_dspy import Executor  # type: ignore
+    import importlib.metadata
+
+    ROMA_AVAILABLE = True
+    try:
+        ROMA_VERSION = importlib.metadata.version("roma_dspy")
+    except Exception:
+        ROMA_VERSION = None
+except Exception:
+    ROMA_AVAILABLE = False
+    ROMA_VERSION = None
 
 app = FastAPI(title="ROMA Bridge API", version="0.1.0")
 
@@ -25,6 +38,7 @@ class HealthResponse(BaseModel):
     status: str
     version: str
     roma_version: Optional[str] = None
+    roma_available: bool = False
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
@@ -32,13 +46,19 @@ async def health_check():
     return HealthResponse(
         status="ok",
         version="0.1.0",
-        roma_version=None  # Will be populated when ROMA is integrated
+        roma_version=ROMA_VERSION,
+        roma_available=ROMA_AVAILABLE,
     )
 
 @app.post("/plan")
 async def plan_task(request: PlanRequest):
     """Plan a task using ROMA Executor"""
     try:
+        if not ROMA_AVAILABLE:
+            raise HTTPException(
+                status_code=503,
+                detail="roma_unavailable: roma_dspy is not installed. Provide vendored source or install from your index.",
+            )
         # Initialize ROMA Executor with requested strategy
         strategy_map = {
             "react": "ReAct",
@@ -46,45 +66,15 @@ async def plan_task(request: PlanRequest):
             "code_act": "CodeAct"
         }
 
-        # TODO: Replace with actual ROMA Executor when available
-        # from roma_dspy import Executor
-        # executor = Executor(
-        #     prediction_strategy=strategy_map.get(request.strategy, "ReAct"),
-        #     lm=get_lm_from_env(),
-        #     tools=get_available_tools()
-        # )
-        # result = executor.plan(request.goal, context=request.context or {})
-
-        # For now, return structured placeholder that matches ROMA's expected format
-        return {
-            "plan": {
-                "goal": request.goal,
-                "strategy": request.strategy,
-                "context": request.context,
-                "subtasks": [
-                    {
-                        "id": "analyze",
-                        "goal": f"Analyze the requirements for: {request.goal}",
-                        "task_type": "THINK",
-                        "dependencies": []
-                    },
-                    {
-                        "id": "decompose",
-                        "goal": f"Break down the task: {request.goal}",
-                        "task_type": "PLAN",
-                        "dependencies": ["analyze"]
-                    },
-                    {
-                        "id": "execute",
-                        "goal": f"Execute the plan for: {request.goal}",
-                        "task_type": "EXECUTE",
-                        "dependencies": ["decompose"]
-                    }
-                ],
-                "estimated_steps": 3
-            },
-            "status": "planned"
-        }
+        executor = Executor(
+            prediction_strategy=strategy_map.get(request.strategy, "ReAct"),
+            lm=get_lm_from_env(),
+            tools=get_available_tools(),
+        )
+        result = executor.plan(request.goal, context=request.context or {})
+        return {"plan": result, "status": "planned"}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -92,28 +82,20 @@ async def plan_task(request: PlanRequest):
 async def act_on_task(request: ActRequest):
     """Execute a task using ROMA Executor"""
     try:
-        # TODO: Replace with actual ROMA Executor.forward when available
-        # result = executor.forward(request.task, context=request.context or {})
-
-        # For now, return structured placeholder that matches ROMA's expected format
-        return {
-            "result": {
-                "task": request.task,
-                "status": "completed",
-                "context": request.context,
-                "tools_used": request.tools or [],
-                "output": {
-                    "type": "text",
-                    "content": f"Successfully executed task: {request.task}",
-                    "metadata": {
-                        "execution_time_ms": 1500,
-                        "tool_calls": len(request.tools or [])
-                    }
-                },
-                "node_type": "EXECUTE"
-            },
-            "status": "executed"
-        }
+        if not ROMA_AVAILABLE:
+            raise HTTPException(
+                status_code=503,
+                detail="roma_unavailable: roma_dspy is not installed. Provide vendored source or install from your index.",
+            )
+        executor = Executor(
+            prediction_strategy="ReAct",
+            lm=get_lm_from_env(),
+            tools=get_available_tools(),
+        )
+        result = executor.forward(request.task, context=request.context or {}, tools=request.tools or [])
+        return {"result": result, "status": "executed"}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -153,9 +135,31 @@ async def act_schema():
 
 def get_lm_from_env():
     """Get language model configuration from environment"""
-    # TODO: Implement based on available LLM providers
-    # For now, return a placeholder
-    return None
+    # ROMA uses DSPy LMs. Configure with a model string like:
+    #   openrouter/anthropic/claude-3.5-sonnet
+    #   openai/gpt-4o-mini
+    #   ollama/qwen3:8b   (if you have a DSPy adapter configured)
+    model = (os.getenv("ROMA_MODEL") or os.getenv("DSPY_MODEL") or "").strip()
+    if not model:
+        raise HTTPException(status_code=400, detail="missing_config: set ROMA_MODEL (or DSPY_MODEL)")
+
+    try:
+        import dspy  # type: ignore
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"dspy_unavailable: {e}")
+
+    temperature_raw = (os.getenv("ROMA_TEMPERATURE") or "0.1").strip()
+    max_tokens_raw = (os.getenv("ROMA_MAX_TOKENS") or "600").strip()
+    try:
+        temperature = float(temperature_raw)
+    except Exception:
+        temperature = 0.1
+    try:
+        max_tokens = int(max_tokens_raw)
+    except Exception:
+        max_tokens = 600
+
+    return dspy.LM(model, temperature=temperature, max_tokens=max_tokens)
 
 def get_available_tools():
     """Get available tools for ROMA"""
