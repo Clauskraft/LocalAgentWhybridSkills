@@ -30,23 +30,16 @@ if (-not $desktopDir) { throw "Could not resolve DesktopDirectory" }
 
 $webUrl = "https://sca-01-web-production.up.railway.app"
 
-# Desktop app exe (prefer packaged build if present)
+# Desktop app exe (optional packaged build)
 $desktopExe = Get-ChildItem -Path (Join-Path $repoRoot "apps\\desktop\\dist-electron") -Recurse -File -Filter "*.exe" -ErrorAction SilentlyContinue |
   Where-Object { $_.Name -eq "SCA-01 The Finisher.exe" } |
   Select-Object -First 1
 
-if (-not $desktopExe) {
-  # Fallback to dev start (opens a terminal)
-  $desktopTarget = (Get-Command pwsh).Source
-  $desktopArgs = "-NoExit -Command `"cd '$repoRoot'; npm --prefix apps/desktop run start`""
-  $desktopWorkDir = $repoRoot
-  $desktopIcon = ""
-} else {
-  $desktopTarget = $desktopExe.FullName
-  $desktopArgs = ""
-  $desktopWorkDir = $desktopExe.DirectoryName
-  $desktopIcon = $desktopExe.FullName
-}
+# Default: ALWAYS prefer dev start so the shortcut always runs newest code.
+$desktopTarget = (Get-Command pwsh).Source
+$desktopArgs = "-NoExit -Command `"cd '$repoRoot'; npm --prefix apps/desktop run start`""
+$desktopWorkDir = $repoRoot
+$desktopIcon = if ($desktopExe) { $desktopExe.FullName } else { "" }
 
 # CLI shortcut (opens terminal at repo root)
 $cliTarget = (Get-Command pwsh).Source
@@ -63,12 +56,19 @@ New-OrUpdate-Shortcut -ShortcutPath (Join-Path $desktopDir "SCA-01 Desktop App.l
 New-OrUpdate-Shortcut -ShortcutPath (Join-Path $desktopDir "SCA-01 Desktop.lnk") -TargetPath $desktopTarget -Arguments $desktopArgs -WorkingDirectory $desktopWorkDir -IconLocation $desktopIcon
 New-OrUpdate-Shortcut -ShortcutPath (Join-Path $desktopDir "SCA-01 CLI.lnk") -TargetPath $cliTarget -Arguments $cliArgs -WorkingDirectory $cliWorkDir
 
+# Optional: add a separate packaged shortcut if available
+if ($desktopExe) {
+  New-OrUpdate-Shortcut -ShortcutPath (Join-Path $desktopDir "SCA-01 Desktop App (Packaged).lnk") -TargetPath $desktopExe.FullName -WorkingDirectory $desktopExe.DirectoryName -IconLocation $desktopExe.FullName
+}
+
 Write-Host "Updated shortcuts on Desktop:"
 Write-Host " - $(Join-Path $desktopDir 'SCA-01 Web.lnk')"
 Write-Host " - $(Join-Path $desktopDir 'SCA-01 Desktop App.lnk')"
+if ($desktopExe) { Write-Host " - $(Join-Path $desktopDir 'SCA-01 Desktop App (Packaged).lnk')" }
 Write-Host " - $(Join-Path $desktopDir 'SCA-01 CLI.lnk')"
 Write-Host ""
 Write-Host "Repo root: $repoRoot"
-if ($desktopExe) { Write-Host "Desktop app target: $($desktopExe.FullName)" } else { Write-Host "Desktop app target: (dev) pwsh + npm start" }
+Write-Host "Desktop app target: (dev) pwsh + npm start"
+if ($desktopExe) { Write-Host "Packaged app target: $($desktopExe.FullName)" }
 Write-Host "Web URL: $webUrl"
 
