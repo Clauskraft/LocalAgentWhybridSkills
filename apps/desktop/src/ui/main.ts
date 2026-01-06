@@ -30,8 +30,11 @@ import type { UnifiedConfig, UnifiedSecrets } from "../config/unifiedSchema.js";
 import { getConfigStore } from "../config/configStore.js";
 import { MCP_SERVER_CATALOG, getPopularServers, getServerById } from "../mcp/serverCatalog.js";
 // import { initUpdater } from "../updater/autoUpdater.js"; // TODO: Fix ESM/CJS loading issue
+import { registerPulseIpcHandlers, unregisterPulseIpcHandlers } from "../pulse/ipc.js";
 
 import type { ApprovalRequest } from "../approval/approvalQueue.js";
+
+let shell: ElectronModule["shell"];
 
 const DEFAULT_RAILWAY_BACKEND = "https://sca-01-phase3-production.up.railway.app";
 
@@ -912,6 +915,16 @@ async function setupIpc(): Promise<void> {
 
   setupChatIpc();
   setupCloudIpc();
+
+  // Shell API for opening external links
+  ipcMain.handle("shell-open-external", async (_event: unknown, url: string) => {
+    if (typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://"))) {
+      await shell.openExternal(url);
+    }
+  });
+
+  // Register Pulse+ IPC handlers
+  registerPulseIpcHandlers();
 }
 
 export async function startMain(electron: ElectronModule): Promise<void> {
@@ -922,6 +935,7 @@ export async function startMain(electron: ElectronModule): Promise<void> {
   dialog = electron.dialog;
   Notification = electron.Notification;
   safeStorage = electron.safeStorage;
+  shell = electron.shell;
 
   await app.whenReady();
 

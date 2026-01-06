@@ -2,7 +2,7 @@ import React, { memo, useEffect, useId, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { MCP_SERVER_CATALOG } from '../../mcp/serverCatalog';
-import { IconBolt, IconPlug, IconSettings, IconShield, IconX } from './icons';
+import { IconBolt, IconPlug, IconPulse, IconSettings, IconShield, IconX } from './icons';
 
 interface Settings {
   ollamaHost: string;
@@ -35,6 +35,7 @@ const TABS = [
   { id: 'security', icon: <IconShield className="w-4 h-4" />, label: 'Sikkerhed' },
   { id: 'perf', icon: <IconBolt className="w-4 h-4" />, label: 'Performance' },
   { id: 'theme', icon: <IconSettings className="w-4 h-4" />, label: 'Theme' },
+  { id: 'pulse', icon: <IconPulse className="w-4 h-4" />, label: 'Pulse+' },
 ];
 
 export const SettingsModal = memo(function SettingsModal({
@@ -115,6 +116,9 @@ export const SettingsModal = memo(function SettingsModal({
             )}
             {activeTab === 'theme' && (
               <ThemeSettings settings={settings} onUpdate={onUpdateSettings} />
+            )}
+            {activeTab === 'pulse' && (
+              <PulseSettings />
             )}
           </div>
         </div>
@@ -1045,6 +1049,380 @@ function ThemeSettings({
               <div className="text-sm text-text-muted">{t.id}</div>
             </button>
           ))}
+        </div>
+      </Section>
+    </div>
+  );
+}
+
+type PulseCategory = 'THREAT' | 'AI_INSIGHT' | 'BUSINESS' | 'ACTIVITY' | 'PERSONAL' | 'FAMILY';
+
+interface PulsePreferences {
+  enabled: boolean;
+  dailyTime: string;
+  maxCards: number;
+  categories: Record<PulseCategory, { enabled: boolean; weight: number }>;
+  interests: string[];
+  blockedKeywords: string[];
+}
+
+const CATEGORY_INFO: Record<PulseCategory, { label: string; emoji: string; description: string }> = {
+  THREAT: { label: 'Cybersikkerhed', emoji: '🔴', description: 'CVEs, sårbarheder, trusler' },
+  AI_INSIGHT: { label: 'AI-indsigter', emoji: '🟣', description: 'ML-nyheder, LLM-opdateringer' },
+  BUSINESS: { label: 'Forretning', emoji: '🟡', description: 'Tech-industri, startups' },
+  ACTIVITY: { label: 'Aktivitet', emoji: '🔵', description: 'GitHub, projekter, netværk' },
+  PERSONAL: { label: 'Personlig Assistent', emoji: '🧠', description: 'Opgaver, påmindelser, mål fra Neo4J' },
+  FAMILY: { label: 'Familie', emoji: '👨‍👩‍👧‍👦', description: 'Fødselsdage, events, kontakt fra Neo4J' },
+};
+
+function PulseSettings() {
+  const [prefs, setPrefs] = useState<PulsePreferences | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [newInterest, setNewInterest] = useState('');
+  const [newBlocked, setNewBlocked] = useState('');
+  const [schedulerStatus, setSchedulerStatus] = useState<{ isRunning: boolean; nextScheduledRun: string | null } | null>(null);
+
+  const pulseApi = (window as any).pulse ?? (window as any).electronAPI?.pulse;
+
+  useEffect(() => {
+    loadPreferences();
+    loadSchedulerStatus();
+  }, []);
+
+  async function loadPreferences() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await pulseApi?.getPreferences?.();
+      if (res?.success && res.data) {
+        setPrefs(res.data);
+      } else {
+        // Default preferences
+        setPrefs({
+          enabled: true,
+          dailyTime: '05:00',
+          maxCards: 10,
+          categories: {
+            THREAT: { enabled: true, weight: 1.0 },
+            AI_INSIGHT: { enabled: true, weight: 1.0 },
+            BUSINESS: { enabled: true, weight: 0.8 },
+            ACTIVITY: { enabled: true, weight: 0.6 },
+            PERSONAL: { enabled: true, weight: 1.0 },
+            FAMILY: { enabled: true, weight: 0.9 },
+          },
+          interests: [],
+          blockedKeywords: [],
+        });
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Kunne ikke hente indstillinger');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadSchedulerStatus() {
+    try {
+      const res = await pulseApi?.getSchedulerStatus?.();
+      if (res?.success && res.data) {
+        setSchedulerStatus(res.data);
+      }
+    } catch {
+      // Ignore
+    }
+  }
+
+  async function savePreferences(updates: Partial<PulsePreferences>) {
+    if (!prefs) return;
+    setSaving(true);
+    try {
+      const updated = { ...prefs, ...updates };
+      await pulseApi?.updatePreferences?.(updated);
+      setPrefs(updated);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Kunne ikke gemme indstillinger');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function runNow() {
+    setSaving(true);
+    try {
+      await pulseApi?.runNow?.();
+      await loadSchedulerStatus();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Kunne ikke køre digest');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function addInterest() {
+    if (!prefs || !newInterest.trim()) return;
+    const interests = [...prefs.interests, newInterest.trim()];
+    setNewInterest('');
+    savePreferences({ interests });
+  }
+
+  function removeInterest(interest: string) {
+    if (!prefs) return;
+    const interests = prefs.interests.filter(i => i !== interest);
+    savePreferences({ interests });
+  }
+
+  function addBlocked() {
+    if (!prefs || !newBlocked.trim()) return;
+    const blockedKeywords = [...prefs.blockedKeywords, newBlocked.trim()];
+    setNewBlocked('');
+    savePreferences({ blockedKeywords });
+  }
+
+  function removeBlocked(keyword: string) {
+    if (!prefs) return;
+    const blockedKeywords = prefs.blockedKeywords.filter(k => k !== keyword);
+    savePreferences({ blockedKeywords });
+  }
+
+  function toggleCategory(cat: PulseCategory) {
+    if (!prefs) return;
+    const categories = {
+      ...prefs.categories,
+      [cat]: { ...prefs.categories[cat], enabled: !prefs.categories[cat].enabled },
+    };
+    savePreferences({ categories });
+  }
+
+  function updateCategoryWeight(cat: PulseCategory, weight: number) {
+    if (!prefs) return;
+    const categories = {
+      ...prefs.categories,
+      [cat]: { ...prefs.categories[cat], weight },
+    };
+    savePreferences({ categories });
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-text-muted">Henter Pulse+ indstillinger...</div>
+      </div>
+    );
+  }
+
+  if (!prefs) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-text-muted">Kunne ikke indlæse indstillinger</div>
+        {error && <div className="text-sm text-red-400 mt-2">{error}</div>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {error && (
+        <div className="p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-sm text-red-400">
+          {error}
+        </div>
+      )}
+
+      <Section title="⚡ Pulse+ Daily Briefing">
+        <p className="text-sm text-text-secondary mb-4">
+          Få en daglig briefing med de vigtigste nyheder og indsigter inden for dine interesseområder.
+        </p>
+
+        <label className="flex items-center gap-3 cursor-pointer mb-4">
+          <input
+            type="checkbox"
+            checked={prefs.enabled}
+            onChange={(e) => savePreferences({ enabled: e.target.checked })}
+            className="w-5 h-5 rounded border-border-primary"
+            disabled={saving}
+          />
+          <span className="font-medium">Aktivér Pulse+ Daily Briefing</span>
+        </label>
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormGroup label="Daglig briefing-tid">
+            <input
+              type="time"
+              value={prefs.dailyTime}
+              onChange={(e) => savePreferences({ dailyTime: e.target.value })}
+              className="form-input"
+              disabled={saving || !prefs.enabled}
+            />
+          </FormGroup>
+          <FormGroup label="Max kort per dag">
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={prefs.maxCards}
+              onChange={(e) => savePreferences({ maxCards: parseInt(e.target.value) || 10 })}
+              className="form-input"
+              disabled={saving || !prefs.enabled}
+            />
+          </FormGroup>
+        </div>
+
+        {schedulerStatus && (
+          <div className="flex items-center justify-between p-3 bg-bg-tertiary border border-border-primary rounded-lg mt-4">
+            <div>
+              <div className="text-sm font-medium">
+                Scheduler: {schedulerStatus.isRunning ? '🟢 Aktiv' : '🔴 Inaktiv'}
+              </div>
+              {schedulerStatus.nextScheduledRun && (
+                <div className="text-xs text-text-muted">
+                  Næste kørsel: {new Date(schedulerStatus.nextScheduledRun).toLocaleString('da-DK')}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={runNow}
+              disabled={saving}
+              className="px-3 py-1.5 text-sm bg-accent text-white rounded hover:bg-accent-hover disabled:opacity-50"
+            >
+              {saving ? 'Kører...' : 'Kør nu'}
+            </button>
+          </div>
+        )}
+      </Section>
+
+      <Section title="📂 Kategorier">
+        <p className="text-sm text-text-secondary mb-4">
+          Vælg hvilke kategorier du vil modtage nyheder fra, og juster vægtning.
+        </p>
+        <div className="space-y-3">
+          {(Object.keys(CATEGORY_INFO) as PulseCategory[]).map((cat) => (
+            <div
+              key={cat}
+              className={`p-3 border rounded-lg transition-colors ${
+                prefs.categories[cat].enabled
+                  ? 'border-accent/50 bg-bg-tertiary'
+                  : 'border-border-primary bg-bg-secondary opacity-60'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={prefs.categories[cat].enabled}
+                  onChange={() => toggleCategory(cat)}
+                  className="w-4 h-4 rounded"
+                  disabled={saving}
+                />
+                <span className="text-xl">{CATEGORY_INFO[cat].emoji}</span>
+                <div className="flex-1">
+                  <div className="font-medium">{CATEGORY_INFO[cat].label}</div>
+                  <div className="text-xs text-text-muted">{CATEGORY_INFO[cat].description}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-text-muted">Vægt:</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.1}
+                    value={prefs.categories[cat].weight}
+                    onChange={(e) => updateCategoryWeight(cat, parseFloat(e.target.value))}
+                    className="w-20"
+                    disabled={saving || !prefs.categories[cat].enabled}
+                  />
+                  <span className="text-xs w-8">{(prefs.categories[cat].weight * 100).toFixed(0)}%</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="🎯 Interesser">
+        <p className="text-sm text-text-secondary mb-4">
+          Tilføj emner du er interesseret i for at få mere relevante nyheder.
+        </p>
+        <div className="flex gap-2 mb-3">
+          <input
+            type="text"
+            value={newInterest}
+            onChange={(e) => setNewInterest(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addInterest()}
+            placeholder="f.eks. React, Kubernetes, ML..."
+            className="form-input flex-1"
+            disabled={saving}
+          />
+          <button
+            onClick={addInterest}
+            disabled={saving || !newInterest.trim()}
+            className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover disabled:opacity-50"
+          >
+            + Tilføj
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {prefs.interests.map((interest) => (
+            <span
+              key={interest}
+              className="px-3 py-1 bg-accent/20 border border-accent/30 rounded-full text-sm flex items-center gap-2"
+            >
+              {interest}
+              <button
+                onClick={() => removeInterest(interest)}
+                className="hover:text-red-400"
+                disabled={saving}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+          {prefs.interests.length === 0 && (
+            <span className="text-sm text-text-muted">Ingen interesser tilføjet endnu</span>
+          )}
+        </div>
+      </Section>
+
+      <Section title="🚫 Blokerede Nøgleord">
+        <p className="text-sm text-text-secondary mb-4">
+          Nyheder der indeholder disse ord vil blive filtreret væk.
+        </p>
+        <div className="flex gap-2 mb-3">
+          <input
+            type="text"
+            value={newBlocked}
+            onChange={(e) => setNewBlocked(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addBlocked()}
+            placeholder="f.eks. spam, clickbait..."
+            className="form-input flex-1"
+            disabled={saving}
+          />
+          <button
+            onClick={addBlocked}
+            disabled={saving || !newBlocked.trim()}
+            className="px-4 py-2 bg-bg-secondary border border-border-primary rounded-lg hover:bg-bg-hover disabled:opacity-50"
+          >
+            + Tilføj
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {prefs.blockedKeywords.map((keyword) => (
+            <span
+              key={keyword}
+              className="px-3 py-1 bg-red-500/10 border border-red-500/30 rounded-full text-sm flex items-center gap-2"
+            >
+              {keyword}
+              <button
+                onClick={() => removeBlocked(keyword)}
+                className="hover:text-red-400"
+                disabled={saving}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+          {prefs.blockedKeywords.length === 0 && (
+            <span className="text-sm text-text-muted">Ingen blokerede nøgleord</span>
+          )}
         </div>
       </Section>
     </div>

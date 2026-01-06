@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import type { Chat } from '../App';
-import { IconChat, IconPlus, IconPlug, IconSettings, IconTrash } from './icons';
+import { IconChat, IconPlus, IconPlug, IconPulse, IconSettings, IconTrash } from './icons';
 
 interface SidebarProps {
   chats: Chat[];
@@ -9,6 +9,7 @@ interface SidebarProps {
   onSelectChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
   onOpenSettings: (tab: string) => void;
+  onOpenPulse?: () => void;
 }
 
 export const Sidebar = memo(function Sidebar({
@@ -18,6 +19,7 @@ export const Sidebar = memo(function Sidebar({
   onSelectChat,
   onDeleteChat,
   onOpenSettings,
+  onOpenPulse,
 }: SidebarProps) {
   const today = new Date().toDateString();
 
@@ -92,6 +94,14 @@ export const Sidebar = memo(function Sidebar({
 
       {/* Footer */}
       <div className="p-3 border-t border-border-primary space-y-1">
+        {onOpenPulse && (
+          <NavItem
+            icon={<IconPulse className="w-4 h-4" />}
+            label="Pulse+ Briefing"
+            onClick={onOpenPulse}
+            highlight
+          />
+        )}
         <NavItem icon={<IconPlug className="w-4 h-4" />} label="MCP Servere" onClick={() => onOpenSettings('mcp')} />
         <NavItem icon={<IconSettings className="w-4 h-4" />} label="Indstillinger" onClick={() => onOpenSettings('general')} />
       </div>
@@ -99,22 +109,33 @@ export const Sidebar = memo(function Sidebar({
   );
 });
 
-function NavItem({ 
-  icon, 
-  label, 
-  onClick 
-}: { 
-  icon: React.ReactNode; 
-  label: string; 
+function NavItem({
+  icon,
+  label,
+  onClick,
+  highlight = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
   onClick: () => void;
+  highlight?: boolean;
 }) {
   return (
     <div
       onClick={onClick}
-      className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors text-sm"
+      className={`flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-colors text-sm ${
+        highlight
+          ? 'text-accent bg-accent/10 hover:bg-accent/20'
+          : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+      }`}
     >
-      <span className="text-text-muted">{icon}</span>
+      <span className={highlight ? 'text-accent' : 'text-text-muted'}>{icon}</span>
       <span>{label}</span>
+      {highlight && (
+        <span className="ml-auto text-xs bg-accent/20 text-accent px-1.5 py-0.5 rounded-full">
+          NY
+        </span>
+      )}
     </div>
   );
 }

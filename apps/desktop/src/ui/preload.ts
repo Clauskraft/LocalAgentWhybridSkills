@@ -191,3 +191,43 @@ contextBridge.exposeInMainWorld("chat", {
   autoSetupMcp: (opts?: { includeAuth?: boolean }) => ipcRenderer.invoke("mcp-auto-setup", opts),
 });
 
+// Pulse+ Daily Briefing API
+const pulseAPI = {
+  // Digest & Cards
+  getTodayCards: () => ipcRenderer.invoke("pulse:get-today-cards"),
+  getRecentCards: (days?: number) => ipcRenderer.invoke("pulse:get-recent-cards", days),
+  generateDigest: () => ipcRenderer.invoke("pulse:generate-digest"),
+
+  // Card Actions
+  markViewed: (cardId: string) => ipcRenderer.invoke("pulse:mark-viewed", cardId),
+  saveCard: (cardId: string) => ipcRenderer.invoke("pulse:save-card", cardId),
+  dismissCard: (cardId: string) => ipcRenderer.invoke("pulse:dismiss-card", cardId),
+  submitFeedback: (cardId: string, feedback: "up" | "down") => ipcRenderer.invoke("pulse:submit-feedback", cardId, feedback),
+
+  // Curation
+  addCuration: (topic: string) => ipcRenderer.invoke("pulse:add-curation", topic),
+
+  // Preferences
+  getPreferences: () => ipcRenderer.invoke("pulse:get-preferences"),
+  updatePreferences: (prefs: Record<string, unknown>) => ipcRenderer.invoke("pulse:update-preferences", prefs),
+
+  // Scheduler
+  getSchedulerStatus: () => ipcRenderer.invoke("pulse:get-scheduler-status"),
+  runNow: () => ipcRenderer.invoke("pulse:run-now"),
+};
+
+contextBridge.exposeInMainWorld("pulse", pulseAPI);
+
+// Shell API for opening external links
+contextBridge.exposeInMainWorld("shell", {
+  openExternal: (url: string) => ipcRenderer.invoke("shell-open-external", url),
+});
+
+// Combined electronAPI for renderer components
+contextBridge.exposeInMainWorld("electronAPI", {
+  pulse: pulseAPI,
+  shell: {
+    openExternal: (url: string) => ipcRenderer.invoke("shell-open-external", url),
+  },
+});
+

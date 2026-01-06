@@ -30,7 +30,8 @@
       "Bash(npx electron:*)",
       "Bash(railway projects:*)",
       "Bash(railway:*)",
-      "Bash(printf:*)"
+      "Bash(printf:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []

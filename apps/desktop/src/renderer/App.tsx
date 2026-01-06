@@ -4,8 +4,12 @@ import { ChatArea } from './components/ChatArea';
 import { SettingsModal } from './components/SettingsModal';
 import { ImmersiveWorkspace } from './components/ImmersiveWorkspace';
 import { CuttingEdgeFeatures } from './components/CuttingEdgeFeatures';
+import { PulseDashboard } from './components/PulseDashboard';
+import { PulseCurate } from './components/PulseCurate';
 import { useChat } from './hooks/useChat';
 import { useSettings } from './hooks/useSettings';
+
+type AppView = 'chat' | 'pulse';
 
 export interface Message {
   id: string;
@@ -31,6 +35,8 @@ export function App() {
   const [immersiveMode, setImmersiveMode] = useState(false);
   const [activePanels, setActivePanels] = useState<Set<string>>(new Set(['chat']));
   const [cuttingEdgeMode, setCuttingEdgeMode] = useState(false);
+  const [currentView, setCurrentView] = useState<AppView>('chat');
+  const [showPulseCurate, setShowPulseCurate] = useState(false);
   
   const {
     chats,
@@ -89,6 +95,19 @@ export function App() {
     await sendMessage(content, settings);
   }, [sendMessage, settings]);
 
+  // Pulse+ Navigation
+  const openPulse = useCallback(() => {
+    setCurrentView('pulse');
+  }, []);
+
+  const closePulse = useCallback(() => {
+    setCurrentView('chat');
+  }, []);
+
+  const handlePulseCurate = useCallback(async (topic: string) => {
+    await window.electronAPI?.pulse?.addCuration?.(topic);
+  }, []);
+
   const chatAreaContent = (
     <ChatArea
       messages={messages}
@@ -114,13 +133,26 @@ export function App() {
         chats={chats}
         currentChatId={currentChatId}
         onNewChat={createChat}
-        onSelectChat={selectChat}
+        onSelectChat={(id) => { selectChat(id); setCurrentView('chat'); }}
         onDeleteChat={deleteChat}
         onOpenSettings={openSettings}
+        onOpenPulse={openPulse}
       />
 
       {/* Main Content */}
-      {immersiveMode ? (
+      {currentView === 'pulse' ? (
+        <div className="flex-1 relative">
+          <PulseDashboard onBack={closePulse} />
+          {/* Curate FAB */}
+          <button
+            onClick={() => setShowPulseCurate(true)}
+            className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-accent text-white shadow-lg hover:bg-accent/80 transition-all duration-200 flex items-center justify-center text-xl z-40"
+            title="Kuratér morgendagens Pulse"
+          >
+            🎯
+          </button>
+        </div>
+      ) : immersiveMode ? (
         <div className="flex-1 relative">
           {/* LOOP 5 & 10: Mode Toggles */}
           <div className="absolute top-4 right-4 z-50 flex gap-2">
@@ -193,6 +225,13 @@ export function App() {
           onClose={closeSettings}
         />
       )}
+
+      {/* Pulse+ Curation Dialog */}
+      <PulseCurate
+        isOpen={showPulseCurate}
+        onClose={() => setShowPulseCurate(false)}
+        onSubmit={handlePulseCurate}
+      />
     </div>
   );
 }

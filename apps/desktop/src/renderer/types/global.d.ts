@@ -1,8 +1,79 @@
 import type { Chat, Message } from "../App";
 import type { SettingsState } from "../hooks/useSettings";
 
+// Pulse+ Types (inline for renderer isolation)
+type PulseCategory = 'THREAT' | 'AI_INSIGHT' | 'BUSINESS' | 'ACTIVITY';
+type PulsePriority = 'critical' | 'high' | 'medium' | 'low';
+type PulseFeedback = 'up' | 'down' | null;
+
+interface PulseCardData {
+  id: string;
+  category: PulseCategory;
+  title: string;
+  summary: string;
+  source: string;
+  sourceUrl?: string;
+  timestamp: string;
+  priority: PulsePriority;
+  relevanceScore: number;
+  feedback: PulseFeedback;
+  tags: string[];
+  status: string;
+}
+
+interface PulsePreferences {
+  enabled: boolean;
+  dailyTime: string;
+  maxCards: number;
+  categories: Record<PulseCategory, { enabled: boolean; weight: number }>;
+  interests: string[];
+  blockedKeywords: string[];
+}
+
+interface PulseAPIResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
 declare global {
   interface Window {
+    electronAPI?: {
+      pulse?: {
+        getTodayCards: () => Promise<PulseAPIResponse<PulseCardData[]>>;
+        getRecentCards: (days?: number) => Promise<PulseAPIResponse<PulseCardData[]>>;
+        generateDigest: () => Promise<PulseAPIResponse<unknown>>;
+        markViewed: (cardId: string) => Promise<PulseAPIResponse<void>>;
+        saveCard: (cardId: string) => Promise<PulseAPIResponse<void>>;
+        dismissCard: (cardId: string) => Promise<PulseAPIResponse<void>>;
+        submitFeedback: (cardId: string, feedback: 'up' | 'down') => Promise<PulseAPIResponse<void>>;
+        addCuration: (topic: string) => Promise<PulseAPIResponse<unknown>>;
+        getPreferences: () => Promise<PulseAPIResponse<PulsePreferences>>;
+        updatePreferences: (prefs: Partial<PulsePreferences>) => Promise<PulseAPIResponse<void>>;
+        getSchedulerStatus: () => Promise<PulseAPIResponse<unknown>>;
+        runNow: () => Promise<PulseAPIResponse<void>>;
+      };
+      shell?: {
+        openExternal: (url: string) => Promise<void>;
+      };
+    };
+    pulse?: {
+      getTodayCards: () => Promise<PulseAPIResponse<PulseCardData[]>>;
+      getRecentCards: (days?: number) => Promise<PulseAPIResponse<PulseCardData[]>>;
+      generateDigest: () => Promise<PulseAPIResponse<unknown>>;
+      markViewed: (cardId: string) => Promise<PulseAPIResponse<void>>;
+      saveCard: (cardId: string) => Promise<PulseAPIResponse<void>>;
+      dismissCard: (cardId: string) => Promise<PulseAPIResponse<void>>;
+      submitFeedback: (cardId: string, feedback: 'up' | 'down') => Promise<PulseAPIResponse<void>>;
+      addCuration: (topic: string) => Promise<PulseAPIResponse<unknown>>;
+      getPreferences: () => Promise<PulseAPIResponse<PulsePreferences>>;
+      updatePreferences: (prefs: Partial<PulsePreferences>) => Promise<PulseAPIResponse<void>>;
+      getSchedulerStatus: () => Promise<PulseAPIResponse<unknown>>;
+      runNow: () => Promise<PulseAPIResponse<void>>;
+    };
+    shell?: {
+      openExternal: (url: string) => Promise<void>;
+    };
     chat?: {
       // Chat history
       getChatHistory?: () => Promise<Chat[]>;
