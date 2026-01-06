@@ -27,7 +27,10 @@
       "Bash(start \"\" \"dist-electron\\win-arm64-unpacked\\SCA-01 The Finisher.exe\")",
       "Bash(curl:*)",
       "Bash(taskkill:*)",
-      "Bash(npx electron:*)"
+      "Bash(npx electron:*)",
+      "Bash(railway projects:*)",
+      "Bash(railway:*)",
+      "Bash(printf:*)"
     ],
     "deny": [],
     "ask": []
