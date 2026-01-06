@@ -1,4 +1,12 @@
-import * as jose from "jose";
+import {
+  SignJWT,
+  exportJWK,
+  generateKeyPair,
+  importJWK,
+  jwtVerify,
+  type JWTPayload,
+  type KeyLike,
+} from "jose";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -44,8 +52,8 @@ const DEFAULT_CONFIG: JwtConfig = {
 
 export class JwtAuthService {
   private config: JwtConfig;
-  private currentKey: jose.KeyLike | null = null;
-  private previousKey: jose.KeyLike | null = null;
+  private currentKey: KeyLike | null = null;
+  private previousKey: KeyLike | null = null;
   private keyId: string = "";
   private keyPath: string;
   private revokedTokens: Set<string> = new Set();
@@ -68,26 +76,26 @@ export class JwtAuthService {
         const age = Date.now() - stored.createdAt;
         
         if (age < this.config.keyRotationInterval * 1000) {
-          const imported = await jose.importJWK(stored.key, "ES256");
-          this.currentKey = imported as jose.KeyLike;
+          const imported = await importJWK(stored.key, "ES256");
+          this.currentKey = imported as KeyLike;
           this.keyId = stored.keyId;
           return;
         }
         
         // Key rotation: keep old key for verification
-        const prevImported = await jose.importJWK(stored.key, "ES256");
-        this.previousKey = prevImported as jose.KeyLike;
+        const prevImported = await importJWK(stored.key, "ES256");
+        this.previousKey = prevImported as KeyLike;
       }
     } catch {
       // Generate new key on any error
     }
 
     // Generate new ECDSA key pair
-    const { privateKey } = await jose.generateKeyPair("ES256");
+    const { privateKey } = await generateKeyPair("ES256");
     this.currentKey = privateKey;
     this.keyId = crypto.randomUUID();
 
-    const jwk = await jose.exportJWK(privateKey);
+    const jwk = await exportJWK(privateKey);
     const keyData = {
       key: jwk,
       keyId: this.keyId,
@@ -128,7 +136,7 @@ export class JwtAuthService {
       agentId
     };
 
-    const accessToken = await new jose.SignJWT(accessPayload as unknown as jose.JWTPayload)
+    const accessToken = await new SignJWT(accessPayload as unknown as JWTPayload)
       .setProtectedHeader({ alg: "ES256", kid: this.keyId })
       .sign(signingKey);
 
@@ -143,7 +151,7 @@ export class JwtAuthService {
       accessJti: jti
     };
 
-    const refreshToken = await new jose.SignJWT(refreshPayload)
+    const refreshToken = await new SignJWT(refreshPayload)
       .setProtectedHeader({ alg: "ES256", kid: this.keyId })
       .sign(signingKey);
 
@@ -168,7 +176,7 @@ export class JwtAuthService {
 
     for (const key of keys) {
       try {
-        const { payload } = await jose.jwtVerify(token, key, {
+        const { payload } = await jwtVerify(token, key, {
           issuer: this.config.issuer,
           audience: this.config.audience
         });

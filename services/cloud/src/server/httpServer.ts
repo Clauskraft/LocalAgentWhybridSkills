@@ -14,8 +14,8 @@ import { executionRoutes } from "../routes/executionRoutes.js";
 import { registerGitHubRoutes } from "../routes/githubRoutes.js";
 import { registerRepoRoutes } from "../routes/repoRoutes.js";
 // Import clients
-import { getRomaClient } from "../../mcp-backend/src/agent/romaBridge.ts";
-import { getSearchClient } from "../../mcp-backend/src/agent/searchBridge.ts";
+import { getRomaClient } from "../agent/romaBridge.js";
+import { getSearchClient } from "../agent/searchBridge.js";
 
 type MigrationsStatus = "not_started" | "running" | "ok" | "error";
 let migrationsStatus: MigrationsStatus = "not_started";
