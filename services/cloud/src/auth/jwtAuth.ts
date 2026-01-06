@@ -5,7 +5,6 @@ import {
   importJWK,
   jwtVerify,
   type JWTPayload,
-  type KeyLike,
 } from "jose";
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -52,8 +51,11 @@ const DEFAULT_CONFIG: JwtConfig = {
 
 export class JwtAuthService {
   private config: JwtConfig;
-  private currentKey: KeyLike | null = null;
-  private previousKey: KeyLike | null = null;
+  // NOTE: Avoid importing KeyLike from jose directly because some jose builds/typings
+  // (as seen in Railway) do not export it consistently. We derive the key type from
+  // jose functions we actually use instead.
+  private currentKey: Awaited<ReturnType<typeof importJWK>> | null = null;
+  private previousKey: Awaited<ReturnType<typeof importJWK>> | null = null;
   private keyId: string = "";
   private keyPath: string;
   private revokedTokens: Set<string> = new Set();
@@ -77,14 +79,14 @@ export class JwtAuthService {
         
         if (age < this.config.keyRotationInterval * 1000) {
           const imported = await importJWK(stored.key, "ES256");
-          this.currentKey = imported as KeyLike;
+          this.currentKey = imported;
           this.keyId = stored.keyId;
           return;
         }
         
         // Key rotation: keep old key for verification
         const prevImported = await importJWK(stored.key, "ES256");
-        this.previousKey = prevImported as KeyLike;
+        this.previousKey = prevImported;
       }
     } catch {
       // Generate new key on any error
@@ -92,7 +94,7 @@ export class JwtAuthService {
 
     // Generate new ECDSA key pair
     const { privateKey } = await generateKeyPair("ES256");
-    this.currentKey = privateKey;
+    this.currentKey = privateKey as Awaited<ReturnType<typeof importJWK>>;
     this.keyId = crypto.randomUUID();
 
     const jwk = await exportJWK(privateKey);
