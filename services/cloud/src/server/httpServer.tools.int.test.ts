@@ -5,7 +5,25 @@ describe("sca-01-cloud MCP tools", () => {
   afterEach(() => {
     delete process.env.DATABASE_URL;
     delete process.env.NODE_ENV;
+    delete process.env.SCA_CLIENT_ID;
+    delete process.env.SCA_CLIENT_SECRET;
   });
+
+  async function getAccessToken(address: string): Promise<string> {
+    const res = await fetch(`${address}/auth/token`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        grant_type: "client_credentials",
+        client_id: process.env.SCA_CLIENT_ID,
+        client_secret: process.env.SCA_CLIENT_SECRET,
+      }),
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { access_token?: string };
+    expect(typeof body.access_token).toBe("string");
+    return body.access_token as string;
+  }
 
   describe("GET /mcp/tools", () => {
     it("returns 403 without JWT auth", async () => {
@@ -21,51 +39,32 @@ describe("sca-01-cloud MCP tools", () => {
     });
 
     it("returns tool list with valid JWT", async () => {
-      // Mock valid JWT - in real tests, generate proper token
-      const mockToken = "mock.jwt.token";
+      process.env.SCA_CLIENT_ID = "test-client";
+      process.env.SCA_CLIENT_SECRET = "12345678";
 
       const app = await createServer({ host: "127.0.0.1", port: 0 });
       const address = await app.listen({ host: "127.0.0.1", port: 0 });
 
       try {
+        const token = await getAccessToken(address);
         const res = await fetch(`${address}/mcp/tools`, {
           headers: {
-            "Authorization": `Bearer ${mockToken}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
-
-        // Should return 403 due to invalid token, but structure should be correct
-        expect([401, 403]).toContain(res.status);
-
-        if (res.status === 401) {
-          const body = await res.text();
-          expect(body).toMatch(/Missing or invalid authorization/i);
-        }
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as { tools?: Array<{ name?: string }> };
+        expect(Array.isArray(body.tools)).toBe(true);
+        const names = (body.tools ?? []).map((t) => t.name).filter(Boolean);
+        expect(names).toContain("roma.plan");
+        expect(names).toContain("roma.act");
+        expect(names).toContain("search.query");
+        expect(names).toContain("search.upsert");
       } finally {
         await app.close();
       }
     });
 
-    it("includes ROMA tools in response", async () => {
-      // This test would need a valid JWT to pass
-      // For now, we test the tool schema structure
-      const expectedRomaTools = [
-        "read_file",
-        "write_file",
-        "run_command",
-        "http_request",
-        "roma.plan",
-        "roma.act",
-        "search.query",
-        "search.upsert"
-      ];
-
-      // Test that our code includes these tools
-      // This is more of an integration test that would run with proper auth
-      expect(expectedRomaTools).toContain("roma.plan");
-      expect(expectedRomaTools).toContain("roma.act");
-      expect(expectedRomaTools).toContain("search.query");
-    });
   });
 
   describe("GET /api/mcp/tools (back-compat)", () => {
@@ -107,44 +106,28 @@ describe("sca-01-cloud MCP tools", () => {
     });
 
     it("validates tool call format", async () => {
-      const mockToken = "mock.jwt.token";
+      process.env.SCA_CLIENT_ID = "test-client";
+      process.env.SCA_CLIENT_SECRET = "12345678";
 
       const app = await createServer({ host: "127.0.0.1", port: 0 });
       const address = await app.listen({ host: "127.0.0.1", port: 0 });
 
       try {
+        const token = await getAccessToken(address);
         const res = await fetch(`${address}/mcp/tools/call`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${mockToken}`
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ invalid: "format" })
         });
 
-        expect([400, 401, 403]).toContain(res.status);
+        expect(res.status).toBe(400);
       } finally {
         await app.close();
       }
     });
   });
 
-  describe("Tool implementations", () => {
-    it("read_file tool requires path parameter", () => {
-      // Unit test for tool validation
-      const toolCall = { name: "read_file", arguments: {} };
-      expect(toolCall.arguments).not.toHaveProperty("path");
-    });
-
-    it("roma.plan tool accepts goal parameter", () => {
-      const toolCall = {
-        name: "roma.plan",
-        arguments: {
-          goal: "Test planning task",
-          strategy: "react"
-        }
-      };
-      expect(toolCall.arguments.goal).toBe("Test planning task");
-    });
-  });
 });

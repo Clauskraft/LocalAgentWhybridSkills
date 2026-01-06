@@ -9,6 +9,8 @@ describe("githubRoutes (smoke)", () => {
   let token = "";
 
   beforeAll(async () => {
+    process.env.SCA_CLIENT_ID = "test-client";
+    process.env.SCA_CLIENT_SECRET = "supersecret123";
     server = await createServer({ port: 0 });
     await registerGitHubRoutes(server, log);
     await server.ready();
@@ -28,6 +30,8 @@ describe("githubRoutes (smoke)", () => {
 
   afterAll(async () => {
     if (server) await server.close();
+    delete process.env.SCA_CLIENT_ID;
+    delete process.env.SCA_CLIENT_SECRET;
   });
 
   test("GET /api/github/status returns 200 with auth", async () => {

@@ -5,9 +5,13 @@ describe("sca-01-cloud auth (integration)", () => {
   afterEach(() => {
     delete process.env.DATABASE_URL;
     delete process.env.NODE_ENV;
+    delete process.env.SCA_CLIENT_ID;
+    delete process.env.SCA_CLIENT_SECRET;
   });
 
   it("POST /auth/token refresh_token returns 200 with new tokens", async () => {
+    process.env.SCA_CLIENT_ID = "test-client";
+    process.env.SCA_CLIENT_SECRET = "12345678";
     const app = await createServer({ host: "127.0.0.1", port: 0 });
     const address = await app.listen({ host: "127.0.0.1", port: 0 });
 

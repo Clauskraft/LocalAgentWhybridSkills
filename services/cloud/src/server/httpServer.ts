@@ -176,6 +176,30 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
 
   // ========== PUBLIC ROUTES ==========
 
+  // Root landing (avoid noisy 404 on Railway domain root)
+  app.get("/", async () => {
+    return {
+      service: "sca-01-cloud",
+      version: "0.3.0",
+      endpoints: {
+        health: "/health",
+        ready: "/ready",
+        mcpInfo: "/mcp/info",
+        auth: {
+          login: "/auth/login",
+          token: "/auth/token",
+          refresh: "/auth/refresh",
+          register: "/auth/register",
+        },
+      },
+    };
+  });
+
+  // Avoid spurious 404s from browser favicon requests
+  app.get("/favicon.ico", async (_req, reply) => {
+    return reply.status(204).send();
+  });
+
   // Health check
   app.get("/health", async () => {
     return {
@@ -277,6 +301,12 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
       };
     }
 
+    // Non-production: report configuration state without requiring a live DB connection.
+    if (!dbRequired) {
+      return { status: "ready", timestamp: new Date().toISOString(), db: !!process.env.DATABASE_URL, service: "sca-01-cloud" };
+    }
+
+    // Production: require DB connectivity.
     try {
       if (process.env.DATABASE_URL) {
         await initializeDatabase(); // connectivity check
@@ -314,7 +344,6 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
     };
 
     if (body.grant_type === "client_credentials") {
-      // Validate client credentials (in production: check against DB)
       const clientId = body.client_id;
       const clientSecret = body.client_secret;
 
@@ -322,9 +351,12 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
         return reply.status(400).send({ error: "invalid_request", error_description: "Missing credentials" });
       }
 
-      // TODO: Validate against registered clients
-      // For demo, accept any non-empty credentials
-      if (clientSecret.length < 8) {
+      const expectedClientId = (process.env.SCA_CLIENT_ID ?? "").trim();
+      const expectedClientSecret = (process.env.SCA_CLIENT_SECRET ?? "").trim();
+      if (!expectedClientId || !expectedClientSecret) {
+        return reply.status(503).send({ error: "server_not_configured" });
+      }
+      if (clientId !== expectedClientId || clientSecret !== expectedClientSecret) {
         return reply.status(401).send({ error: "invalid_client" });
       }
 

@@ -20,6 +20,21 @@ describe("sca-01-cloud smoke", () => {
       await app.close();
     }
   });
+
+  it("GET / returns 200 with service info", async () => {
+    const app = await createServer({ host: "127.0.0.1", port: 0 });
+    const address = await app.listen({ host: "127.0.0.1", port: 0 });
+
+    try {
+      const res = await fetch(`${address}/`);
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { service?: string; endpoints?: { health?: string } };
+      expect(body.service).toBe("sca-01-cloud");
+      expect(body.endpoints?.health).toBe("/health");
+    } finally {
+      await app.close();
+    }
+  });
 });
 
 
