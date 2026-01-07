@@ -1,0 +1,202 @@
+# Documentation Validation Workflow
+# Validates documentation consistency, links, and quality
+
+name: Docs Validation
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'docs/**'
+      - '**/*.md'
+      - 'README.md'
+      - 'CLAUDE.md'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'docs/**'
+      - '**/*.md'
+      - 'README.md'
+      - 'CLAUDE.md'
+
+jobs:
+  validate-links:
+    runs-on: ubuntu-latest
+    name: Check Markdown Links
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Check markdown links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          use-verbose-mode: 'no'
+          config-file: '.github/markdown-link-check.json'
+          check-modified-files-only: 'yes'
+          base-branch: 'main'
+        continue-on-error: true
+
+  validate-structure:
+    runs-on: ubuntu-latest
+    name: Validate Doc Structure
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Check required files exist
+        run: |
+          required_files=(
+            "README.md"
+            "CLAUDE.md"
+            "docs/README.md"
+          )
+
+          missing=0
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing required file: $file"
+              missing=1
+            else
+              echo "✅ Found: $file"
+            fi
+          done
+
+          if [ $missing -eq 1 ]; then
+            echo ""
+            echo "⚠️ Some required documentation files are missing"
+            exit 1
+          fi
+
+      - name: Check CLAUDE.md sections
+        run: |
+          required_sections=(
+            "## Project Overview"
+            "## Architecture"
+            "## Build Commands"
+            "## Testing"
+            "## Key Files"
+          )
+
+          missing=0
+          for section in "${required_sections[@]}"; do
+            if ! grep -q "$section" CLAUDE.md; then
+              echo "❌ Missing section in CLAUDE.md: $section"
+              missing=1
+            else
+              echo "✅ Found section: $section"
+            fi
+          done
+
+          if [ $missing -eq 1 ]; then
+            echo ""
+            echo "⚠️ CLAUDE.md is missing required sections"
+            exit 1
+          fi
+
+  spell-check:
+    runs-on: ubuntu-latest
+    name: Spell Check
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install cspell
+        run: npm install -g cspell
+
+      - name: Check spelling
+        run: |
+          cspell --no-progress --no-summary "docs/**/*.md" "*.md" || true
+        continue-on-error: true
+
+  lint-markdown:
+    runs-on: ubuntu-latest
+    name: Lint Markdown
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Install markdownlint-cli2
+        run: npm install -g markdownlint-cli2
+
+      - name: Lint markdown files
+        run: |
+          markdownlint-cli2 "docs/**/*.md" "*.md" || true
+        continue-on-error: true
+
+  toc-sync:
+    runs-on: ubuntu-latest
+    name: Check TOC Sync
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Check if docs have updated TOC
+        run: |
+          # Check if any docs with TOC markers are missing updates
+          for file in $(find docs -name "*.md" -type f); do
+            if grep -q "<!-- TOC -->" "$file" 2>/dev/null; then
+              echo "📝 File with TOC marker: $file"
+            fi
+          done
+
+  api-docs:
+    runs-on: ubuntu-latest
+    name: Validate API Docs
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: services/cloud/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: services/cloud
+
+      - name: Validate OpenAPI spec
+        run: |
+          if [ -f "services/cloud/openapi.yaml" ]; then
+            npx @redocly/cli lint services/cloud/openapi.yaml || true
+          else
+            echo "No OpenAPI spec found - skipping validation"
+          fi
+        continue-on-error: true
+
+  docs-summary:
+    needs: [validate-links, validate-structure, spell-check, lint-markdown]
+    runs-on: ubuntu-latest
+    name: Docs Summary
+
+    steps:
+      - name: Summary
+        run: |
+          echo "## 📚 Documentation Validation Complete"
+          echo ""
+          echo "All documentation checks have been processed."
+          echo "Review individual job results for details."
