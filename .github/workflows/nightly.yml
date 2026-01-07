@@ -84,7 +84,7 @@ jobs:
         working-directory: apps/desktop
 
       - name: Upload nightly artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sca-01-nightly-${{ matrix.platform }}-${{ github.run_number }}
           path: apps/desktop/dist/
