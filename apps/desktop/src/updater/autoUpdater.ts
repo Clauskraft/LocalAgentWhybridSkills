@@ -1,11 +1,38 @@
 /**
  * SCA-01 Auto-Updater
  * Handles automatic updates via GitHub Releases or custom server
+ *
+ * Uses dynamic import for electron-updater to handle ESM/CJS compatibility
  */
 
 import { app, dialog, BrowserWindow, ipcMain } from "electron";
-import { autoUpdater, UpdateInfo, ProgressInfo } from "electron-updater";
 import { HyperLog } from "../logging/hyperlog.js";
+
+// Dynamic import types for electron-updater (CJS module)
+type ElectronUpdaterModule = typeof import("electron-updater");
+type AutoUpdaterType = ElectronUpdaterModule["autoUpdater"];
+type UpdateInfoType = import("electron-updater").UpdateInfo;
+type ProgressInfoType = import("electron-updater").ProgressInfo;
+
+// Module-level reference for the dynamically imported autoUpdater
+let autoUpdater: AutoUpdaterType | null = null;
+
+/**
+ * Lazily load electron-updater (CJS module in ESM context)
+ */
+async function getAutoUpdater(): Promise<AutoUpdaterType> {
+  if (autoUpdater) return autoUpdater;
+
+  try {
+    // Dynamic import for CJS compatibility
+    const electronUpdater = await import("electron-updater");
+    autoUpdater = electronUpdater.autoUpdater;
+    return autoUpdater;
+  } catch (error) {
+    console.error("Failed to load electron-updater:", error);
+    throw error;
+  }
+}
 
 export interface UpdaterConfig {
   /** Check for updates on startup */
@@ -32,38 +59,56 @@ export class SCA01Updater {
   private log: HyperLog;
   private mainWindow: BrowserWindow | null = null;
   private checkIntervalId: ReturnType<typeof setInterval> | null = null;
+  private initialized = false;
 
   constructor(config: Partial<UpdaterConfig> = {}, logDir = "./logs") {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.log = new HyperLog(logDir, "updater.hyperlog.jsonl");
-
-    // Configure autoUpdater
-    autoUpdater.autoDownload = this.config.autoDownload;
-    autoUpdater.autoInstallOnAppQuit = this.config.autoInstallOnQuit;
-
-    // Use custom update server if provided
-    if (this.config.updateServerUrl) {
-      autoUpdater.setFeedURL({
-        provider: "generic",
-        url: this.config.updateServerUrl,
-      });
-    }
-
-    this.setupEventHandlers();
     this.setupIpcHandlers();
+  }
+
+  /**
+   * Initialize the updater (must be called before use)
+   * This handles the async loading of electron-updater
+   */
+  async init(): Promise<void> {
+    if (this.initialized) return;
+
+    try {
+      const updater = await getAutoUpdater();
+
+      // Configure autoUpdater
+      updater.autoDownload = this.config.autoDownload;
+      updater.autoInstallOnAppQuit = this.config.autoInstallOnQuit;
+
+      // Use custom update server if provided
+      if (this.config.updateServerUrl) {
+        updater.setFeedURL({
+          provider: "generic",
+          url: this.config.updateServerUrl,
+        });
+      }
+
+      this.setupEventHandlers(updater);
+      this.initialized = true;
+      this.log.info("updater", "Auto-updater initialized successfully");
+    } catch (error) {
+      this.log.error("updater", `Failed to initialize auto-updater: ${(error as Error).message}`);
+      throw error;
+    }
   }
 
   setMainWindow(window: BrowserWindow): void {
     this.mainWindow = window;
   }
 
-  private setupEventHandlers(): void {
-    autoUpdater.on("checking-for-update", () => {
+  private setupEventHandlers(updater: AutoUpdaterType): void {
+    updater.on("checking-for-update", () => {
       this.log.info("updater", "Checking for updates...");
       this.sendToRenderer("update-status", { status: "checking" });
     });
 
-    autoUpdater.on("update-available", (info: UpdateInfo) => {
+    updater.on("update-available", (info: UpdateInfoType) => {
       this.log.info("updater", `Update available: ${info.version}`, {
         version: info.version,
         releaseDate: info.releaseDate,
@@ -80,7 +125,7 @@ export class SCA01Updater {
       }
     });
 
-    autoUpdater.on("update-not-available", (info: UpdateInfo) => {
+    updater.on("update-not-available", (info: UpdateInfoType) => {
       this.log.info("updater", "No updates available", { version: info.version });
       this.sendToRenderer("update-status", {
         status: "up-to-date",
@@ -88,7 +133,7 @@ export class SCA01Updater {
       });
     });
 
-    autoUpdater.on("download-progress", (progress: ProgressInfo) => {
+    updater.on("download-progress", (progress: ProgressInfoType) => {
       this.log.info("updater", `Download progress: ${progress.percent.toFixed(1)}%`);
       this.sendToRenderer("update-status", {
         status: "downloading",
@@ -101,7 +146,7 @@ export class SCA01Updater {
       });
     });
 
-    autoUpdater.on("update-downloaded", (info: UpdateInfo) => {
+    updater.on("update-downloaded", (info: UpdateInfoType) => {
       this.log.info("updater", `Update downloaded: ${info.version}`);
       this.sendToRenderer("update-status", {
         status: "downloaded",
@@ -112,7 +157,7 @@ export class SCA01Updater {
       this.showRestartDialog(info);
     });
 
-    autoUpdater.on("error", (error: Error) => {
+    updater.on("error", (error: Error) => {
       this.log.error("updater", `Update error: ${error.message}`, {
         stack: error.stack,
       });
@@ -131,12 +176,14 @@ export class SCA01Updater {
 
     // Download update
     ipcMain.handle("updater:download", async () => {
-      return await autoUpdater.downloadUpdate();
+      const updater = await getAutoUpdater();
+      return await updater.downloadUpdate();
     });
 
     // Install update (restart)
-    ipcMain.handle("updater:install", () => {
-      autoUpdater.quitAndInstall(false, true);
+    ipcMain.handle("updater:install", async () => {
+      const updater = await getAutoUpdater();
+      updater.quitAndInstall(false, true);
     });
 
     // Get current version
@@ -150,17 +197,19 @@ export class SCA01Updater {
     });
 
     // Update config
-    ipcMain.handle("updater:setConfig", (_event, newConfig: Partial<UpdaterConfig>) => {
+    ipcMain.handle("updater:setConfig", async (_event, newConfig: Partial<UpdaterConfig>) => {
       this.config = { ...this.config, ...newConfig };
-      autoUpdater.autoDownload = this.config.autoDownload;
-      autoUpdater.autoInstallOnAppQuit = this.config.autoInstallOnQuit;
+      const updater = await getAutoUpdater();
+      updater.autoDownload = this.config.autoDownload;
+      updater.autoInstallOnAppQuit = this.config.autoInstallOnQuit;
       return this.config;
     });
   }
 
   async checkForUpdates(): Promise<{ available: boolean; version?: string }> {
     try {
-      const result = await autoUpdater.checkForUpdates();
+      const updater = await getAutoUpdater();
+      const result = await updater.checkForUpdates();
       if (result?.updateInfo) {
         return {
           available: result.updateInfo.version !== app.getVersion(),
@@ -203,7 +252,7 @@ export class SCA01Updater {
     }
   }
 
-  private async showUpdateDialog(info: UpdateInfo): Promise<void> {
+  private async showUpdateDialog(info: UpdateInfoType): Promise<void> {
     const result = await dialog.showMessageBox({
       type: "info",
       title: "Opdatering tilgængelig",
@@ -214,11 +263,12 @@ export class SCA01Updater {
     });
 
     if (result.response === 0) {
-      autoUpdater.downloadUpdate();
+      const updater = await getAutoUpdater();
+      updater.downloadUpdate();
     }
   }
 
-  private async showRestartDialog(info: UpdateInfo): Promise<void> {
+  private async showRestartDialog(info: UpdateInfoType): Promise<void> {
     const result = await dialog.showMessageBox({
       type: "info",
       title: "Opdatering klar",
@@ -229,7 +279,8 @@ export class SCA01Updater {
     });
 
     if (result.response === 0) {
-      autoUpdater.quitAndInstall(false, true);
+      const updater = await getAutoUpdater();
+      updater.quitAndInstall(false, true);
     }
   }
 }
@@ -237,13 +288,21 @@ export class SCA01Updater {
 // Singleton instance
 let updaterInstance: SCA01Updater | null = null;
 
-export function initUpdater(config?: Partial<UpdaterConfig>, logDir?: string): SCA01Updater {
+/**
+ * Initialize the updater singleton
+ * This handles the async loading of electron-updater for ESM/CJS compatibility
+ */
+export async function initUpdater(config?: Partial<UpdaterConfig>, logDir?: string): Promise<SCA01Updater> {
   if (!updaterInstance) {
     updaterInstance = new SCA01Updater(config, logDir);
+    await updaterInstance.init();
   }
   return updaterInstance;
 }
 
+/**
+ * Get the updater instance (may be null if not initialized)
+ */
 export function getUpdater(): SCA01Updater | null {
   return updaterInstance;
 }

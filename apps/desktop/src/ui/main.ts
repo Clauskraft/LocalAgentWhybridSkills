@@ -29,7 +29,7 @@ import {
 import type { UnifiedConfig, UnifiedSecrets } from "../config/unifiedSchema.js";
 import { getConfigStore } from "../config/configStore.js";
 import { MCP_SERVER_CATALOG, getPopularServers, getServerById } from "../mcp/serverCatalog.js";
-// import { initUpdater } from "../updater/autoUpdater.js"; // TODO: Fix ESM/CJS loading issue
+import { initUpdater } from "../updater/autoUpdater.js";
 import { registerPulseIpcHandlers } from "../pulse/ipc.js";
 
 import type { ApprovalRequest } from "../approval/approvalQueue.js";
@@ -1116,6 +1116,28 @@ export async function startMain(electron: ElectronModule): Promise<void> {
   await ensureConnectivityOnStartup();
 
   createWindow();
+
+  // Initialize auto-updater (async for ESM/CJS compatibility)
+  try {
+    const updater = await initUpdater({
+      checkOnStartup: true,
+      autoDownload: true,
+      autoInstallOnQuit: true,
+    }, "./logs");
+
+    if (mainWindow) {
+      updater.setMainWindow(mainWindow);
+    }
+
+    // Start periodic update checks
+    updater.startPeriodicChecks();
+    log.info("updater.init", "Auto-updater initialized successfully");
+  } catch (error) {
+    log.warn("updater.init.failed", "Failed to initialize auto-updater", {
+      error: String(error),
+    });
+    // Continue without auto-updater - not critical for app function
+  }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {

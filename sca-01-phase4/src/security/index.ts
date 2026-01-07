@@ -30,3 +30,17 @@ export type {
   AuditLogConfig,
   AuditStats,
 } from "./auditLog.js";
+
+export {
+  SignatureVerifier,
+  signatureVerifier,
+} from "./signatureVerifier.js";
+
+export type {
+  KeyPair,
+  SignaturePayload,
+  SignatureAlgorithm,
+  VerificationResult,
+  TrustChain,
+  SignatureVerifierConfig,
+} from "./signatureVerifier.js";
