@@ -5,14 +5,14 @@ const ROMA_BRIDGE_URL = process.env.ROMA_BRIDGE_URL || "http://localhost:8808";
 // Request/Response schemas
 const PlanRequestSchema = z.object({
   goal: z.string(),
-  context: z.record(z.unknown()).optional(),
+  context: z.record(z.string(), z.unknown()).optional(),
   strategy: z.enum(["react", "cot", "code_act"]).optional(),
 });
 
 const ActRequestSchema = z.object({
   task: z.string(),
-  context: z.record(z.unknown()).optional(),
-  tools: z.array(z.record(z.unknown())).optional(),
+  context: z.record(z.string(), z.unknown()).optional(),
+  tools: z.array(z.record(z.string(), z.unknown())).optional(),
 });
 
 const PlanResponseSchema = z.object({
@@ -36,12 +36,12 @@ const ActResponseSchema = z.object({
   result: z.object({
     task: z.string(),
     status: z.string(),
-    context: z.record(z.unknown()).optional(),
-    tools_used: z.array(z.record(z.unknown())),
+    context: z.record(z.string(), z.unknown()).optional(),
+    tools_used: z.array(z.record(z.string(), z.unknown())),
     output: z.object({
       type: z.string(),
       content: z.string(),
-      metadata: z.record(z.unknown()),
+      metadata: z.record(z.string(), z.unknown()),
     }),
     node_type: z.string(),
   }),

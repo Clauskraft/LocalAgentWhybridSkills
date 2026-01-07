@@ -34,12 +34,13 @@ const UpsertResponseSchema = z.object({
   message: z.string()
 });
 
-const HealthResponseSchema = z.object({
-  status: z.string(),
-  version: z.string(),
-  opensearch_status: z.string().optional(),
-  vector_store_status: z.string().optional()
-});
+// Health response type (schema used only for type inference)
+type HealthResponse = {
+  status: string;
+  version: string;
+  opensearch_status?: string;
+  vector_store_status?: string;
+};
 
 export type SearchRequest = z.infer<typeof SearchRequestSchema>;
 export type UpsertRequest = z.infer<typeof UpsertRequestSchema>;
@@ -91,34 +92,34 @@ export class SearchBridgeClient {
     return UpsertResponseSchema.parse(data);
   }
 
-  async health(): Promise<z.infer<typeof HealthResponseSchema>> {
+  async health(): Promise<HealthResponse> {
     const response = await fetch(`${this.baseUrl}/health`);
 
     if (!response.ok) {
       throw new Error(`Search health check failed: ${response.status} ${response.statusText}`);
     }
 
-    return response.json();
+    return response.json() as Promise<HealthResponse>;
   }
 
-  async getQuerySchema(): Promise<any> {
+  async getQuerySchema(): Promise<Record<string, unknown>> {
     const response = await fetch(`${this.baseUrl}/schema/query`);
 
     if (!response.ok) {
       throw new Error(`Failed to get query schema: ${response.status} ${response.statusText}`);
     }
 
-    return response.json();
+    return response.json() as Promise<Record<string, unknown>>;
   }
 
-  async getUpsertSchema(): Promise<any> {
+  async getUpsertSchema(): Promise<Record<string, unknown>> {
     const response = await fetch(`${this.baseUrl}/schema/upsert`);
 
     if (!response.ok) {
       throw new Error(`Failed to get upsert schema: ${response.status} ${response.statusText}`);
     }
 
-    return response.json();
+    return response.json() as Promise<Record<string, unknown>>;
   }
 }
 

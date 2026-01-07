@@ -106,24 +106,24 @@ export class RomaBridgeClient {
     return response.json();
   }
 
-  async getPlanSchema(): Promise<any> {
+  async getPlanSchema(): Promise<Record<string, unknown>> {
     const response = await fetch(`${this.baseUrl}/schema/plan`);
 
     if (!response.ok) {
       throw new Error(`Failed to get plan schema: ${response.status} ${response.statusText}`);
     }
 
-    return response.json();
+    return response.json() as Promise<Record<string, unknown>>;
   }
 
-  async getActSchema(): Promise<any> {
+  async getActSchema(): Promise<Record<string, unknown>> {
     const response = await fetch(`${this.baseUrl}/schema/act`);
 
     if (!response.ok) {
       throw new Error(`Failed to get act schema: ${response.status} ${response.statusText}`);
     }
 
-    return response.json();
+    return response.json() as Promise<Record<string, unknown>>;
   }
 }
 

@@ -27,9 +27,9 @@ export function registerAuthRoutes(app: FastifyInstance, log: HyperLog): void {
     const parseResult = RegisterSchema.safeParse(request.body);
     
     if (!parseResult.success) {
-      return reply.status(400).send({ 
-        error: "validation_error", 
-        details: parseResult.error.errors 
+      return reply.status(400).send({
+        error: "validation_error",
+        details: parseResult.error.issues
       });
     }
 
@@ -76,9 +76,9 @@ export function registerAuthRoutes(app: FastifyInstance, log: HyperLog): void {
     const parseResult = LoginSchema.safeParse(request.body);
     
     if (!parseResult.success) {
-      return reply.status(400).send({ 
-        error: "validation_error", 
-        details: parseResult.error.errors 
+      return reply.status(400).send({
+        error: "validation_error",
+        details: parseResult.error.issues
       });
     }
 

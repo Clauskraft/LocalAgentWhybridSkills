@@ -6,12 +6,12 @@ const SEARCH_BRIDGE_URL = process.env.SEARCH_BRIDGE_URL || "http://localhost:881
 const SearchRequestSchema = z.object({
   query: z.string(),
   limit: z.number().optional(),
-  filters: z.record(z.unknown()).optional(),
-  context: z.record(z.unknown()).optional(),
+  filters: z.record(z.string(), z.unknown()).optional(),
+  context: z.record(z.string(), z.unknown()).optional(),
 });
 
 const UpsertRequestSchema = z.object({
-  documents: z.array(z.record(z.unknown())),
+  documents: z.array(z.record(z.string(), z.unknown())),
   index_name: z.string().optional(),
 });
 
@@ -21,7 +21,7 @@ const SearchResponseSchema = z.object({
       id: z.string(),
       content: z.string(),
       score: z.number(),
-      metadata: z.record(z.unknown()),
+      metadata: z.record(z.string(), z.unknown()),
     })
   ),
   total: z.number(),

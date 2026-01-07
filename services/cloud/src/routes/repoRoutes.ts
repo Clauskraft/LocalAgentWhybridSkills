@@ -62,7 +62,7 @@ export function registerRepoRoutes(app: FastifyInstance, log: HyperLog): void {
 
     const parsed = CreateRepoSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.status(400).send({ error: "validation_error", details: parsed.error.errors });
+      return reply.status(400).send({ error: "validation_error", details: parsed.error.issues });
     }
 
     const repo = await createRepo(user.sub, {
@@ -101,7 +101,7 @@ export function registerRepoRoutes(app: FastifyInstance, log: HyperLog): void {
 
     const parsed = UpdateRepoSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.status(400).send({ error: "validation_error", details: parsed.error.errors });
+      return reply.status(400).send({ error: "validation_error", details: parsed.error.issues });
     }
 
     const updated = await updateRepo(id, user.sub, parsed.data);
