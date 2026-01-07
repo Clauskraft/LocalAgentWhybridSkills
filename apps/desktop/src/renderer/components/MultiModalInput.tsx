@@ -9,7 +9,7 @@ interface MultiModalInputProps {
 }
 
 export const MultiModalInput = memo(function MultiModalInput({
-  onTextInput,
+  onTextInput: _onTextInput,
   onVoiceInput,
   onDrawingInput,
   isLoading
@@ -17,7 +17,7 @@ export const MultiModalInput = memo(function MultiModalInput({
   const [mode, setMode] = useState<'text' | 'voice' | 'drawing'>('text');
   const [isRecording, setIsRecording] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [drawingData, setDrawingData] = useState<string>('');
+  const [_drawingData, setDrawingData] = useState<string>('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);

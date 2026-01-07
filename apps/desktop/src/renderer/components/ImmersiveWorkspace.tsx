@@ -1,5 +1,5 @@
 import { useState, memo } from 'react';
-import { IconCircle, IconSettings, IconPlug, IconX, IconChevronDown } from './icons';
+import { IconSettings, IconPlug, IconX } from './icons';
 
 interface Panel {
   id: string;

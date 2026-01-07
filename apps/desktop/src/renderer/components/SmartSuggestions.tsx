@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { IconBolt, IconSettings, IconPlug, IconCircle } from './icons';
+// Icons available if needed: IconBolt, IconSettings, IconPlug, IconCircle
 
 interface SmartSuggestionsProps {
   input: string;

@@ -34,7 +34,7 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [settingsTab, setSettingsTab] = useState<string>('general');
   const [immersiveMode, setImmersiveMode] = useState(false);
-  const [activePanels, setActivePanels] = useState<Set<string>>(new Set(['chat']));
+  const [_activePanels, _setActivePanels] = useState<Set<string>>(new Set(['chat']));
   const [cuttingEdgeMode, setCuttingEdgeMode] = useState(false);
   const [currentView, setCurrentView] = useState<AppView>('chat');
   const [showPulseCurate, setShowPulseCurate] = useState(false);

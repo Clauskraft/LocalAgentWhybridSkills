@@ -112,7 +112,7 @@ export class PulseScheduler {
           silent: false,
         }).show();
       }
-    } catch (error) {
+    } catch (_error) {
       // Notification not available (e.g., in renderer process)
       console.log('[PulseScheduler] Notification not available');
     }

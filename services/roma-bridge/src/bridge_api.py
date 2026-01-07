@@ -162,9 +162,95 @@ def get_lm_from_env():
     return dspy.LM(model, temperature=temperature, max_tokens=max_tokens)
 
 def get_available_tools():
-    """Get available tools for ROMA"""
-    # TODO: Implement tool loading
-    return []
+    """
+    Get available tools for ROMA executor.
+
+    Tools can be configured via:
+    1. ROMA_TOOLS_CONFIG environment variable pointing to a JSON file
+    2. ROMA_TOOLS environment variable with comma-separated tool names
+    3. Default fallback to common MCP tools
+
+    Returns a list of tool definitions compatible with DSPy/ROMA.
+    """
+    import json
+
+    # Option 1: Load from config file
+    tools_config_path = os.getenv("ROMA_TOOLS_CONFIG")
+    if tools_config_path and os.path.exists(tools_config_path):
+        try:
+            with open(tools_config_path, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"[ROMA] Warning: Failed to load tools config from {tools_config_path}: {e}")
+
+    # Option 2: Parse from environment variable
+    tools_env = os.getenv("ROMA_TOOLS", "").strip()
+    if tools_env:
+        tool_names = [t.strip() for t in tools_env.split(",") if t.strip()]
+        return [{"name": name, "description": f"Tool: {name}"} for name in tool_names]
+
+    # Option 3: Default fallback - return common MCP tool stubs
+    # These are placeholder definitions; actual implementations come from MCP servers
+    default_tools = [
+        {
+            "name": "search",
+            "description": "Search for information in the knowledge base",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"}
+                },
+                "required": ["query"]
+            }
+        },
+        {
+            "name": "read_file",
+            "description": "Read contents of a file",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "File path to read"}
+                },
+                "required": ["path"]
+            }
+        },
+        {
+            "name": "write_file",
+            "description": "Write content to a file",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "File path to write"},
+                    "content": {"type": "string", "description": "Content to write"}
+                },
+                "required": ["path", "content"]
+            }
+        },
+        {
+            "name": "execute_command",
+            "description": "Execute a shell command",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "command": {"type": "string", "description": "Command to execute"}
+                },
+                "required": ["command"]
+            }
+        }
+    ]
+
+    return default_tools
+
+
+@app.get("/tools")
+async def list_tools():
+    """List available tools for ROMA executor"""
+    tools = get_available_tools()
+    return {
+        "tools": tools,
+        "count": len(tools),
+        "source": "config" if os.getenv("ROMA_TOOLS_CONFIG") else ("env" if os.getenv("ROMA_TOOLS") else "default")
+    }
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8000"))

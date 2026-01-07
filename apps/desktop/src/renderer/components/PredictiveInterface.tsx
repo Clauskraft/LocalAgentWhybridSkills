@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, memo } from 'react';
-import { IconBolt, IconPlug, IconSettings, IconSend } from './icons';
+import { IconSend } from './icons';
 
 interface Prediction {
   id: string;

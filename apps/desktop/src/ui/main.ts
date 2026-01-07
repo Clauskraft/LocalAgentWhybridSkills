@@ -30,7 +30,7 @@ import type { UnifiedConfig, UnifiedSecrets } from "../config/unifiedSchema.js";
 import { getConfigStore } from "../config/configStore.js";
 import { MCP_SERVER_CATALOG, getPopularServers, getServerById } from "../mcp/serverCatalog.js";
 // import { initUpdater } from "../updater/autoUpdater.js"; // TODO: Fix ESM/CJS loading issue
-import { registerPulseIpcHandlers, unregisterPulseIpcHandlers } from "../pulse/ipc.js";
+import { registerPulseIpcHandlers } from "../pulse/ipc.js";
 
 import type { ApprovalRequest } from "../approval/approvalQueue.js";
 
