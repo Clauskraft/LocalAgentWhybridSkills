@@ -5,8 +5,8 @@
  * Kører som default kl. 05:00 CET, konfigurerbar via preferences.
  */
 
-import { getPulseService, PulseService } from './PulseService';
-import { getPreferences } from './storage';
+import { getPulseService, PulseService } from "./PulseService.js";
+import { getPreferences } from "./storage.js";
 
 // ============================================================================
 // Scheduler Class
@@ -69,11 +69,15 @@ export class PulseScheduler {
   }
 
   private calculateNextRunTime(dailyTime: string): Date {
-    const [hours, minutes] = dailyTime.split(':').map(Number);
+    const parts = dailyTime.split(":");
+    const hoursRaw = parts[0];
+    const minutesRaw = parts[1];
+    const hours = Number(hoursRaw ?? "5");
+    const minutes = Number(minutesRaw ?? "0");
 
     const now = new Date();
     const todayRun = new Date(now);
-    todayRun.setHours(hours, minutes, 0, 0);
+    todayRun.setHours(Number.isFinite(hours) ? hours : 5, Number.isFinite(minutes) ? minutes : 0, 0, 0);
 
     // If today's run time has passed, schedule for tomorrow
     if (todayRun.getTime() <= now.getTime()) {

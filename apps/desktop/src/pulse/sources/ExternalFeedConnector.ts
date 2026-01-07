@@ -9,7 +9,7 @@ import type {
   PulseSource,
   RawPulseEvent,
   PulseCategory,
-} from '../types';
+} from "../types.js";
 
 // ============================================================================
 // RSS Parser (simpel XML parsing)
@@ -30,7 +30,8 @@ async function parseRSS(xml: string): Promise<RSSItem[]> {
   let match;
 
   while ((match = itemRegex.exec(xml)) !== null) {
-    const itemXml = match[1];
+    const itemXml = match[1] ?? "";
+    if (!itemXml) continue;
 
     const title = extractTag(itemXml, 'title');
     const link = extractTag(itemXml, 'link');
@@ -306,6 +307,9 @@ const CATEGORY_KEYWORDS: Record<PulseCategory, string[]> = {
     'release', 'update', 'launch', 'announcement', 'event', 'conference',
     'partnership', 'collaboration', 'milestone', 'achievement', 'news',
   ],
+  // Graph-derived categories: keyword heuristics don't apply (leave empty)
+  PERSONAL: [],
+  FAMILY: [],
 };
 
 export function extractTags(text: string, category: PulseCategory): string[] {
@@ -340,6 +344,8 @@ export function inferCategory(text: string): PulseCategory {
     AI_INSIGHT: 0,
     BUSINESS: 0,
     ACTIVITY: 0,
+    PERSONAL: 0,
+    FAMILY: 0,
   };
 
   for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {

@@ -12,7 +12,7 @@ import type {
   FamilyGraphEvent,
   RawPulseEvent,
   PulsePriority,
-} from '../types';
+} from "../types.js";
 
 // ============================================================================
 // Configuration
@@ -36,7 +36,8 @@ async function getDriver(config: Neo4JConfig = DEFAULT_NEO4J_CONFIG): Promise<an
   if (!driverInitialized) {
     try {
       // Dynamic import for neo4j-driver (optional dependency)
-      const neo4j = await import('neo4j-driver');
+      // @ts-expect-error optional dependency: compiled even when neo4j-driver isn't installed
+      const neo4j = await import("neo4j-driver");
       neo4jDriver = neo4j.default.driver(
         config.uri,
         neo4j.default.auth.basic(config.username, config.password)

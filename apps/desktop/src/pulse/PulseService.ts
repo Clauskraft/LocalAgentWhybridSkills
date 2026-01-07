@@ -5,7 +5,6 @@
  * Koordinerer datainhentning, klassificering, prioritering og summarisering.
  */
 
-import { v4 as uuidv4 } from 'crypto';
 import type {
   PulseCard,
   PulseCategory,
@@ -15,7 +14,7 @@ import type {
   PulseServiceState,
   RawPulseEvent,
   CurationRequest,
-} from './types';
+} from "./types.js";
 import {
   initPulseStorage,
   insertCards,
@@ -33,13 +32,13 @@ import {
   cleanupOldCards,
   getFeedbackStats,
   getPreferredTags,
-} from './storage';
-import { ExternalFeedConnector, extractTags, inferCategory } from './sources/ExternalFeedConnector';
+} from "./storage.js";
+import { ExternalFeedConnector, extractTags, inferCategory } from "./sources/ExternalFeedConnector.js";
 import {
   fetchPersonalAssistantEvents,
   fetchFamilyGraphEvents,
   checkNeo4JConnection,
-} from './sources/Neo4JConnector';
+} from "./sources/Neo4JConnector.js";
 
 // ============================================================================
 // UUID Generator (Node.js crypto)
@@ -151,7 +150,7 @@ export class PulseService {
 
       // 9. Build digest
       const digest: PulseDailyDigest = {
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().slice(0, 10),
         cards: selectedCards,
         generatedAt: new Date().toISOString(),
         curationRequests,
@@ -323,7 +322,7 @@ export class PulseService {
         medium: 0.1,
         low: 0,
       };
-      score += priorityBoost[card.priority];
+      score += priorityBoost[card.priority] ?? 0;
 
       // 3. User interests match
       for (const interest of preferences.interests) {
@@ -331,7 +330,7 @@ export class PulseService {
         if (
           card.title.toLowerCase().includes(lowerInterest) ||
           card.summary.toLowerCase().includes(lowerInterest) ||
-          card.tags.some(t => t.includes(lowerInterest))
+          card.tags.some((t: string) => t.includes(lowerInterest))
         ) {
           score += 0.15;
         }

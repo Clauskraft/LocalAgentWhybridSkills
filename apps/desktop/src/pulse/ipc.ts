@@ -5,9 +5,9 @@
  */
 
 import { ipcMain } from 'electron';
-import { getPulseService } from './PulseService';
-import { getPulseScheduler, startPulseScheduler } from './PulseScheduler';
-import type { PulseAPIResponse, PulseCard, PulseDailyDigest, PulsePreferences, CurationRequest } from './types';
+import { getPulseService } from "./PulseService.js";
+import { getPulseScheduler, startPulseScheduler } from "./PulseScheduler.js";
+import type { PulseAPIResponse, PulseCard, PulseDailyDigest, PulsePreferences, CurationRequest } from "./types.js";
 
 // ============================================================================
 // IPC Channel Names

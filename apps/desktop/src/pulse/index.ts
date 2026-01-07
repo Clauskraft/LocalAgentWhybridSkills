@@ -6,7 +6,7 @@
  */
 
 // Types
-export * from './types';
+export * from "./types.js";
 
 // Storage
 export {
@@ -32,10 +32,10 @@ export {
   updatePreferences,
   getFeedbackStats,
   getPreferredTags,
-} from './storage';
+} from "./storage.js";
 
 // Service
-export { PulseService, getPulseService } from './PulseService';
+export { PulseService, getPulseService } from "./PulseService.js";
 
 // Scheduler
 export {
@@ -43,11 +43,11 @@ export {
   getPulseScheduler,
   startPulseScheduler,
   stopPulseScheduler,
-} from './PulseScheduler';
+} from "./PulseScheduler.js";
 
 // Sources
 export {
   ExternalFeedConnector,
   extractTags,
   inferCategory,
-} from './sources/ExternalFeedConnector';
+} from "./sources/ExternalFeedConnector.js";

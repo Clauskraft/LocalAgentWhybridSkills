@@ -9,6 +9,7 @@ import Database from 'better-sqlite3';
 import { app } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import { DEFAULT_PULSE_PREFERENCES } from "./types.js";
 import type {
   PulseCard,
   PulseCategory,
@@ -17,8 +18,7 @@ import type {
   PulsePreferences,
   CurationRequest,
   PulseSource,
-  DEFAULT_PULSE_PREFERENCES,
-} from './types';
+} from "./types.js";
 
 // ============================================================================
 // Database Setup
@@ -411,13 +411,13 @@ export function getPreferences(): PulsePreferences {
   const database = initPulseStorage();
   const row = database.prepare('SELECT preferences FROM pulse_preferences WHERE id = 1').get() as { preferences: string } | undefined;
   if (!row) {
-    return { ...require('./types').DEFAULT_PULSE_PREFERENCES };
+    return { ...DEFAULT_PULSE_PREFERENCES };
   }
   try {
     const stored = JSON.parse(row.preferences);
-    return { ...require('./types').DEFAULT_PULSE_PREFERENCES, ...stored };
+    return { ...DEFAULT_PULSE_PREFERENCES, ...stored };
   } catch {
-    return { ...require('./types').DEFAULT_PULSE_PREFERENCES };
+    return { ...DEFAULT_PULSE_PREFERENCES };
   }
 }
 
@@ -445,6 +445,8 @@ export function getFeedbackStats(): Record<PulseCategory, { upCount: number; dow
     AI_INSIGHT: { upCount: 0, downCount: 0 },
     BUSINESS: { upCount: 0, downCount: 0 },
     ACTIVITY: { upCount: 0, downCount: 0 },
+    PERSONAL: { upCount: 0, downCount: 0 },
+    FAMILY: { upCount: 0, downCount: 0 },
   };
 
   for (const row of rows) {
