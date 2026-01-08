@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, memo } from 'react';
-import { IconSend } from './icons';
+import { IconSend, IconSparkles, IconCode, IconSearch } from './icons';
 
 interface Prediction {
   id: string;
@@ -25,7 +25,7 @@ export const PredictiveInterface = memo(function PredictiveInterface({
 }: PredictiveInterfaceProps) {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [hoveredPrediction, setHoveredPrediction] = useState<string | null>(null);
-  const predictionTimeoutRef = useRef<NodeJS.Timeout>();
+  const predictionTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // LOOP 8: AI-Powered Predictive Interface
   useEffect(() => {
@@ -50,6 +50,17 @@ export const PredictiveInterface = memo(function PredictiveInterface({
       }
     };
   }, [input, messages]);
+
+  // Apply width from data-width attribute to avoid inline styles
+  useEffect(() => {
+    const bars = document.querySelectorAll('[data-width]');
+    bars.forEach((bar) => {
+      const width = bar.getAttribute('data-width');
+      if (width && bar instanceof HTMLElement) {
+        bar.style.width = width;
+      }
+    });
+  }, [predictions]);
 
   const generatePredictions = async (currentInput: string, messageHistory: any[]) => {
     const newPredictions: Prediction[] = [];
@@ -189,11 +200,10 @@ export const PredictiveInterface = memo(function PredictiveInterface({
             onClick={() => handlePredictionClick(prediction)}
             onMouseEnter={() => setHoveredPrediction(prediction.id)}
             onMouseLeave={() => setHoveredPrediction(null)}
-            className={`w-full text-left p-2 rounded-lg transition-all duration-200 group ${
-              hoveredPrediction === prediction.id
-                ? 'bg-accent/20 shadow-lg transform scale-105'
-                : 'bg-bg-tertiary/50 hover:bg-accent/10'
-            }`}
+            className={`w-full text-left p-2 rounded-lg transition-all duration-200 group ${hoveredPrediction === prediction.id
+              ? 'bg-accent/20 shadow-lg transform scale-105'
+              : 'bg-bg-tertiary/50 hover:bg-accent/10'
+              }`}
           >
             <div className="flex items-center gap-2">
               <span className={hoveredPrediction === prediction.id ? 'text-accent' : 'text-text-secondary'}>
@@ -202,11 +212,10 @@ export const PredictiveInterface = memo(function PredictiveInterface({
               <span className={`text-sm flex-1 ${hoveredPrediction === prediction.id ? 'text-accent font-medium' : 'text-text-primary'}`}>
                 {prediction.content}
               </span>
-              <span className={`text-xs px-2 py-1 rounded-full ${
-                prediction.confidence > 0.8 ? 'bg-success/20 text-success' :
+              <span className={`text-xs px-2 py-1 rounded-full ${prediction.confidence > 0.8 ? 'bg-success/20 text-success' :
                 prediction.confidence > 0.6 ? 'bg-warning/20 text-warning' :
-                'bg-bg-tertiary text-text-muted'
-              }`}>
+                  'bg-bg-tertiary text-text-muted'
+                }`}>
                 {(prediction.confidence * 100).toFixed(0)}%
               </span>
             </div>
@@ -214,12 +223,11 @@ export const PredictiveInterface = memo(function PredictiveInterface({
             {/* Confidence bar */}
             <div className="mt-1 w-full bg-bg-tertiary rounded-full h-1">
               <div
-                className={`h-1 rounded-full transition-all duration-300 ${
-                  prediction.confidence > 0.8 ? 'bg-success' :
+                className={`h-1 rounded-full transition-all duration-300 ${prediction.confidence > 0.8 ? 'bg-success' :
                   prediction.confidence > 0.6 ? 'bg-warning' :
-                  'bg-accent'
-                }`}
-                style={{ width: `${prediction.confidence * 100}%` }}
+                    'bg-accent'
+                  }`}
+                data-width={`${prediction.confidence * 100}%`}
               />
             </div>
           </button>

@@ -191,6 +191,102 @@ async function runNativeWidgetdcMcpServer(): Promise<void> {
   });
 
   if (cockpitUrl) {
+    // High-level MCP tools for WidgetDC integration
+    server.tool(
+      "widgetdc.mcp.list_tools",
+      "List all available MCP tools from WidgetDC backend",
+      {},
+      async () => {
+        try {
+          const res = await fetch(`${cockpitUrl}/api/mcp/tools`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            signal: AbortSignal.timeout(10_000),
+          });
+          const data = await res.json();
+          return {
+            content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+          };
+        } catch (err) {
+          return {
+            content: [{ type: "text", text: `Error listing tools: ${err instanceof Error ? err.message : String(err)}` }],
+          };
+        }
+      }
+    );
+
+    server.tool(
+      "widgetdc.mcp.execute",
+      "Execute an MCP tool on the WidgetDC backend",
+      {
+        tool: z.string().describe("The tool name to execute"),
+        parameters: z.record(z.unknown()).optional().describe("Tool parameters"),
+      },
+      async (args) => {
+        try {
+          const res = await fetch(`${cockpitUrl}/api/mcp/route`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tool: args.tool, parameters: args.parameters ?? {} }),
+            signal: AbortSignal.timeout(30_000),
+          });
+          const data = await res.json();
+          return {
+            content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+          };
+        } catch (err) {
+          return {
+            content: [{ type: "text", text: `Error executing tool: ${err instanceof Error ? err.message : String(err)}` }],
+          };
+        }
+      }
+    );
+
+    server.tool(
+      "widgetdc.health",
+      "Check WidgetDC backend health status",
+      {},
+      async () => {
+        try {
+          const res = await fetch(`${cockpitUrl}/health`, {
+            method: "GET",
+            signal: AbortSignal.timeout(5_000),
+          });
+          const data = await res.json();
+          return {
+            content: [{ type: "text", text: JSON.stringify({ status: res.ok ? "healthy" : "unhealthy", ...data }, null, 2) }],
+          };
+        } catch (err) {
+          return {
+            content: [{ type: "text", text: JSON.stringify({ status: "unreachable", error: err instanceof Error ? err.message : String(err) }, null, 2) }],
+          };
+        }
+      }
+    );
+
+    server.tool(
+      "widgetdc.mcp.status",
+      "Get MCP server status and metrics from WidgetDC",
+      {},
+      async () => {
+        try {
+          const res = await fetch(`${cockpitUrl}/api/mcp/status`, {
+            method: "GET",
+            signal: AbortSignal.timeout(5_000),
+          });
+          const data = await res.json();
+          return {
+            content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+          };
+        } catch (err) {
+          return {
+            content: [{ type: "text", text: `Error getting MCP status: ${err instanceof Error ? err.message : String(err)}` }],
+          };
+        }
+      }
+    );
+
+    // Generic request tool for advanced usage
     server.tool(
       "widgetdc.cockpit.request",
       "Perform a safe HTTP request against the configured WidgetDC Cockpit base URL",

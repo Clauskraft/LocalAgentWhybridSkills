@@ -1,4 +1,5 @@
 import { useState, useEffect, memo } from 'react';
+import { IconSparkles, IconSearch, IconLightbulb, IconCode } from './icons';
 // Icons available if needed: IconBolt, IconSettings, IconPlug, IconCircle
 
 interface SmartSuggestionsProps {

@@ -167,7 +167,10 @@ function insertDefaultSources(database: Database.Database) {
   `);
 
   for (const source of defaultSources) {
-    insert.run(source);
+    insert.run({
+      ...source,
+      enabled: source.enabled ? 1 : 0,
+    });
   }
 }
 
