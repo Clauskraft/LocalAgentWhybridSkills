@@ -1,6 +1,6 @@
 import { memo, useState, useMemo } from 'react';
 import type { Chat } from '../App';
-import { IconChat, IconPlus, IconPlug, IconPulse, IconSettings, IconTrash, IconSearch, IconArchive, IconShield } from './icons';
+import { IconChat, IconPlus, IconPlug, IconPulse, IconSettings, IconTrash, IconSearch, IconArchive, IconShield, IconMesh } from './icons';
 
 interface SidebarProps {
   chats: Chat[];
@@ -12,6 +12,7 @@ interface SidebarProps {
   onOpenSettings: (tab: string) => void;
   onOpenPulse?: () => void;
   onOpenRoma?: () => void;
+  onOpenConstellation?: () => void;
   isCollapsed?: boolean;
   onToggleCollapsed?: () => void;
 }
@@ -26,6 +27,7 @@ export const Sidebar = memo(function Sidebar({
   onOpenSettings,
   onOpenPulse,
   onOpenRoma,
+  onOpenConstellation,
   isCollapsed = false,
   onToggleCollapsed
 }: SidebarProps) {
@@ -206,6 +208,14 @@ export const Sidebar = memo(function Sidebar({
             label={isCollapsed ? "" : "Pulse+ Briefing"}
             onClick={onOpenPulse}
             highlight
+            compact={isCollapsed}
+          />
+        )}
+        {onOpenConstellation && (
+          <NavItem
+            icon={<IconMesh className="w-4 h-4" />}
+            label={isCollapsed ? "" : "Constellation"}
+            onClick={onOpenConstellation}
             compact={isCollapsed}
           />
         )}

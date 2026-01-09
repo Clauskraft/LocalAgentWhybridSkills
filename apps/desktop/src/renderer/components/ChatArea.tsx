@@ -420,7 +420,7 @@ export const ChatArea = memo(function ChatArea({
             />
           </div>
 
-          <div className="relative bg-bg-secondary border border-border-primary rounded-2xl p-3 focus-within:border-accent transition-all duration-200 focus-within:shadow-lg focus-within:shadow-accent/20">
+          <div className="relative bg-bg-secondary/40 backdrop-blur-2xl border border-white/10 rounded-2xl p-4 focus-within:border-accent/40 transition-all duration-300 focus-within:shadow-[0_0_25px_rgba(226,0,116,0.15)] group">
             {/* Multi-Modal Input Controls */}
             <MultiModalInput
               onTextInput={setInput}
@@ -467,8 +467,8 @@ export const ChatArea = memo(function ChatArea({
             </div>
           </div>
 
-          <p className="text-center text-xs text-text-muted mt-3">
-            SCA-01 kan udføre handlinger på din PC. Alle operationer logges.
+          <p className="text-center text-[10px] text-text-muted mt-3 font-medium uppercase tracking-[0.2em] opacity-40">
+            @dot Personal Agent • Alle operationer logges og sikres
           </p>
         </div>
       </div>
@@ -479,7 +479,7 @@ export const ChatArea = memo(function ChatArea({
         inputData={input}
         outputData={messages[messages.length - 1]?.content}
       />
-    </main>
+    </main >
   );
 });
 

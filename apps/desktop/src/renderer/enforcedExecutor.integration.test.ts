@@ -49,7 +49,7 @@ describe("EnforcedExecutor (integration)", () => {
     const log = new HyperLog("./logs", "vitest-enforced-executor.hyperlog.jsonl");
     const ex = new EnforcedExecutor({ fullAccess: false, autoApprove: false, safeDirs: [] }, log);
 
-    const shell = process.platform === "win32" ? "powershell" : "bash";
+    const shell = process.platform === "win32" ? "cmd" : "bash";
     const res = await ex.runShell("echo hello", { shell, timeout: 10_000 });
     expect(res.ok).toBe(true);
     if (res.ok) {

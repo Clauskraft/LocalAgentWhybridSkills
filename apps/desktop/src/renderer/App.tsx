@@ -7,6 +7,7 @@ import { CuttingEdgeFeatures } from './components/CuttingEdgeFeatures';
 import { PulseDashboard } from './components/PulseDashboard';
 import { PulseCurate } from './components/PulseCurate';
 import { RomaPlanner } from "./components/RomaPlanner";
+import { ConstellationDashboard } from './components/ConstellationDashboard';
 import { useChat } from './hooks/useChat';
 import { useSettings } from './hooks/useSettings';
 import { ShortcutsModal } from './components/ShortcutsModal';
@@ -15,7 +16,7 @@ import { DropZone } from './components/DropZone';
 import { CommandPalette } from './components/CommandPalette';
 import { findShortcut } from './lib/shortcuts';
 
-type AppView = 'chat' | 'pulse' | 'roma';
+type AppView = 'chat' | 'pulse' | 'roma' | 'constellation';
 
 export interface Message {
   id: string;
@@ -238,6 +239,14 @@ export function App() {
     setCurrentView("chat");
   }, []);
 
+  const openConstellation = useCallback(() => {
+    setCurrentView('constellation');
+  }, []);
+
+  const closeConstellation = useCallback(() => {
+    setCurrentView('chat');
+  }, []);
+
   const handlePulseCurate = useCallback(async (topic: string) => {
     await window.electronAPI?.pulse?.addCuration?.(topic);
   }, []);
@@ -305,35 +314,40 @@ export function App() {
         onOpenSettings={openSettings}
         onOpenPulse={openPulse}
         onOpenRoma={openRoma}
+        onOpenConstellation={openConstellation}
         isCollapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((v) => !v)}
       />
 
       {/* Main Content */}
       {currentView === "roma" ? (
-        <div className="flex-1 relative min-w-0 min-h-0">
+        <div className="flex-1 relative min-w-0 min-h-0 animate-fade-in">
           <RomaPlanner onBack={closeRoma} />
         </div>
-      ) : currentView === 'pulse' ? (
+      ) : currentView === 'constellation' ? (
         <div className="flex-1 relative min-w-0 min-h-0">
+          <ConstellationDashboard onBack={closeConstellation} />
+        </div>
+      ) : currentView === 'pulse' ? (
+        <div className="flex-1 relative min-w-0 min-h-0 animate-fade-in">
           <PulseDashboard onBack={closePulse} />
           {/* Curate FAB */}
           <button
             onClick={() => setShowPulseCurate(true)}
-            className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-accent text-white shadow-lg hover:bg-accent/80 transition-all duration-200 flex items-center justify-center text-xl z-40"
+            className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-accent text-white shadow-lg hover:bg-accent/80 transition-all duration-200 flex items-center justify-center text-xl z-40 animate-bounce-in"
             title="Kuratér morgendagens Pulse"
           >
             🎯
           </button>
         </div>
       ) : settings.immersiveMode ? (
-        <div className="flex-1 relative min-w-0 min-h-0">
+        <div className="flex-1 relative min-w-0 min-h-0 animate-fade-in">
           <ImmersiveWorkspace onPanelToggle={() => { }}>
             {chatAreaContent}
           </ImmersiveWorkspace>
         </div>
       ) : (
-        <div className="flex-1 relative min-w-0 min-h-0">
+        <div className="flex-1 relative min-w-0 min-h-0 animate-fade-in">
           {chatAreaContent}
         </div>
       )}

@@ -34,22 +34,29 @@ export const StatusMenu = memo(function StatusMenu({
     return (
         <div className="flex items-center gap-2">
             {/* Mini status indicator */}
-            <div className={`flex items-center gap-2 px-4 py-2 glass-card rounded-2xl shadow-lg border-opacity-40 transition-all duration-500 ${ollamaStatus === 'online' ? 'border-success/30' : 'border-warning/30'
+            <div className={`flex items-center gap-3 px-4 py-2 glass-card rounded-2xl shadow-xl border-opacity-30 transition-all duration-700 ${ollamaStatus === 'online' ? 'border-success/40 bg-success/5' : 'border-warning/40 bg-warning/5'
                 }`}>
                 <div className="relative flex items-center justify-center">
-                    <span
-                        className={`w-2.5 h-2.5 rounded-full ${ollamaStatus === 'online' ? 'bg-success' :
-                            ollamaStatus === 'offline' ? 'bg-error' : 'bg-warning'
-                            }`}
-                    />
+                    <div className={`w-2.5 h-2.5 rounded-full z-10 ${ollamaStatus === 'online' ? 'bg-success shadow-[0_0_10px_rgba(34,197,94,0.8)]' :
+                        ollamaStatus === 'offline' ? 'bg-error shadow-[0_0_10px_rgba(239,68,68,0.8)]' : 'bg-warning shadow-[0_0_10px_rgba(234,179,8,0.8)]'
+                        }`} />
                     {ollamaStatus === 'online' && (
-                        <span className="absolute inset-0 w-2.5 h-2.5 bg-success rounded-full animate-ping opacity-75" />
+                        <>
+                            <span className="absolute inset-0 w-2.5 h-2.5 bg-success rounded-full animate-ping opacity-75" />
+                            <span className="absolute -inset-1.5 w-5.5 h-5.5 border border-success/30 rounded-full animate-pulse-ring opacity-20" />
+                        </>
                     )}
                 </div>
-                <span className={`text-[11px] font-black uppercase tracking-[0.15em] ${ollamaStatus === 'online' ? 'text-success' : 'text-warning'
-                    }`}>
-                    {ollamaStatus === 'online' ? 'Neural Link Active' : 'Connecting...'}
-                </span>
+                <div className="flex flex-col">
+                    <span className={`text-[9px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${ollamaStatus === 'online' ? 'text-success/70' : 'text-warning/70'
+                        }`}>
+                        System Status
+                    </span>
+                    <span className={`text-[10px] font-bold uppercase tracking-[0.05em] leading-none ${ollamaStatus === 'online' ? 'text-success' : 'text-warning'
+                        }`}>
+                        {ollamaStatus === 'online' ? 'Neural Link Active' : 'Connecting...'}
+                    </span>
+                </div>
             </div>
 
             {/* Main Status Dropdown (Simplified for now as a group) */}
