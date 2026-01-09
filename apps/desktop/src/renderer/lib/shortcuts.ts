@@ -147,6 +147,26 @@ export const SYSTEM_SHORTCUTS: Record<string, {
             };
         }
     },
+    'plan': {
+        name: 'Dot.Plan (The Manager)',
+        description: 'Administrerer backlog, projektplaner og orkestrerer Dots via Redis.',
+        handler: async () => {
+            return {
+                content: `📅 **Dot.Plan: Mission Control Active**
+- **State Layer**: Forbundet til Redis & Postgres via WidgetDC.
+- **Incident Report**: 
+  - ⚠️ **ALARM**: Build fejlede i \`matrix-frontend-v2\` (35 min siden).
+  - Dot.Ops er adviseret.
+- **Backlog Status**:
+  - [ ] Implementer Redis-sync for Constellation State (Phase 4.2).
+  - [ ] Etabler Dot.Resilience logik i Neo4J.
+  - [x] Launch @dot Atomic Branding.
+- **Next Milestone**: "The Sovereign Mesh" (100% færdiggørelse).`,
+                role: 'system',
+                meta: { icon: '📅' }
+            };
+        }
+    },
     'clean': {
         name: 'Workspace Cleanup',
         description: 'Rydder op i midlertidige filer og logs.',

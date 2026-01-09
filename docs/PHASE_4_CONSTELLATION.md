@@ -15,6 +15,7 @@ While @dot represents the singular point of interaction, the **Constellation** r
    - **Dot.Ops**: Infrastructure, deployment, and health orchestration.
    - **Dot.Brief**: Intelligence gathering, ROMA planning, and OSINT.
    - **Dot.Resilience**: Proactive health monitoring and auto-patching. *[ACTIVE]*
+   - **Dot.Plan**: Backlog management and inter-agent orchestration (Manager). *[ACTIVE]*
 
 ## 🛠️ Implementation Strategy
 
