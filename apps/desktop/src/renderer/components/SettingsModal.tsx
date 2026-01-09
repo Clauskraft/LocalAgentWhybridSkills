@@ -107,9 +107,19 @@ export const SettingsModal = memo(function SettingsModal({
                     <input
                       type="text"
                       value={settings.ollamaHost}
-                      onChange={(e) => onUpdateSettings({ ollamaHost: e.target.value })}
-                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:border-accent outline-none transition-all"
                     />
+                  </SettingField>
+
+                  <SettingField
+                    label="Ghost Mode (Ultra-light)"
+                    description="Deaktiver komplekse animationer og gennemsigtighed for maksimal ydeevne på ældre hardware."
+                  >
+                    <button
+                      onClick={() => onUpdateSettings({ performanceMode: !settings.performanceMode })}
+                      className={`w-12 h-6 rounded-full transition-all relative ${settings.performanceMode ? 'bg-accent' : 'bg-white/10'}`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${settings.performanceMode ? 'right-1' : 'left-1'}`} />
+                    </button>
                   </SettingField>
 
                   <div className="space-y-4">
@@ -124,8 +134,8 @@ export const SettingsModal = memo(function SettingsModal({
                           key={t.id}
                           onClick={() => onUpdateSettings({ theme: t.id })}
                           className={`flex flex-col gap-3 p-4 rounded-2xl border transition-all text-left group ${settings.theme === t.id
-                              ? 'bg-accent/10 border-accent shadow-[0_0_20px_rgba(226,0,116,0.1)]'
-                              : 'bg-white/5 border-white/5 hover:border-white/20'
+                            ? 'bg-accent/10 border-accent shadow-[0_0_20px_rgba(226,0,116,0.1)]'
+                            : 'bg-white/5 border-white/5 hover:border-white/20'
                             }`}
                         >
                           <div className={`w-8 h-8 rounded-lg ${t.color} shadow-lg transition-transform group-hover:scale-110`} />

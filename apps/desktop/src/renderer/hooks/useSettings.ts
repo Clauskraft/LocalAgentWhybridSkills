@@ -18,6 +18,7 @@ export interface UISettings {
   contextLength?: number;
   immersiveMode?: boolean;
   personaId?: string;
+  performanceMode?: boolean;
 }
 
 // Backwards-compatible name used by other modules/types.
@@ -38,6 +39,7 @@ const DEFAULT_SETTINGS: UISettings = {
   contextLength: 4096,
   immersiveMode: false,
   personaId: 'architect',
+  performanceMode: false,
 };
 
 export function useSettings() {
@@ -72,6 +74,13 @@ export function useSettings() {
     classes.forEach(c => document.documentElement.classList.remove(c));
     // Add new theme class
     document.documentElement.classList.add(`theme-${theme}`);
+
+    // Performance mode handling
+    if (settings.performanceMode) {
+      document.documentElement.classList.add('ghost-mode');
+    } else {
+      document.documentElement.classList.remove('ghost-mode');
+    }
   };
 
   const resetToDefaults = () => {

@@ -839,4 +839,25 @@
   .code-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #E20074;
   }
+
+  /* Ghost Mode / Performance Mode */
+  .ghost-mode .glass-card,
+  .ghost-mode .glass-panel,
+  .ghost-mode .glass-modal,
+  .ghost-mode .bg-white\/5 {
+    backdrop-filter: none !important;
+    background: rgba(20, 20, 25, 0.95) !important;
+  }
+
+  .ghost-mode .animate-holographic-float,
+  .ghost-mode .animate-neural-pulse,
+  .ghost-mode .animate-message-entry {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .ghost-mode .holographic-glow {
+    filter: none !important;
+    box-shadow: none !important;
+  }
 }
