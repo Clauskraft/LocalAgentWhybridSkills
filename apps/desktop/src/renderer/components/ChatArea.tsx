@@ -426,7 +426,12 @@ export const ChatArea = memo(function ChatArea({
                   {isLoading ? (
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
-                    <IconSend className="w-4 h-4" />
+                    <div className="relative flex items-center justify-center">
+                      {input.trim() && (
+                        <div className="absolute inset-0 bg-accent rounded-full animate-pulse-ring opacity-40" />
+                      )}
+                      <IconSend className="w-4 h-4 relative z-10" />
+                    </div>
                   )}
                 </button>
               </div>

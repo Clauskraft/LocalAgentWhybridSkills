@@ -36,7 +36,6 @@ export interface Chat {
 export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [settingsTab, setSettingsTab] = useState<string>('general');
-  const [immersiveMode, setImmersiveMode] = useState(false);
   const [cuttingEdgeMode, setCuttingEdgeMode] = useState(false);
   const [currentView, setCurrentView] = useState<AppView>('chat');
   const [showPulseCurate, setShowPulseCurate] = useState(false);
@@ -104,9 +103,9 @@ export function App() {
     });
   }, []);
 
-  const toggleImmersiveMode = useCallback(() => {
-    setImmersiveMode(prev => !prev);
-  }, []);
+  const handleImmersiveToggle = useCallback(() => {
+    updateSettings({ immersiveMode: !settings.immersiveMode });
+  }, [settings.immersiveMode, updateSettings]);
 
   // LOOP 10: Cutting Edge Features
   const handleFeatureActivate = useCallback((feature: string, data?: any) => {
@@ -182,14 +181,14 @@ export function App() {
       onSelectModel={(model) => updateSettings({ model })}
       cuttingEdgeMode={cuttingEdgeMode}
       setCuttingEdgeMode={setCuttingEdgeMode}
-      immersiveMode={immersiveMode}
-      setImmersiveMode={setImmersiveMode}
+      immersiveMode={settings.immersiveMode}
+      onToggleImmersive={handleImmersiveToggle}
     />
   );
 
   return (
     <div className={`flex h-screen bg-bg-primary text-text-primary overflow-hidden transition-all duration-700 border-t-2 holographic-bg animate-holographic-float ${cuttingEdgeMode ? 'border-purple-500 shadow-[0_-10px_30px_rgba(168,85,247,0.15)]' :
-      immersiveMode ? 'border-accent shadow-[0_-10px_30px_rgba(226,0,116,0.15)]' :
+      settings.immersiveMode ? 'border-accent shadow-[0_-10px_30px_rgba(226,0,116,0.15)]' :
         'border-white/5'
       }`}>
       {/* Sidebar */}
@@ -223,7 +222,7 @@ export function App() {
             🎯
           </button>
         </div>
-      ) : immersiveMode ? (
+      ) : settings.immersiveMode ? (
         <div className="flex-1 relative min-w-0 min-h-0">
           <ImmersiveWorkspace onPanelToggle={handlePanelToggle}>
             {chatAreaContent}
@@ -249,6 +248,7 @@ export function App() {
           settings={settings}
           onTabChange={setSettingsTab}
           onUpdateSettings={updateSettings}
+          resetToDefaults={resetToDefaults}
           onClose={closeSettings}
         />
       )}

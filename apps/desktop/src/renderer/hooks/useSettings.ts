@@ -16,6 +16,7 @@ export interface UISettings {
   safeDirs?: string[];
   temperature?: number;
   contextLength?: number;
+  immersiveMode?: boolean;
 }
 
 // Backwards-compatible name used by other modules/types.
@@ -34,6 +35,7 @@ const DEFAULT_SETTINGS: UISettings = {
   useCloud: true,
   temperature: 0.7,
   contextLength: 4096,
+  immersiveMode: false,
 };
 
 export function useSettings() {
@@ -63,6 +65,16 @@ export function useSettings() {
 
   const applyTheme = (theme: string) => {
     document.documentElement.setAttribute('data-theme', theme);
+  };
+
+  const resetToDefaults = () => {
+    setSettings(DEFAULT_SETTINGS);
+    const api = (window as any).sca01?.chat;
+    if (api?.updateSettings) {
+      api.updateSettings(DEFAULT_SETTINGS);
+    }
+    localStorage.setItem('sca01_settings', JSON.stringify(DEFAULT_SETTINGS));
+    applyTheme(DEFAULT_SETTINGS.theme); // Apply default theme immediately
   };
 
   const updateSettings = useCallback((partial: Partial<UISettings>) => {

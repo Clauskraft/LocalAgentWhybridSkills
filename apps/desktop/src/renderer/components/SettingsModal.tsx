@@ -10,12 +10,13 @@ interface SettingsModalProps {
   onTabChange: (tab: string) => void;
   onUpdateSettings: (settings: Partial<any>) => void;
   onClose: () => void;
+  resetToDefaults: () => void;
 }
 
 const TABS = [
   { id: 'general', icon: <IconSettings className="w-4 h-4" />, label: 'Generelt' },
   { id: 'models', icon: <IconBolt className="w-4 h-4" />, label: 'Modeller' },
-  { id: 'security', icon: <IconShield className="w-4 h-4" />, label: 'Sikkerhed' },
+  { id: 'system', icon: <IconShield className="w-4 h-4" />, label: 'System' },
   { id: 'mcp', icon: <IconPlug className="w-4 h-4" />, label: 'MCP Servere' },
   { id: 'pulse', icon: <IconPulse className="w-4 h-4" />, label: 'Pulse+' },
 ];
@@ -26,6 +27,7 @@ export const SettingsModal = memo(function SettingsModal({
   onTabChange,
   onUpdateSettings,
   onClose,
+  resetToDefaults,
 }: SettingsModalProps) {
   // Close on Escape
   useEffect(() => {
@@ -136,8 +138,54 @@ export const SettingsModal = memo(function SettingsModal({
               </div>
             )}
 
+            {activeTab === 'system' && (
+              <div className="space-y-8 animate-fade-in">
+                <section>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted mb-6 flex items-center gap-2">
+                    <IconShield className="w-3.5 h-3.5" /> System Control
+                  </h3>
+                  <div className="glass-card p-8 rounded-[2rem] border-error/10 bg-error/5">
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 rounded-2xl bg-error/10 flex items-center justify-center text-error">
+                        <IconTrash className="w-6 h-6" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-sm font-black uppercase tracking-wider text-text-primary mb-1">Restore Factory Defaults</h4>
+                        <p className="text-xs text-text-muted">Nulstil alle temaer, model-parametre og system-indstillinger til deres standardværdier. Dine chats slettes ikke.</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (confirm('Er du sikker på du vil nulstille alle indstillinger?')) {
+                            resetToDefaults();
+                            onClose();
+                          }
+                        }}
+                        className="px-6 py-3 bg-error text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-error/80 transition-all shadow-lg shadow-error/20"
+                      >
+                        Nulstil
+                      </button>
+                    </div>
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted mb-4">Environment Diagnostics</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 glass-card rounded-2xl border-white/5">
+                      <div className="text-[10px] text-text-muted uppercase font-bold text-[10px] mb-1">Architecture</div>
+                      <div className="text-xs font-mono text-accent">X64_HYBRID_NEURAL</div>
+                    </div>
+                    <div className="p-4 glass-card rounded-2xl border-white/5">
+                      <div className="text-[10px] text-text-muted uppercase font-bold mb-1">Registry State</div>
+                      <div className="text-xs font-mono text-success">STABLE</div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            )}
+
             {/* Placeholder for other tabs */}
-            {!['general', 'models', 'mcp'].includes(activeTab) && (
+            {!['general', 'models', 'mcp', 'system'].includes(activeTab) && (
               <div className="h-full flex flex-col items-center justify-center text-center p-12 animate-fade-in">
                 <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center text-accent mb-6">
                   <IconPulse className="w-8 h-8 opacity-20" />
