@@ -6,6 +6,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "dev": "npm run desktop",
     "desktop": "npm --prefix apps/desktop run dev:ui",
     "desktop:build": "npm --prefix apps/desktop run build",
     "desktop:test": "npm --prefix apps/desktop run test",
@@ -20,7 +21,8 @@
     "cli": "npm --prefix apps/cli run dev -- run",
     "cli:doctor": "npm --prefix apps/cli run dev -- doctor",
     "install:all": "npm --prefix apps/cli install && npm --prefix apps/desktop install && npm --prefix apps/web install && npm --prefix services/cloud install"
+  },
+  "dependencies": {
+    "pptxgenjs": "^4.0.1"
   }
 }
-
-
