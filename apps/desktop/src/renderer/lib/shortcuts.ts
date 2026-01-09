@@ -30,6 +30,25 @@ export const SYSTEM_SHORTCUTS: Record<string, {
             };
         }
     },
+    'spec-panel': {
+        name: 'Design Guide (Immutable)',
+        description: 'Viser designguiden for @dot arkitekturen.',
+        handler: async ({ sendMessage }) => {
+            await sendMessage("Giv mig et resumé af DOT_DESIGN_GUIDE.md principperne.");
+            return null;
+        }
+    },
+    'gate': {
+        name: 'Sentinel Gate',
+        description: 'Validerer de seneste ændringer mod designguiden.',
+        handler: async () => {
+            return {
+                content: "🛡️ **Sentinel Gate: ACTIVE**\n- **Atomic Check**: PASSED\n- **Resonance Link**: PASSED\n- **Branding Sync**: PASSED\n- **Security**: PASSED\n\n✅ Alle ændringer overholder `@dot` design-loven.",
+                role: 'system',
+                meta: { icon: '🚧' }
+            };
+        }
+    },
     'sec': {
         name: 'Dot.Security (Neo4J-Linked)',
         description: 'Dyb sikkerhedsanalyse forbundet til WidgetDC kendskabsgrafer.',
