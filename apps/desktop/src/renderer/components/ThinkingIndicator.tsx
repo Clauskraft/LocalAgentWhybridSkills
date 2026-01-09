@@ -9,25 +9,25 @@ export const ThinkingIndicator = memo(function ThinkingIndicator() {
                 </svg>
             </div>
 
-            <div className="flex flex-col gap-2 py-1">
+            <div className="flex flex-col gap-2 py-1 flex-1">
                 <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold uppercase tracking-widest text-accent animate-glow-pulse">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent animate-pulse">
                         SCA-01 is processing
                     </span>
                     <div className="flex gap-1">
-                        <span className="w-1 h-1 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-1 h-1 bg-accent rounded-full animate-bounce" style={{ animationDelay: '200ms' }} />
-                        <span className="w-1 h-1 bg-accent rounded-full animate-bounce" style={{ animationDelay: '400ms' }} />
+                        <div className="w-1 h-1 rounded-full bg-accent animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-1 h-1 rounded-full bg-accent animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-1 h-1 rounded-full bg-accent animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
                 </div>
 
-                <div className="flex gap-1.5 overflow-hidden">
-                    <div className="h-0.5 bg-accent/20 rounded-full w-24 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-accent animate-loading-slide" />
-                    </div>
-                    <span className="text-[10px] text-text-muted font-mono animate-pulse-slow">
-                        Analyzing context...
-                    </span>
+                <div className="relative h-1 w-48 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                    <div className="absolute inset-0 bg-gradient-to-r from-accent/20 via-accent to-accent/20 animate-loading-slide shadow-[0_0_10px_rgba(226,0,116,0.5)]" />
+                </div>
+
+                <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono">
+                    <span className="inline-block w-2 h-2 rounded-full bg-success animate-pulse" />
+                    Neural connections active • High confidence
                 </div>
             </div>
         </div>

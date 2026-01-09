@@ -60,14 +60,11 @@ export const Sidebar = memo(function Sidebar({
 
         <button
           onClick={onNewChat}
-          className={["btn btn-primary flex-1 justify-between", isCollapsed ? "px-2" : ""].join(" ")}
-          title="Ny samtale (Ctrl+N)"
+          className="w-full flex items-center justify-center gap-2 py-3 bg-accent text-white rounded-2xl hover:bg-accent-hover transition-all duration-300 font-bold text-sm shadow-[0_4px_15px_rgba(226,0,116,0.3)] mb-6 btn-holographic group active:scale-95"
         >
-          <span className="inline-flex items-center gap-2">
-            <IconPlus className="opacity-90" />
-            {!isCollapsed ? <span>Ny samtale</span> : null}
-          </span>
-          {!isCollapsed ? <kbd className="kbd bg-white/15 border-white/10 text-white/90">Ctrl+N</kbd> : null}
+          <IconPlus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
+          <span>Ny samtale</span>
+          <span className="ml-auto text-[10px] opacity-40 font-mono hidden group-hover:block transition-all">Ctrl+N</span>
         </button>
       </div>
 

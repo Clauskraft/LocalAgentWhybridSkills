@@ -381,7 +381,7 @@ export const ChatArea = memo(function ChatArea({
                   onClick={handleSubmit}
                   disabled={!input.trim() || isLoading}
                   className={`
-                    w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300
+                    w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 btn-holographic
                     ${!input.trim() || isLoading
                       ? 'bg-bg-tertiary text-text-muted cursor-not-allowed opacity-50'
                       : 'bg-accent text-white shadow-[0_0_15px_rgba(226,0,116,0.3)] hover:shadow-[0_0_25px_rgba(226,0,116,0.5)] transform hover:scale-105 active:scale-95'

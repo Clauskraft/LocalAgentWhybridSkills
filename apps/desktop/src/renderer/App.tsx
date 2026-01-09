@@ -143,7 +143,10 @@ export function App() {
   );
 
   return (
-    <div className="flex h-dvh bg-bg-primary holographic-bg animate-holographic-float overflow-hidden">
+    <div className={`flex h-screen bg-bg-primary text-text-primary overflow-hidden transition-all duration-700 border-t-2 holographic-bg animate-holographic-float ${cuttingEdgeMode ? 'border-purple-500 shadow-[0_-10px_30px_rgba(168,85,247,0.15)]' :
+        immersiveMode ? 'border-accent shadow-[0_-10px_30px_rgba(226,0,116,0.15)]' :
+          'border-white/5'
+      }`}>
       {/* Sidebar */}
       <Sidebar
         chats={chats}
