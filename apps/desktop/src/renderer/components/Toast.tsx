@@ -31,18 +31,27 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                     <div
                         key={toast.id}
                         className={`
-              px-5 py-3 rounded-xl shadow-2xl border backdrop-blur-xl animate-slide-left pointer-events-auto
-              flex items-center gap-3 min-w-[300px]
-              ${toast.type === 'success' ? 'bg-success/20 border-success/30 text-success' :
-                                toast.type === 'error' ? 'bg-error/20 border-error/30 text-error' :
-                                    toast.type === 'warning' ? 'bg-warning/20 border-warning/30 text-warning' :
-                                        'bg-accent/20 border-accent/30 text-accent'}
+              px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] border border-white/5 backdrop-blur-3xl animate-slide-left pointer-events-auto
+              flex items-center gap-4 min-w-[320px] max-w-[450px]
+              ${toast.type === 'success' ? 'bg-success/10 text-success' :
+                                toast.type === 'error' ? 'bg-error/10 text-error' :
+                                    toast.type === 'warning' ? 'bg-warning/10 text-warning' :
+                                        'bg-accent/10 text-accent'}
             `}
                     >
-                        <div className="text-lg">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${toast.type === 'success' ? 'bg-success/20' :
+                                toast.type === 'error' ? 'bg-error/20' :
+                                    toast.type === 'warning' ? 'bg-warning/20' :
+                                        'bg-accent/20'
+                            }`}>
                             {toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : toast.type === 'warning' ? '⚠️' : 'ℹ️'}
                         </div>
-                        <div className="text-sm font-medium">{toast.message}</div>
+                        <div className="flex-1 min-w-0">
+                            <div className="text-xs font-bold uppercase tracking-widest opacity-50 mb-0.5">
+                                {toast.type === 'info' ? 'System' : toast.type}
+                            </div>
+                            <div className="text-sm font-medium text-text-primary leading-tight">{toast.message}</div>
+                        </div>
                     </div>
                 ))}
             </div>

@@ -51,11 +51,19 @@ export const MessageBubble = memo(function MessageBubble({ message }: MessageBub
 
         {/* Tool Calls */}
         {message.toolCalls?.map((tc, i) => (
-          <div key={i} className="mt-3 p-3 bg-bg-tertiary border border-border-primary rounded-lg">
-            <div className="flex items-center gap-2 text-tdc-blue font-semibold text-sm mb-2">
-              <IconPlug className="w-4 h-4" /> {tc.name}
+          <div key={i} className="mt-4 p-4 bg-accent/5 backdrop-blur-md border border-accent/20 rounded-2xl animate-fade-in">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2.5 text-accent font-bold text-xs uppercase tracking-widest">
+                <div className="w-6 h-6 rounded-lg bg-accent/20 flex items-center justify-center shadow-[0_0_10px_rgba(226,0,116,0.3)]">
+                  <IconPlug className="w-3.5 h-3.5" />
+                </div>
+                <span>Executing: {tc.name}</span>
+              </div>
+              <div className="text-[10px] text-accent/50 font-mono">
+                MCP TRACE ID: {Math.random().toString(36).slice(2, 8).toUpperCase()}
+              </div>
             </div>
-            <pre className="text-xs text-text-secondary bg-bg-primary p-2 rounded overflow-x-auto">
+            <pre className="text-[11px] leading-relaxed text-text-muted bg-black/20 p-3 rounded-xl border border-white/5 font-mono overflow-x-auto max-h-[150px]">
               {JSON.stringify(tc.arguments, null, 2)}
             </pre>
           </div>
