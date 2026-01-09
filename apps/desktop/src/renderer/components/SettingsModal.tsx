@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useState } from 'react';
-import { IconSettings, IconShield, IconBolt, IconPlug, IconPulse, IconX } from './icons';
+import { IconSettings, IconShield, IconBolt, IconPlug, IconPulse, IconX, IconTrash } from './icons';
 import { UISettings } from '../hooks/useSettings';
 import { ModelsSettings } from './settings/ModelsSettings';
 import { MCPSettings } from './settings/MCPSettings';

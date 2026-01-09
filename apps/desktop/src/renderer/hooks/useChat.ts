@@ -288,7 +288,7 @@ export function useChat() {
           const data = await res.json();
           const content = data?.message?.content ?? data?.content ?? "";
           const assistantMsg = createMessage('assistant', content);
-          assistantMsg.meta = { model: params.model || payload.model };
+          assistantMsg.meta = { model: data?.model || payload.model };
           setMessages((prev) => [...prev, assistantMsg]);
           setChats((prev) =>
             prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c)
