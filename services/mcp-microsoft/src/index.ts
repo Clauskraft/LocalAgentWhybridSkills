@@ -2,7 +2,7 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { DeviceCodeCredential, useIdentityPlugin, DeviceCodeCredentialOptions } from "@azure/identity";
+import { DeviceCodeCredential, ClientSecretCredential, useIdentityPlugin, DeviceCodeCredentialOptions } from "@azure/identity";
 import { cachePersistencePlugin } from "@azure/identity-cache-persistence";
 import { Client } from "@microsoft/microsoft-graph-client";
 import { TokenCredentialAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials/index.js";
@@ -25,40 +25,48 @@ const server = new Server(
 );
 
 // Configuration for "Dot.Corp" (Azure App Registration)
-// Users should set these ENV vars or we default to a 'common' tenant with a known Client ID if available.
-// For now, we use placeholders that the user must fill or we provide a default specific to the branding.
 const MS_CONFIG = {
     tenantId: process.env.MS_TENANT_ID || "common",
-    clientId: process.env.MS_CLIENT_ID || "04b07795-8ddb-461a-bbee-02f9e1bf7b46", // Standard Microsoft Graph CLI client ID commonly used for dev
+    clientId: process.env.MS_CLIENT_ID || "04b07795-8ddb-461a-bbee-02f9e1bf7b46", // Default to 'common' or Graph CLI ID if no env provided
+    clientSecret: process.env.MS_CLIENT_SECRET, // Optional: Enables Silent Server Auth
+    powerPlatformUrl: process.env.MS_POWER_PLATFORM_URL, // Optional: e.g. https://org.crm.dynamics.com
 };
 
 // Global Graph Client
 let graphClient: Client | null = null;
-let credential: DeviceCodeCredential | null = null;
+let credential: DeviceCodeCredential | ClientSecretCredential | null = null;
 
 async function getGraphClient() {
     if (graphClient) return graphClient;
 
-    console.error("[Dot.Corp] Initializing Azure Auth (Device Code + Persistence)...");
+    // STRATEGY 1: Client Secret (Silent / Server Mode) - Preferred if configured
+    if (MS_CONFIG.clientSecret && MS_CONFIG.tenantId && MS_CONFIG.tenantId !== "common") {
+        console.error("[Dot.Corp] Initializing Azure Auth (Client Secret Flow)...");
+        credential = new ClientSecretCredential(MS_CONFIG.tenantId, MS_CONFIG.clientId, MS_CONFIG.clientSecret);
+    }
+    // STRATEGY 2: Device Code (Interactive / User Mode) - Fallback
+    else {
+        console.error("[Dot.Corp] Initializing Azure Auth (Device Code + Persistence)...");
 
-    const persistenceOptions: DeviceCodeCredentialOptions = {
-        tenantId: MS_CONFIG.tenantId,
-        clientId: MS_CONFIG.clientId,
-        tokenCachePersistenceOptions: {
-            enabled: true,
-            name: "dot-corp-token-cache",
-            unsafeAllowUnencryptedStorage: true // Fallback for environments without secure storage
-        },
-        userPromptCallback: (info) => {
-            console.error(`[AUTH REQUIRED] Please go to ${info.verificationUri} and enter code: ${info.userCode}`);
-        }
-    };
+        const persistenceOptions: DeviceCodeCredentialOptions = {
+            tenantId: MS_CONFIG.tenantId,
+            clientId: MS_CONFIG.clientId,
+            tokenCachePersistenceOptions: {
+                enabled: true,
+                name: "dot-corp-token-cache",
+                unsafeAllowUnencryptedStorage: true // Fallback for environments without secure storage
+            },
+            userPromptCallback: (info) => {
+                console.error(`[AUTH REQUIRED] Please go to ${info.verificationUri} and enter code: ${info.userCode}`);
+            }
+        };
 
-    // Using DeviceCodeCredential which prints a code to stderr for the user to login
-    credential = new DeviceCodeCredential(persistenceOptions);
+        // Using DeviceCodeCredential which prints a code to stderr for the user to login
+        credential = new DeviceCodeCredential(persistenceOptions);
+    }
 
     const authProvider = new TokenCredentialAuthenticationProvider(credential, {
-        scopes: ["User.Read", "Directory.Read.All", "Files.Read.All", "Sites.Read.All"]
+        scopes: ["User.Read", "Directory.Read.All", "Files.Read.All", "Sites.Read.All", "https://graph.microsoft.com/.default"]
     });
 
     graphClient = Client.initWithMiddleware({

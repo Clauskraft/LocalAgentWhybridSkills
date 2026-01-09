@@ -69,9 +69,14 @@ export interface IntegrationConfig {
     smtp?: { enabled: boolean; host: string; port: number; user: string; password: string };
   };
   widgetdc?: {
-    cyberstreams?: { enabled: boolean; serverPath: string };
-    cockpit?: { enabled: boolean; url: string };
     cloudflare?: { enabled: boolean; workerUrl: string };
+  };
+  microsoft?: { // Added for Dot.Corp / Power Platform Integration
+    enabled: boolean;
+    tenantId: string;
+    clientId: string;
+    clientSecret?: string; // Optional: If present, use ClientSecretCredential (Server mode)
+    environmentUrl?: string; // e.g. https://org123.crm.dynamics.com
   };
 }
 
@@ -331,6 +336,15 @@ export class IntegrationConfigManager {
         }
         if (this.config.widgetdc?.cloudflare?.enabled && this.config.widgetdc.cloudflare.workerUrl) {
           env.WIDGETDC_WORKER_URL = this.config.widgetdc.cloudflare.workerUrl;
+        }
+        break;
+
+      case "microsoft":
+        if (this.config.microsoft?.enabled) {
+          env.MS_TENANT_ID = this.config.microsoft.tenantId;
+          env.MS_CLIENT_ID = this.config.microsoft.clientId;
+          if (this.config.microsoft.clientSecret) env.MS_CLIENT_SECRET = this.config.microsoft.clientSecret;
+          if (this.config.microsoft.environmentUrl) env.MS_POWER_PLATFORM_URL = this.config.microsoft.environmentUrl;
         }
         break;
     }
