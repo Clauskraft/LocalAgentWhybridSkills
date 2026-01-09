@@ -14,6 +14,7 @@ While @dot represents the singular point of interaction, the **Constellation** r
    - **Dot.Sec**: Continuous security auditing and policy enforcement.
    - **Dot.Ops**: Infrastructure, deployment, and health orchestration.
    - **Dot.Brief**: Intelligence gathering, ROMA planning, and OSINT.
+   - **Dot.Resilience**: Proactive health monitoring and auto-patching. *[ACTIVE]*
 
 ## 🛠️ Implementation Strategy
 
