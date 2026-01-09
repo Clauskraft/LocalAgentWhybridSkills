@@ -49,6 +49,23 @@ export const SYSTEM_SHORTCUTS: Record<string, {
             };
         }
     },
+    'scout': {
+        name: 'MasterDot (The Scout)',
+        description: 'Scanner WidgetDC/Neo4J for nye kompetencer og viden-noder.',
+        handler: async () => {
+            return {
+                content: `🔭 **MasterDot: Knowledge Harvest Initiated**
+- **Neo4J Scan Phase**: Analyserer noder oprettet de sidste 24 timer...
+- **Discovery**: 
+  - 1 ny API-struktur fundet (WidgetDC Endpoint: /api/threat-model).
+  - Emergent mønster genkendt: "Cyber Resilience".
+- **Recommendation**: Bør vi etablere **Dot.Resilience** som ny Constellation-node?
+- **Status**: Venter på bruger-godkendelse til integration.`,
+                role: 'system',
+                meta: { icon: '🔭' }
+            };
+        }
+    },
     'sec': {
         name: 'Dot.Security (Neo4J-Linked)',
         description: 'Dyb sikkerhedsanalyse forbundet til WidgetDC kendskabsgrafer.',
