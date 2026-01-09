@@ -9,9 +9,9 @@ import { PulseCurate } from './components/PulseCurate';
 import { RomaPlanner } from "./components/RomaPlanner";
 import { useChat } from './hooks/useChat';
 import { useSettings } from './hooks/useSettings';
-import { useToast } from './components/Toast';
 import { ShortcutsModal } from './components/ShortcutsModal';
 import { DropZone } from './components/DropZone';
+import { CommandPalette } from './components/CommandPalette';
 
 type AppView = 'chat' | 'pulse' | 'roma';
 
@@ -43,6 +43,7 @@ export function App() {
   const [showPulseCurate, setShowPulseCurate] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const { showToast } = useToast();
 
@@ -57,7 +58,8 @@ export function App() {
     undoDeleteChat,
     sendMessage,
     lastDeletedChat,
-    archiveChat, // Added archiveChat
+    archiveChat,
+    createNewChat,
   } = useChat();
 
   // LOOP 9: Undo Delete Notification
@@ -77,6 +79,17 @@ export function App() {
       );
     }
   }, [lastDeletedChat, undoDeleteChat, showToast]);
+
+  useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setShowCommandPalette(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, []);
 
   const {
     settings,
@@ -218,6 +231,21 @@ export function App() {
         }`}>
 
       <DropZone isDragging={isDragging} />
+
+      <CommandPalette
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+        actions={{
+          newChat: createNewChat,
+          openSettings: (tab) => { setShowSettings(true); setActiveSettingsTab(tab); },
+          toggleImmersive: () => updateSettings({ immersiveMode: !settings.immersiveMode }),
+          toggleLab: () => setCuttingEdgeMode(prev => !prev),
+          archiveCurrent: () => {
+            const activeId = chats.find(c => !c.isArchived)?.id;
+            if (activeId) archiveChat(activeId);
+          }
+        }}
+      />
       {/* Sidebar */}
       <Sidebar
         chats={chats}
