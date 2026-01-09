@@ -30,7 +30,7 @@ export const CommandPalette = memo(function CommandPalette({ isOpen, onClose, ac
         { id: 'new', text: 'Ny Samtale', description: 'Start en frisk chat session', icon: <IconPlus className="w-4 h-4" />, shortcut: 'Ctrl+N', action: actions.newChat },
         { id: 'settings', text: 'Indstillinger', description: 'Åbn system konfiguration', icon: <IconSettings className="w-4 h-4" />, shortcut: 'Ctrl+,', action: () => actions.openSettings('general') },
         { id: 'immersive', text: 'Toggle Immersive Mode', description: 'Fuldskærms workspace arkitektur', icon: <IconBolt className="w-4 h-4 text-accent" />, action: actions.toggleImmersive },
-        { id: 'lab', text: 'Toggle Lab Mode', description: 'Eksperimentelle SCA-01 funktioner', icon: <IconSparkles className="w-4 h-4 text-purple-400" />, shortcut: 'Ctrl+/', action: actions.toggleLab },
+        { id: 'lab', text: 'Toggle Lab Mode', description: 'Eksperimentelle @dot funktioner', icon: <IconSparkles className="w-4 h-4 text-purple-400" />, shortcut: 'Ctrl+/', action: actions.toggleLab },
         { id: 'archive', text: 'Arkivér Samtale', description: 'Flyt aktiv chat til arkiv', icon: <IconArchive className="w-4 h-4" />, action: actions.archiveCurrent },
     ], [actions]);
 

@@ -4,18 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SCA-01 "The Finisher" is a local-first AI agent runtime that uses Ollama for LLM inference and MCP (Model Context Protocol) for tool execution. The project provides multiple deployment targets: CLI, Desktop (Electron), Web UI, Cloud API, and Mobile (Expo).
+@dot is a local-first AI agent runtime that uses Ollama for LLM inference and MCP (Model Context Protocol) for tool execution. The project provides multiple deployment targets: CLI, Desktop (Electron), Web UI, Cloud API, and Mobile (Expo).
 
 ## Architecture
 
 ```
 apps/
-├── cli/          # Phase 1: CLI runtime with Ollama + MCP
-├── desktop/      # Phase 2: Electron UI with full system access
+├── cli/          # CLI runtime with Ollama + MCP
+├── desktop/      # Electron UI with full system access
 └── web/          # Web UI (Open WebUI-style) for cloud sessions
 
 services/
-├── cloud/        # Phase 3: Fastify API on Railway + PostgreSQL
+├── cloud/        # Fastify API on Railway + PostgreSQL
 ├── roma-bridge/  # Python: ROMA agent planning/acting bridge
 └── search/       # Python: OpenSearch integration
 
@@ -32,6 +32,7 @@ integrations/     # External system integrations
 ### Core Agent Loop (READ → PLAN → ACT → TEST → REPORT)
 
 The `DesktopAgent` (`apps/desktop/src/agent/DesktopAgent.ts`) orchestrates:
+
 1. Connects to MCP tool servers (stdio or HTTP)
 2. Sends messages to Ollama with tool definitions
 3. Executes tool calls through the policy engine
@@ -40,6 +41,7 @@ The `DesktopAgent` (`apps/desktop/src/agent/DesktopAgent.ts`) orchestrates:
 ### MCP Tool Categories
 
 Tools are defined in `apps/desktop/src/tools/`:
+
 - **fileTools.ts**: read_file, write_file, list_directory, search_files
 - **shellTools.ts**: run_shell, run_powershell
 - **systemTools.ts**: system_info, list_processes, kill_process
@@ -50,6 +52,7 @@ Tools are defined in `apps/desktop/src/tools/`:
 ### Security Model
 
 Policy engine (`apps/desktop/src/security/policy.ts`) evaluates risk:
+
 - **Blocklist**: Always blocked paths/commands
 - **Safe dirs**: Auto-allowed project directories
 - **Full access flag**: Required for system-wide operations
@@ -58,6 +61,7 @@ Policy engine (`apps/desktop/src/security/policy.ts`) evaluates risk:
 ## Build Commands
 
 ### Root Level (recommended)
+
 ```bash
 npm install            # Install dependencies for all packages
 npm run install:all    # Explicit install for all packages
@@ -86,6 +90,7 @@ npm run cli:doctor     # Health check for Ollama/dependencies
 ### Package-Level Commands
 
 **Desktop** (`apps/desktop/`):
+
 ```bash
 npm run dev:ui         # Full dev environment (renderer + main + electron)
 npm run build:ui       # Electron-builder package
@@ -97,6 +102,7 @@ npm run lint           # ESLint
 ```
 
 **Cloud** (`services/cloud/`):
+
 ```bash
 npm run dev:server     # Start with tsx watch
 npm run db:migrate:dev # Run migrations (dev)
@@ -105,6 +111,7 @@ npm start              # Production server
 ```
 
 **Mobile** (`sca-01-mobile/`):
+
 ```bash
 npm start              # Expo start
 npm run android        # Android emulator
@@ -112,6 +119,7 @@ npm run ios            # iOS simulator
 ```
 
 **MCP Backend** (`mcp-backend/`):
+
 ```bash
 npm run dev            # tsx watch mode
 npm run test           # vitest
@@ -119,6 +127,7 @@ npm run test:smoke     # Smoke tests only
 ```
 
 ### Makefile Targets
+
 ```bash
 make lint              # ESLint all packages
 make test              # Test all packages
@@ -130,6 +139,7 @@ make clean             # Remove build artifacts
 ## Testing
 
 **Unit tests**: vitest (`apps/desktop/`, `services/cloud/`, `mcp-backend/`)
+
 ```bash
 npm run test                    # Run all tests
 npx vitest run src/path/file.test.ts  # Run single test file
@@ -137,6 +147,7 @@ npx vitest -t "test name"       # Run by test name pattern
 ```
 
 **E2E tests**: Playwright (`apps/desktop/`, `apps/web/`)
+
 ```bash
 npm run test:e2e               # Full E2E suite
 npm run test:e2e:headed        # With browser visible
@@ -145,6 +156,7 @@ npm run test:smoke:ci          # CI version (chromium only)
 ```
 
 **CLI tests**: Node.js test runner (`apps/cli/`)
+
 ```bash
 npm run test                   # tsx --test
 npm run test:watch             # Watch mode
@@ -157,12 +169,13 @@ npm run test:watch             # Watch mode
 - **MCP tool server**: `apps/desktop/src/mcp/toolServerFull.ts`
 - **Policy engine**: `apps/desktop/src/security/policy.ts`
 - **Cloud server**: `services/cloud/src/server/httpServer.ts`
-- **System prompt**: `prompts/sca-01.system.md`
+- **System prompt**: `prompts/dot.system.md`
 - **Blackboard state**: `docs/HANDOVER_LOG.md`
 
 ## Environment Variables
 
 Copy `.env.example` to `.env`:
+
 ```bash
 # Required for LLM
 OLLAMA_HOST=http://localhost:11434
@@ -207,6 +220,7 @@ gh pr merge --merge --delete-branch
 **IPC Communication** (Desktop): Main ↔ Renderer via `ipcMain`/`ipcRenderer` with preload bridge
 
 **Tool Registration** (MCP):
+
 ```typescript
 server.tool("tool_name", "Description", { param: z.string() }, async ({ param }) => {
   return { content: [{ type: "text", text: result }] };
@@ -216,3 +230,7 @@ server.tool("tool_name", "Description", { param: z.string() }, async ({ param })
 **Logging**: Use HyperLog for structured JSONL output to `logs/` directory
 
 **Health Endpoints**: All services expose `/health` and `/ready` endpoints
+
+## License
+
+Private - @dot Project

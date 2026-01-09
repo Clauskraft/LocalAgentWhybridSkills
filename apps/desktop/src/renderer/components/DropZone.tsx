@@ -17,7 +17,7 @@ export const DropZone = memo(function DropZone({ isDragging }: DropZoneProps) {
                 </div>
                 <div className="text-center">
                     <h2 className="text-3xl font-black uppercase tracking-widest text-text-primary mb-2">Drop Intelligence</h2>
-                    <p className="text-sm text-text-muted font-bold uppercase tracking-widest">SCA-01 er klar til at analysere din fil</p>
+                    <p className="text-sm text-text-muted font-bold uppercase tracking-widest">@dot er klar til at analysere din fil</p>
                 </div>
             </div>
         </div>

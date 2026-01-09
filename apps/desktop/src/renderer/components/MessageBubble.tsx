@@ -21,7 +21,7 @@ export const MessageBubble = memo(function MessageBubble({ message }: MessageBub
         : 'bg-tdc-purple';
 
   const avatarIcon = isUser ? <IconShield className="w-4 h-4" /> : isSystem ? <IconSettings className="w-4 h-4" /> : isTool ? <IconPlug className="w-4 h-4" /> : <IconBolt className="w-4 h-4" />;
-  const roleName = isUser ? 'Dig' : isSystem ? 'System' : isTool ? 'Tool' : 'SCA-01';
+  const roleName = isUser ? 'Dig' : isSystem ? 'System' : isTool ? 'Tool' : '@dot';
 
   const handleSpeak = () => {
     if ('speechSynthesis' in window) {

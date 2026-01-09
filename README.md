@@ -1,4 +1,4 @@
-# SCA-01 "The Finisher"
+# @dot
 
 A completion engine that takes partial implementations and drives them to "Definition of Done" with security-by-design principles.
 
@@ -18,7 +18,7 @@ To make this easier, you can now start the products from the repo root with simp
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        SCA-01 ECOSYSTEM                         │
+│                          @dot ECOSYSTEM                         │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐         │
@@ -154,12 +154,14 @@ npm start              # Start Expo
 ## 🛠️ MCP Tools
 
 ### Phase 1 (Safe)
+
 - `read_handover_log` - Read blackboard
 - `read_file` - Read files (with path restrictions)
 - `write_file` - Write files (requires SCA_ALLOW_WRITE=true)
 - `run_make_target` - Run make commands (requires SCA_ALLOW_EXEC=true)
 
 ### Phase 2 (Full Access)
+
 - `shell_exec` - Execute any shell command
 - `file_*` - Full filesystem access
 - `system_*` - CPU, memory, processes
@@ -177,6 +179,7 @@ npm start              # Start Expo
 ## 📱 Mobile App
 
 Native Android/iOS app with:
+
 - Secure login
 - Session management
 - Chat interface
@@ -223,7 +226,7 @@ NOTION_DATABASE_ID=xxx
 
 ## 📄 License
 
-Private - SCA-01 Project
+Private - @dot Project
 
 ---
 
