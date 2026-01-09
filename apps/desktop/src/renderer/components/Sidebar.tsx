@@ -1,6 +1,6 @@
-import { memo } from 'react';
+import { memo, useState, useMemo } from 'react';
 import type { Chat } from '../App';
-import { IconChat, IconPlus, IconPlug, IconPulse, IconSettings, IconTrash } from './icons';
+import { IconChat, IconPlus, IconPlug, IconPulse, IconSettings, IconTrash, IconSearch } from './icons';
 
 interface SidebarProps {
   chats: Chat[];
@@ -27,7 +27,14 @@ export const Sidebar = memo(function Sidebar({
   isCollapsed = false,
   onToggleCollapsed,
 }: SidebarProps) {
-  const groupedChats = chats.reduce((acc, chat) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredChats = useMemo(() => {
+    if (!searchQuery.trim()) return chats;
+    return chats.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [chats, searchQuery]);
+
+  const groupedChats = filteredChats.reduce((acc, chat) => {
     const created = new Date(chat.createdAt);
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - created.getTime()) / (1000 * 3600 * 24));
@@ -47,6 +54,14 @@ export const Sidebar = memo(function Sidebar({
   const orderedSections = Object.keys(groupedChats).sort((a, b) =>
     sectionOrder.indexOf(a) - sectionOrder.indexOf(b)
   );
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+    e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+  };
 
   return (
     <aside
@@ -69,98 +84,117 @@ export const Sidebar = memo(function Sidebar({
           </button>
         )}
 
-        <button
-          onClick={onNewChat}
-          className="w-full flex items-center justify-center gap-2 py-3 bg-accent text-white rounded-2xl hover:bg-accent-hover transition-all duration-300 font-bold text-sm shadow-[0_4px_15px_rgba(226,0,116,0.3)] mb-6 btn-holographic group active:scale-95"
-        >
-          <IconPlus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
-          <span>Ny samtale</span>
-          <span className="ml-auto text-[10px] opacity-40 font-mono hidden group-hover:block transition-all">Ctrl+N</span>
-        </button>
-      </div>
+        <div className="p-4 space-y-4">
+          <button
+            onClick={onNewChat}
+            className="w-full flex items-center justify-center gap-2 py-3 bg-accent text-white rounded-2xl hover:bg-accent-hover transition-all duration-300 font-bold text-sm shadow-[0_4px_15px_rgba(226,0,116,0.3)] btn-holographic group active:scale-95"
+          >
+            <IconPlus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
+            {!isCollapsed && (
+              <>
+                <span>Ny samtale</span>
+                <span className="ml-auto text-[10px] opacity-40 font-mono hidden group-hover:block transition-all">Ctrl+N</span>
+              </>
+            )}
+          </button>
 
-      {/* Chat List */}
-      <div className="flex-1 overflow-y-auto p-2 min-h-0 custom-scrollbar">
-        {orderedSections.map((section) => {
-          const sectionChats = groupedChats[section];
-          return (
-            <div key={section}>
-              {!isCollapsed ? (
-                <div className="text-[10px] text-text-muted uppercase tracking-[0.2em] font-bold px-3 py-4 mt-2 border-b border-white/5 mb-2">
-                  {section}
-                </div>
-              ) : null}
-              {sectionChats.map((chat) => (
-                <div
-                  key={chat.id}
-                  onClick={() => onSelectChat(chat.id)}
-                  className={`
-                  group flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer mb-1
-                  transition-all duration-200 relative overflow-hidden
-                  ${chat.id === currentChatId
-                      ? 'bg-accent/10 border border-accent/20 text-accent ring-1 ring-accent/10'
-                      : 'hover:bg-white/5 border border-transparent text-text-secondary hover:text-text-primary'}
-                `}
-                  title={chat.title}
-                >
-                  {chat.id === currentChatId && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-accent rounded-r-full shadow-[2px_0_10px_rgba(226,0,116,0.6)]" />
-                  )}
-                  <span className={`${chat.id === currentChatId ? 'text-accent' : 'text-text-muted group-hover:text-text-secondary'}`}>
-                    <IconChat className="w-4 h-4" />
-                  </span>
-                  {!isCollapsed ? (
-                    <span className={`flex-1 text-sm truncate font-medium ${chat.id === currentChatId ? 'text-accent' : ''}`}>
-                      {chat.title}
-                    </span>
-                  ) : null}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteChat(chat.id);
-                    }}
-                    className={[
-                      "p-1.5 rounded-lg text-text-muted hover:text-error hover:bg-error/10 transition-all",
-                      isCollapsed ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-                    ].join(" ")}
-                    title="Slet"
-                  >
-                    <IconTrash className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
+          {!isCollapsed && (
+            <div className="relative group">
+              <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted group-focus-within:text-accent transition-colors" />
+              <input
+                type="text"
+                placeholder="Søg i samtaler..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-accent/40 focus:bg-white/10 transition-all placeholder:text-text-muted/50"
+              />
             </div>
-          ))}
+          )}
+        </div>
 
-        {chats.length === 0 && (
-          !isCollapsed ? (
-            <p className="text-text-muted text-center py-8 text-sm">Ingen samtaler endnu</p>
-          ) : null
-        )}
-      </div>
+        {/* Chat List */}
+        <div className="flex-1 overflow-y-auto p-2 min-h-0 custom-scrollbar">
+          {orderedSections.map((section) => {
+            const sectionChats = groupedChats[section];
+            return (
+              <div key={section}>
+                {!isCollapsed ? (
+                  <div className="text-[10px] text-text-muted uppercase tracking-[0.2em] font-bold px-3 py-4 mt-2 border-b border-white/5 mb-2">
+                    {section}
+                  </div>
+                ) : null}
+                {sectionChats.map((chat) => (
+                  <div
+                    key={chat.id}
+                    onClick={() => onSelectChat(chat.id)}
+                    onMouseMove={handleMouseMove}
+                    className={`
+                  group flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer mb-1
+                  transition-all duration-200 relative overflow-hidden item-magnetic-glow
+                  ${chat.id === currentChatId
+                        ? 'bg-accent/10 border border-accent/20 text-accent ring-1 ring-accent/10'
+                        : 'hover:bg-white/5 border border-transparent text-text-secondary hover:text-text-primary'}
+                `}
+                    title={chat.title}
+                  >
+                    {chat.id === currentChatId && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-accent rounded-r-full shadow-[2px_0_10px_rgba(226,0,116,0.6)]" />
+                    )}
+                    <span className={`${chat.id === currentChatId ? 'text-accent' : 'text-text-muted group-hover:text-text-secondary'}`}>
+                      <IconChat className="w-4 h-4" />
+                    </span>
+                    {!isCollapsed ? (
+                      <span className={`flex-1 text-sm truncate font-medium ${chat.id === currentChatId ? 'text-accent' : ''}`}>
+                        {chat.title}
+                      </span>
+                    ) : null}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteChat(chat.id);
+                      }}
+                      className={[
+                        "p-1.5 rounded-lg text-text-muted hover:text-error hover:bg-error/10 transition-all",
+                        isCollapsed ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                      ].join(" ")}
+                      title="Slet"
+                    >
+                      <IconTrash className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ))}
 
-      {/* Footer */}
-      <div className="p-3 border-t border-border-primary space-y-1">
-        {onOpenRoma && (
-          <NavItem
-            icon={<span className="text-base leading-none">🧭</span>}
-            label={isCollapsed ? "" : "ROMA Planner"}
-            onClick={onOpenRoma}
-            compact={isCollapsed}
-          />
-        )}
-        {onOpenPulse && (
-          <NavItem
-            icon={<IconPulse className="w-4 h-4" />}
-            label={isCollapsed ? "" : "Pulse+ Briefing"}
-            onClick={onOpenPulse}
-            highlight
-            compact={isCollapsed}
-          />
-        )}
-        <NavItem icon={<IconPlug className="w-4 h-4" />} label={isCollapsed ? "" : "MCP Servere"} onClick={() => onOpenSettings('mcp')} compact={isCollapsed} />
-        <NavItem icon={<IconSettings className="w-4 h-4" />} label={isCollapsed ? "" : "Indstillinger"} onClick={() => onOpenSettings('general')} compact={isCollapsed} kbd="Ctrl+," />
-      </div>
+          {chats.length === 0 && (
+            !isCollapsed ? (
+              <p className="text-text-muted text-center py-8 text-sm">Ingen samtaler endnu</p>
+            ) : null
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-3 border-t border-border-primary space-y-1">
+          {onOpenRoma && (
+            <NavItem
+              icon={<span className="text-base leading-none">🧭</span>}
+              label={isCollapsed ? "" : "ROMA Planner"}
+              onClick={onOpenRoma}
+              compact={isCollapsed}
+            />
+          )}
+          {onOpenPulse && (
+            <NavItem
+              icon={<IconPulse className="w-4 h-4" />}
+              label={isCollapsed ? "" : "Pulse+ Briefing"}
+              onClick={onOpenPulse}
+              highlight
+              compact={isCollapsed}
+            />
+          )}
+          <NavItem icon={<IconPlug className="w-4 h-4" />} label={isCollapsed ? "" : "MCP Servere"} onClick={() => onOpenSettings('mcp')} compact={isCollapsed} />
+          <NavItem icon={<IconSettings className="w-4 h-4" />} label={isCollapsed ? "" : "Indstillinger"} onClick={() => onOpenSettings('general')} compact={isCollapsed} kbd="Ctrl+," />
+        </div>
     </aside>
   );
 });
