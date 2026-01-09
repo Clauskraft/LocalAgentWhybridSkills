@@ -142,18 +142,6 @@ export function IconCurate(props: IconProps) {
   );
 }
 
-export function IconSparkles(props: IconProps) {
-  return (
-    <svg {...baseProps(props)}>
-      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-      <path d="M5 3v4" />
-      <path d="M19 17v4" />
-      <path d="M3 5h4" />
-      <path d="M17 19h4" />
-    </svg>
-  );
-}
-
 export function IconSearch(props: IconProps) {
   return (
     <svg {...baseProps(props)}>
@@ -201,5 +189,15 @@ export function IconVolume(props: IconProps) {
     </svg>
   );
 }
+
+export function IconSparkles(props: IconProps) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M12 3l-1.9 5.8A2 2 0 018.8 10L3 12l5.8 1.9a2 2 0 011.3 1.3L12 21l1.9-5.8a2 2 0 011.3-1.3L21 12l-5.8-1.9a2 2 0 01-1.3-1.3L12 3z" />
+    </svg>
+  );
+}
+
+
 
 

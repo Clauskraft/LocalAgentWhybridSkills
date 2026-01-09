@@ -1,0 +1,35 @@
+{
+    "github": {
+        "enabled": false
+    },
+    "notion": {
+        "enabled": false
+    },
+    "huggingface": {
+        "enabled": false
+    },
+    "braveSearch": {
+        "enabled": false
+    },
+    "databases": {
+        "postgres": {
+            "enabled": false
+        },
+        "sqlite": {
+            "enabled": true,
+            "dbPath": "./data/local.db"
+        }
+    },
+    "widgetdc": {
+        "cyberstreams": {
+            "enabled": false
+        },
+        "cockpit": {
+            "enabled": false
+        },
+        "cloudflare": {
+            "enabled": true,
+            "workerUrl": "https://cyberstreams.clak.workers.dev"
+        }
+    }
+}

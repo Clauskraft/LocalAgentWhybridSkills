@@ -6,7 +6,7 @@ import { SmartSuggestions } from './SmartSuggestions';
 import { MultiModalInput } from './MultiModalInput';
 import { NeuralVisualizer } from './NeuralVisualizer';
 import { PredictiveInterface } from './PredictiveInterface';
-import { IconSend, IconChevronDown, IconSettings, IconShield, IconBolt, IconPlus, IconPlug, IconCircle } from './icons';
+import { IconSend, IconChevronDown, IconSettings, IconShield, IconBolt, IconPlus, IconPlug, IconCircle, IconSparkles } from './icons';
 import { PERSONAS, Persona } from '../lib/personas';
 import { StatusMenu } from './StatusMenu';
 import { ThinkingIndicator } from './ThinkingIndicator';
