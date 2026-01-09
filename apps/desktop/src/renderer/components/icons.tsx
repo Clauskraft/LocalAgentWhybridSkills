@@ -193,7 +193,11 @@ export function IconVolume(props: IconProps) {
 export function IconSparkles(props: IconProps) {
   return (
     <svg {...baseProps(props)}>
-      <path d="M12 3l-1.9 5.8A2 2 0 018.8 10L3 12l5.8 1.9a2 2 0 011.3 1.3L12 21l1.9-5.8a2 2 0 011.3-1.3L21 12l-5.8-1.9a2 2 0 01-1.3-1.3L12 3z" />
+      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+      <path d="M5 3L6.5 4.5" />
+      <path d="M19 3L17.5 4.5" />
+      <path d="M5 19L6.5 17.5" />
+      <path d="M19 19L17.5 17.5" />
     </svg>
   );
 }

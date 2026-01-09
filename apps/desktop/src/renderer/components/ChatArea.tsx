@@ -155,10 +155,12 @@ export const ChatArea = memo(function ChatArea({
     }
   }, []);
 
-  const handleQuickStart = useCallback((prompt: string) => {
+  const handleQuickStart = useCallback(async (prompt: string) => {
     setInput(prompt);
+    // instant send
+    await onSendMessage(prompt);
     inputRef.current?.focus();
-  }, []);
+  }, [onSendMessage]);
 
   // LOOP 4: Multi-Modal Input Handlers
   const handleVoiceInput = useCallback(async (audioBlob: Blob) => {
@@ -433,7 +435,7 @@ export const ChatArea = memo(function ChatArea({
                 value={input}
                 onChange={autoResize}
                 onKeyDown={handleKeyDown}
-                placeholder="Spørg SCA-01 om hvad som helst..."
+                placeholder="Spørg @dot om hvad som helst..."
                 rows={1}
                 className="flex-1 bg-transparent resize-none text-text-primary placeholder-text-muted focus:outline-none min-h-[32px] max-h-[200px] py-2 text-sm leading-relaxed"
               />

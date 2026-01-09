@@ -24,6 +24,22 @@
       "endpoint": "http://localhost:11434",
       "enabled": true,
       "createdAt": "2026-01-01T19:20:09.442Z"
+    },
+    {
+      "id": "widgetdc-mcp",
+      "name": "WidgetDC MCP",
+      "type": "custom",
+      "endpoint": "http://127.0.0.1:3001",
+      "enabled": true,
+      "createdAt": "2026-01-09T20:15:00.000Z"
+    },
+    {
+      "id": "cockpit-mcp",
+      "name": "Cockpit MCP",
+      "type": "custom",
+      "endpoint": "http://127.0.0.1:3002",
+      "enabled": true,
+      "createdAt": "2026-01-09T20:15:00.000Z"
     }
   ],
   "settings": {

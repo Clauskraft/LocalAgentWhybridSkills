@@ -36,9 +36,11 @@ export const WelcomeScreen = memo(function WelcomeScreen({ onQuickStart }: Welco
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-8 animate-fade-in">
       {/* Logo */}
-      <div className="w-16 h-16 rounded-[2rem] bg-gradient-to-br from-accent/20 via-bg-secondary to-bg-tertiary border border-white/10 flex items-center justify-center mb-6 text-accent shadow-[0_0_30px_rgba(226,0,116,0.15)] animate-morphing-blob">
+      <div className="w-16 h-16 rounded-[2rem] bg-gradient-to-br from-accent/20 via-bg-secondary to-bg-tertiary border border-white/10 flex items-center justify-center mb-4 text-accent shadow-[0_0_30px_rgba(226,0,116,0.15)] animate-morphing-blob">
         <IconBolt className="w-8 h-8 animate-glow-pulse" />
       </div>
+      <div className="text-[10px] font-black uppercase tracking-[0.4em] text-accent/60 mb-6">@dot protocol</div>
+
 
       {/* Title */}
       <h1 className="text-3xl font-semibold mb-2">@dot</h1>

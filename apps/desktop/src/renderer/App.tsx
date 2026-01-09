@@ -143,6 +143,34 @@ export function App() {
     }
   };
 
+  // LOOP 11: Model Pull Progress
+  useEffect(() => {
+    const chatApi = (window as any).sca01?.chat || (window as any).chat;
+    if (chatApi?.onPullProgress) {
+      chatApi.onPullProgress((data: any) => {
+        const { model, status, percent } = data;
+        const id = `pull-${model}`;
+        showToast(
+          <div className="flex flex-col gap-1 min-w-[200px]">
+            <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+              <span>Henter {model}</span>
+              <span>{percent}%</span>
+            </div>
+            <div className="text-[11px] opacity-70 mb-1">{status}</div>
+            <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-accent transition-all duration-300"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+          </div>,
+          'info',
+          percent === 100 ? 3000 : 0 // Don't auto-dismiss during download
+        );
+      });
+    }
+  }, [showToast]);
+
   // LOOP 10: Cutting Edge Features
   const handleFeatureActivate = useCallback((feature: string, data?: any) => {
     console.log('Cutting edge feature activated:', feature, data);

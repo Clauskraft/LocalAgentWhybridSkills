@@ -56,7 +56,7 @@ function createSplashWindow(): void {
       contextIsolation: true,
     }
   });
-  
+
   // Load inline splash HTML
   splashWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(getSplashHtml())}`);
 }
@@ -153,8 +153,8 @@ function getSplashHtml(): string {
   </style>
 </head>
 <body>
-  <div class="logo">SCA-01</div>
-  <div class="subtitle">The Finisher • Executive Edition</div>
+  <div class="logo">@dot</div>
+  <div class="subtitle">Personal Agent • Protocol Phase 4</div>
   <div id="status" class="status">
     <div class="spinner" style="display: inline-block; margin-right: 8px;"></div>
     Running startup checks...
@@ -169,7 +169,7 @@ function updateSplashStatus(status: string): void {
   if (splashWindow && !splashWindow.isDestroyed()) {
     splashWindow.webContents.executeJavaScript(`
       document.getElementById('status').innerHTML = '${status.replace(/'/g, "\\'")}';
-    `).catch(() => {/* ignore */});
+    `).catch(() => {/* ignore */ });
   }
 }
 
@@ -184,10 +184,10 @@ function updateSplashChecks(checks: CheckResult[]): void {
         <div class="check-status">${c.message}</div>
       </div>`;
     }).join("");
-    
+
     splashWindow.webContents.executeJavaScript(`
       document.getElementById('checks').innerHTML = \`${html.replace(/`/g, "\\`")}\`;
-    `).catch(() => {/* ignore */});
+    `).catch(() => {/* ignore */ });
   }
 }
 
@@ -199,7 +199,7 @@ function showSplashError(errors: string[]): void {
       box.innerHTML = \`${html.replace(/`/g, "\\`")}\`;
       box.style.display = 'block';
       document.getElementById('status').innerHTML = '<span style="color:#ff4466">❌ Startup failed</span>';
-    `).catch(() => {/* ignore */});
+    `).catch(() => {/* ignore */ });
   }
 }
 
@@ -212,11 +212,11 @@ function closeSplash(): void {
 
 async function runStartupChecks(): Promise<boolean> {
   const settings = configStore.getSettings();
-  
+
   // Parse Ollama host
   let port = 11434;
   let host = "localhost";
-  
+
   try {
     const url = new URL(settings.ollamaHost);
     host = url.hostname;
@@ -224,9 +224,9 @@ async function runStartupChecks(): Promise<boolean> {
   } catch {
     // Use defaults
   }
-  
+
   updateSplashStatus('<div class="spinner" style="display: inline-block; margin-right: 8px;"></div> Running startup checks...');
-  
+
   bootstrapResult = await bootstrap({
     host,
     port,
@@ -234,20 +234,20 @@ async function runStartupChecks(): Promise<boolean> {
     autoStart: true,
     startTimeout: 30000,
   });
-  
+
   updateSplashChecks(bootstrapResult.checks);
-  
+
   if (!bootstrapResult.success) {
     showSplashError(bootstrapResult.errors);
-    
+
     // Wait a bit before closing
     await new Promise(r => setTimeout(r, 5000));
     return false;
   }
-  
+
   updateSplashStatus('<span style="color:#00ff88">✓ All checks passed!</span>');
   await new Promise(r => setTimeout(r, 1000));
-  
+
   return true;
 }
 
@@ -272,7 +272,7 @@ function createWindow(): void {
   // Load chat.html from src folder
   const htmlPath = path.join(import.meta.dirname, "..", "..", "src", "ui", "chat.html");
   mainWindow.loadFile(htmlPath);
-  
+
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
@@ -295,7 +295,7 @@ async function getOllamaModels(): Promise<Array<{ name: string; size?: string }>
   try {
     const response = await fetch(`${settings.ollamaHost}/api/tags`);
     if (!response.ok) return [];
-    
+
     const data = await response.json() as { models?: Array<{ name: string; size?: number }> };
     return (data.models ?? []).map(m => ({
       name: m.name,
@@ -311,24 +311,24 @@ async function sendToOllama(
   systemPrompt?: string
 ): Promise<{ content: string; toolCalls?: Array<{ name: string; arguments: Record<string, unknown> }> }> {
   const settings = configStore.getSettings();
-  
+
   // Build Ollama messages
   const ollamaMessages = [];
-  
+
   if (systemPrompt) {
     ollamaMessages.push({ role: "system", content: systemPrompt });
   }
-  
+
   for (const msg of messages) {
     ollamaMessages.push({
       role: msg.role,
       content: msg.content
     });
   }
-  
+
   // Get available tools
   const tools = getAvailableTools();
-  
+
   const response = await fetch(`${settings.ollamaHost}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -339,12 +339,12 @@ async function sendToOllama(
       stream: false
     })
   });
-  
+
   if (!response.ok) {
     const errorText = await response.text().catch(() => "");
     throw new Error(`Ollama error: ${response.status} ${response.statusText} - ${errorText}`);
   }
-  
+
   const data = await response.json() as {
     message?: {
       content?: string;
@@ -354,15 +354,15 @@ async function sendToOllama(
     };
     error?: string;
   };
-  
+
   if (data.error) {
     throw new Error(`Ollama: ${data.error}`);
   }
-  
+
   if (!data.message) {
     throw new Error("Ollama returned empty response");
   }
-  
+
   return {
     content: data.message.content ?? "",
     toolCalls: data.message.tool_calls?.map(tc => ({
@@ -461,7 +461,7 @@ function setupIpcHandlers(): void {
     const settings = configStore.getSettings();
     let port = 11434;
     let host = "localhost";
-    
+
     try {
       const url = new URL(settings.ollamaHost);
       host = url.hostname;
@@ -469,7 +469,7 @@ function setupIpcHandlers(): void {
     } catch {
       // Use defaults
     }
-    
+
     bootstrapResult = await bootstrap({
       host,
       port,
@@ -477,7 +477,7 @@ function setupIpcHandlers(): void {
       autoStart: false, // Don't auto-start on recheck
       startTimeout: 15000,
     });
-    
+
     return bootstrapResult;
   });
 
@@ -485,7 +485,7 @@ function setupIpcHandlers(): void {
     const settings = configStore.getSettings();
     let port = 11434;
     let host = "localhost";
-    
+
     try {
       const url = new URL(settings.ollamaHost);
       host = url.hostname;
@@ -493,7 +493,7 @@ function setupIpcHandlers(): void {
     } catch {
       // Use defaults
     }
-    
+
     const started = await startOllama({
       host,
       port,
@@ -501,7 +501,7 @@ function setupIpcHandlers(): void {
       autoStart: true,
       startTimeout: 30000,
     });
-    
+
     return { success: started };
   });
 
@@ -509,7 +509,7 @@ function setupIpcHandlers(): void {
     const settings = configStore.getSettings();
     let port = 11434;
     let host = "localhost";
-    
+
     try {
       const url = new URL(settings.ollamaHost);
       host = url.hostname;
@@ -517,7 +517,7 @@ function setupIpcHandlers(): void {
     } catch {
       // Use defaults
     }
-    
+
     return await isOllamaRunning({ host, port, model: "", autoStart: false, startTimeout: 0 });
   });
 
@@ -536,13 +536,13 @@ function setupIpcHandlers(): void {
   ipcMain.handle("chat:updateSettings", (_event, updates: Record<string, unknown>) => {
     // Map frontend names to config names
     const mapped: Partial<ReturnType<typeof configStore.getSettings>> = {};
-    
+
     if ("ollamaModel" in updates) mapped.ollamaModel = updates.ollamaModel as string;
     if ("ollamaHost" in updates) mapped.ollamaHost = updates.ollamaHost as string;
     if ("maxTurns" in updates) mapped.maxTurns = updates.maxTurns as number;
     if ("fullAccess" in updates) mapped.fullAccess = updates.fullAccess as boolean;
     if ("autoApprove" in updates) mapped.autoApprove = updates.autoApprove as boolean;
-    
+
     configStore.updateSettings(mapped);
     log.info("chat.settingsUpdated", "Settings updated", updates);
     return true;
@@ -586,18 +586,18 @@ function setupIpcHandlers(): void {
   ipcMain.handle("chat:pullModel", async (_event, modelName: string) => {
     const settings = configStore.getSettings();
     log.info("chat.pullModel", `Starting download: ${modelName}`);
-    
+
     try {
       const response = await fetch(`${settings.ollamaHost}/api/pull`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: modelName, stream: false })
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to pull model: ${response.statusText}`);
       }
-      
+
       const result = await response.json();
       log.info("chat.pullModel", `Download complete: ${modelName}`);
       return { success: true, result };
@@ -611,14 +611,14 @@ function setupIpcHandlers(): void {
   ipcMain.handle("chat:pullModelStream", async (_event, modelName: string) => {
     const settings = configStore.getSettings();
     log.info("chat.pullModelStream", `Starting streamed download: ${modelName}`);
-    
+
     try {
       const response = await fetch(`${settings.ollamaHost}/api/pull`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: modelName, stream: true })
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to pull model: ${response.statusText}`);
       }
@@ -641,7 +641,7 @@ function setupIpcHandlers(): void {
           try {
             const data = JSON.parse(line) as { status?: string; completed?: number; total?: number };
             lastStatus = data.status ?? lastStatus;
-            
+
             // Send progress to renderer
             if (data.completed && data.total) {
               const percent = Math.round((data.completed / data.total) * 100);
@@ -677,18 +677,18 @@ function setupIpcHandlers(): void {
   ipcMain.handle("chat:deleteModel", async (_event, modelName: string) => {
     const settings = configStore.getSettings();
     log.info("chat.deleteModel", `Deleting: ${modelName}`);
-    
+
     try {
       const response = await fetch(`${settings.ollamaHost}/api/delete`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: modelName })
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to delete model: ${response.statusText}`);
       }
-      
+
       return { success: true };
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
@@ -698,26 +698,26 @@ function setupIpcHandlers(): void {
   });
 
   // Chat
-  ipcMain.handle("chat:sendMessage", async (_event, data: { 
-    chatId: string; 
-    messages: ChatMessage[]; 
-    settings: { systemPrompt?: string } 
+  ipcMain.handle("chat:sendMessage", async (_event, data: {
+    chatId: string;
+    messages: ChatMessage[];
+    settings: { systemPrompt?: string }
   }) => {
     try {
       log.info("chat.send", "Sending message", { chatId: data.chatId, messageCount: data.messages.length });
-      
+
       const response = await sendToOllama(data.messages, data.settings.systemPrompt);
-      
+
       // If there are tool calls, execute them
       if (response.toolCalls && response.toolCalls.length > 0) {
         for (const tc of response.toolCalls) {
           log.info("chat.toolCall", `Executing tool: ${tc.name}`, { args: tc.arguments });
-          
+
           // Notify UI about tool call
           mainWindow?.webContents.send("chat:toolCall", tc);
         }
       }
-      
+
       return response;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
@@ -728,10 +728,10 @@ function setupIpcHandlers(): void {
 
   ipcMain.handle("chat:getChatHistory", () => {
     ensureChatStorage();
-    
+
     const files = fs.readdirSync(chatStorePath).filter(f => f.endsWith(".json"));
     const chats: Array<{ id: string; title: string; createdAt: string }> = [];
-    
+
     for (const file of files) {
       try {
         const data = JSON.parse(fs.readFileSync(path.join(chatStorePath, file), "utf8")) as ChatData;
@@ -744,7 +744,7 @@ function setupIpcHandlers(): void {
         // Skip invalid files
       }
     }
-    
+
     // Sort by date, newest first
     return chats.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   });
@@ -752,9 +752,9 @@ function setupIpcHandlers(): void {
   ipcMain.handle("chat:loadChat", (_event, chatId: string) => {
     ensureChatStorage();
     const filePath = path.join(chatStorePath, `${chatId}.json`);
-    
+
     if (!fs.existsSync(filePath)) return null;
-    
+
     try {
       return JSON.parse(fs.readFileSync(filePath, "utf8"));
     } catch {
@@ -765,23 +765,23 @@ function setupIpcHandlers(): void {
   ipcMain.handle("chat:saveChat", (_event, data: ChatData) => {
     ensureChatStorage();
     const filePath = path.join(chatStorePath, `${data.id}.json`);
-    
+
     fs.writeFileSync(filePath, JSON.stringify({
       ...data,
       createdAt: data.createdAt || new Date().toISOString()
     }, null, 2));
-    
+
     return true;
   });
 
   ipcMain.handle("chat:deleteChat", (_event, chatId: string) => {
     ensureChatStorage();
     const filePath = path.join(chatStorePath, `${chatId}.json`);
-    
+
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
-    
+
     return true;
   });
 
@@ -855,8 +855,8 @@ function setupIpcHandlers(): void {
 
     log.info("mcp.install", `Installed MCP server: ${server.name}`, { serverId });
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       server,
       requiresAuth: server.requiresAuth,
       authEnvVar: server.authEnvVar
@@ -927,14 +927,14 @@ function setupIpcHandlers(): void {
         { name: "Text", extensions: ["txt", "md", "json", "ts", "js", "py"] }
       ]
     });
-    
+
     if (result.canceled || result.filePaths.length === 0) {
       return null;
     }
-    
+
     const filePath = result.filePaths[0];
     if (!filePath) return null;
-    
+
     try {
       const content = fs.readFileSync(filePath, "utf8");
       return {
@@ -960,84 +960,84 @@ function setupIpcHandlers(): void {
 
   ipcMain.handle("chat:updateIntegration", (_event, data: { integration: string; config: Record<string, unknown> }) => {
     const manager = getIntegrationManager("./config");
-    
+
     // Update specific integration
     const updates: Record<string, unknown> = {};
     updates[data.integration] = data.config;
-    
+
     manager.updateConfig(updates as Parameters<typeof manager.updateConfig>[0]);
     log.info("integrations.update", `Updated integration: ${data.integration}`);
-    
+
     return { success: true };
   });
 
   ipcMain.handle("chat:testIntegration", async (_event, integrationId: string) => {
     const manager = getIntegrationManager("./config");
-    
+
     try {
       switch (integrationId) {
         case "github": {
           const token = manager.getGitHubToken();
           if (!token) return { success: false, error: "No token configured" };
-          
+
           const res = await fetch("https://api.github.com/user", {
             headers: { Authorization: `Bearer ${token}` }
           });
-          
+
           if (res.ok) {
             const user = await res.json() as { login: string };
             return { success: true, message: `Connected as ${user.login}` };
           }
           return { success: false, error: `GitHub API error: ${res.status}` };
         }
-        
+
         case "notion": {
           const key = manager.getNotionApiKey();
           if (!key) return { success: false, error: "No API key configured" };
-          
+
           const res = await fetch("https://api.notion.com/v1/users/me", {
             headers: {
               Authorization: `Bearer ${key}`,
               "Notion-Version": "2022-06-28"
             }
           });
-          
+
           if (res.ok) {
             const user = await res.json() as { name?: string };
             return { success: true, message: `Connected as ${user.name ?? "Notion user"}` };
           }
           return { success: false, error: `Notion API error: ${res.status}` };
         }
-        
+
         case "huggingface": {
           const token = manager.getHuggingFaceToken();
           if (!token) return { success: false, error: "No token configured" };
-          
+
           const res = await fetch("https://huggingface.co/api/whoami-v2", {
             headers: { Authorization: `Bearer ${token}` }
           });
-          
+
           if (res.ok) {
             const user = await res.json() as { name?: string };
             return { success: true, message: `Connected as ${user.name ?? "HF user"}` };
           }
           return { success: false, error: `HuggingFace API error: ${res.status}` };
         }
-        
+
         case "brave-search": {
           const key = manager.getBraveApiKey();
           if (!key) return { success: false, error: "No API key configured" };
-          
+
           const res = await fetch("https://api.search.brave.com/res/v1/web/search?q=test&count=1", {
             headers: { "X-Subscription-Token": key }
           });
-          
+
           if (res.ok) {
             return { success: true, message: "Brave Search API working" };
           }
           return { success: false, error: `Brave API error: ${res.status}` };
         }
-        
+
         default:
           return { success: false, error: "Test not implemented for this integration" };
       }
@@ -1053,28 +1053,28 @@ function setupIpcHandlers(): void {
 app.whenReady().then(async () => {
   configStore = new ConfigStore("./config");
   log = new HyperLog("./logs", "chat.jsonl");
-  
+
   ensureChatStorage();
   setupIpcHandlers();
-  
+
   // Show splash and run startup checks
   createSplashWindow();
-  
+
   log.info("app.startup", "Running startup checks...");
-  
+
   const startupOk = await runStartupChecks();
-  
+
   if (startupOk) {
     log.info("app.startup", "Startup checks passed", { checks: bootstrapResult?.checks.length });
     closeSplash();
     createWindow();
   } else {
     log.error("app.startup", "Startup checks failed", { errors: bootstrapResult?.errors });
-    
+
     // Show main window anyway but with error state
     closeSplash();
     createWindow();
-    
+
     // Notify window of startup failure
     mainWindow?.webContents.once("did-finish-load", () => {
       mainWindow?.webContents.send("chat:startupFailed", bootstrapResult);

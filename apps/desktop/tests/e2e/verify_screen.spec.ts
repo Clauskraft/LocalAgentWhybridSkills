@@ -9,7 +9,7 @@ test('End-to-End Functional Test: Ollama, MCP & Chat', async ({ page }) => {
                 status: 200,
                 contentType: 'application/json',
                 body: JSON.stringify({
-                    message: { content: `Hej! Jeg er din lokalt konfigurerede SCA-01 agent. Jeg bruger modellen ${payload.model}. Jeg kan se dine 3 MCP servere er klar.` },
+                    message: { content: `Hej! Jeg er din lokalt konfigurerede @dot agent. Jeg bruger modellen ${payload.model}. Jeg kan se dine 3 MCP servere er klar.` },
                     model: payload.model || 'deepseek-v3.1:671b-cloud'
                 })
             });
@@ -32,16 +32,12 @@ test('End-to-End Functional Test: Ollama, MCP & Chat', async ({ page }) => {
     await expect(mcpEntry.first()).toBeVisible();
 
     // 3. Click "Hvad kan du?" to test chat flow
-    const helpCard = page.locator('div, h3, span').filter({ hasText: 'Hvad kan du?' });
+    const helpCard = page.locator('button').filter({ hasText: 'Hvad kan du?' });
     if (await helpCard.count() > 0) {
         console.log('✅ Klikker på "Hvad kan du?" kort...');
         await helpCard.first().click();
-        await page.waitForTimeout(1000);
 
-        // Send besked via Enter
-        await page.keyboard.press('Enter');
-
-        console.log('✅ Sendte besked, venter på respons...');
+        console.log('✅ Klikker sendte besked øjeblikkeligt, venter på respons...');
         await page.waitForTimeout(6000); // Vent på respons
 
         await page.screenshot({ path: 'test-results/11_chat_response_verified.png', fullPage: true });
