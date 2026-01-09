@@ -143,6 +143,7 @@ export function useSettings() {
   return {
     settings,
     updateSettings,
+    resetToDefaults,
     ollamaStatus,
     mcpServersCount,
   };

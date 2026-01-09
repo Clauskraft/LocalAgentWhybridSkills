@@ -2,12 +2,12 @@ import { useState, useEffect, useCallback, createContext, useContext } from 'rea
 
 interface Toast {
     id: string;
-    message: string;
+    message: React.ReactNode;
     type: 'info' | 'success' | 'warning' | 'error';
 }
 
 interface ToastContextType {
-    showToast: (message: string, type: Toast['type']) => void;
+    showToast: (message: React.ReactNode, type?: Toast['type']) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -15,7 +15,7 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export function ToastProvider({ children }: { children: React.ReactNode }) {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
-    const showToast = useCallback((message: string, type: Toast['type'] = 'info') => {
+    const showToast = useCallback((message: React.ReactNode, type: Toast['type'] = 'info') => {
         const id = crypto.randomUUID();
         setToasts((prev) => [...prev, { id, message, type }]);
         setTimeout(() => {
@@ -40,9 +40,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             `}
                     >
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${toast.type === 'success' ? 'bg-success/20' :
-                                toast.type === 'error' ? 'bg-error/20' :
-                                    toast.type === 'warning' ? 'bg-warning/20' :
-                                        'bg-accent/20'
+                            toast.type === 'error' ? 'bg-error/20' :
+                                toast.type === 'warning' ? 'bg-warning/20' :
+                                    'bg-accent/20'
                             }`}>
                             {toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : toast.type === 'warning' ? '⚠️' : 'ℹ️'}
                         </div>

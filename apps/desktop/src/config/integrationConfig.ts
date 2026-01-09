@@ -69,6 +69,8 @@ export interface IntegrationConfig {
     smtp?: { enabled: boolean; host: string; port: number; user: string; password: string };
   };
   widgetdc?: {
+    cyberstreams?: { enabled: boolean; serverPath: string };
+    cockpit?: { enabled: boolean; url: string };
     cloudflare?: { enabled: boolean; workerUrl: string };
   };
   microsoft?: { // Added for Dot.Corp / Power Platform Integration

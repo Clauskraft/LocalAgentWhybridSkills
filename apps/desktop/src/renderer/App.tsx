@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
 import { SettingsModal } from './components/SettingsModal';
@@ -10,6 +10,7 @@ import { RomaPlanner } from "./components/RomaPlanner";
 import { useChat } from './hooks/useChat';
 import { useSettings } from './hooks/useSettings';
 import { ShortcutsModal } from './components/ShortcutsModal';
+import { useToast } from './components/Toast';
 import { DropZone } from './components/DropZone';
 import { CommandPalette } from './components/CommandPalette';
 import { findShortcut } from './lib/shortcuts';
@@ -183,12 +184,13 @@ export function App() {
         archiveChat: (id) => archiveChat(id || currentChatId || '')
       });
       if (result) {
-        addSystemMessage(result.content, result.meta);
+        // TODO: Add system message handling
+        console.log('Shortcut result:', result);
       }
       return;
     }
     await sendMessage(content, settings);
-  }, [sendMessage, settings, addSystemMessage, updateSettings, createChat, archiveChat, currentChatId]);
+  }, [sendMessage, settings, updateSettings, createChat, archiveChat, currentChatId]);
 
   // Pulse+ Navigation
   const openPulse = useCallback(() => {
@@ -230,8 +232,10 @@ export function App() {
       onSelectModel={(model) => updateSettings({ model })}
       cuttingEdgeMode={cuttingEdgeMode}
       setCuttingEdgeMode={setCuttingEdgeMode}
-      immersiveMode={settings.immersiveMode}
-      onToggleImmersive={handleImmersiveToggle}
+      immersiveMode={!!settings.immersiveMode}
+      setImmersiveMode={(active) => updateSettings({ immersiveMode: active })}
+      personaId={settings.personaId}
+      onUpdatePersona={(id) => updateSettings({ personaId: id })}
     />
   );
 
@@ -252,7 +256,7 @@ export function App() {
         onClose={() => setShowCommandPalette(false)}
         actions={{
           newChat: createNewChat,
-          openSettings: (tab) => { setShowSettings(true); setActiveSettingsTab(tab); },
+          openSettings: (tab) => { setShowSettings(true); setSettingsTab(tab); },
           toggleImmersive: () => updateSettings({ immersiveMode: !settings.immersiveMode }),
           toggleLab: () => setCuttingEdgeMode(prev => !prev),
           archiveCurrent: () => {
@@ -296,7 +300,7 @@ export function App() {
         </div>
       ) : settings.immersiveMode ? (
         <div className="flex-1 relative min-w-0 min-h-0">
-          <ImmersiveWorkspace onPanelToggle={handlePanelToggle}>
+          <ImmersiveWorkspace onPanelToggle={() => { }}>
             {chatAreaContent}
           </ImmersiveWorkspace>
         </div>

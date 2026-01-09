@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { IconBolt, IconChat, IconPlug, IconPlus, IconSettings } from './icons';
+import { IconBolt, IconChat, IconPlug, IconPlus, IconSettings, IconShield } from './icons';
 
 interface WelcomeScreenProps {
   onQuickStart: (prompt: string) => void;

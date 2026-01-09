@@ -30,6 +30,8 @@ interface ChatAreaProps {
   immersiveMode: boolean;
   setImmersiveMode: (active: boolean) => void;
   mcpServersCount: number;
+  personaId?: string;
+  onUpdatePersona?: (id: string) => void;
 }
 
 export const ChatArea = memo(function ChatArea({
@@ -46,6 +48,8 @@ export const ChatArea = memo(function ChatArea({
   immersiveMode,
   setImmersiveMode,
   mcpServersCount,
+  personaId = 'architect',
+  onUpdatePersona,
 }: ChatAreaProps) {
   const [input, setInput] = useState('');
   const [debouncedInput, setDebouncedInput] = useState('');
@@ -316,15 +320,15 @@ export const ChatArea = memo(function ChatArea({
           {PERSONAS.map(p => (
             <button
               key={p.id}
-              onClick={() => onUpdateSettings({ personaId: p.id })}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-300 ${settings.personaId === p.id
-                  ? 'bg-accent text-white shadow-[0_0_15px_rgba(226,0,116,0.3)] scale-105'
-                  : 'text-text-muted hover:text-text-primary hover:bg-white/5'
+              onClick={() => onUpdatePersona?.(p.id)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-300 ${personaId === p.id
+                ? 'bg-accent text-white shadow-[0_0_15px_rgba(226,0,116,0.3)] scale-105'
+                : 'text-text-muted hover:text-text-primary hover:bg-white/5'
                 }`}
               title={p.description}
             >
               <span className="text-sm">{p.icon}</span>
-              {settings.personaId === p.id && (
+              {personaId === p.id && (
                 <span className="text-[10px] font-black uppercase tracking-wider animate-fade-in whitespace-nowrap">
                   {p.name.split(' ')[1]}
                 </span>

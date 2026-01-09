@@ -80,7 +80,9 @@ const req = https.request(options, (res) => {
             // Icon
             const icon = r.icon?.emoji || "📄";
 
-            console.log(`${icon} [${type}] ${title} \n   Link: ${r.url}`);
+            console.log(`${icon} [${type}] ${title}`);
+            console.log(`   ID: ${r.id}`);
+            console.log(`   Link: ${r.url}`);
         });
     });
 });

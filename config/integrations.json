@@ -34,9 +34,9 @@
     "token": ""
   },
   "notion": {
-    "enabled": false,
-    "apiKey": "",
-    "databaseId": ""
+    "enabled": true,
+    "apiKey": "ntn_K48691274926Rjq31CnM7lGyRCYKIbMmOg8mE5KEhbfgkc",
+    "databaseId": "d6e0a2471f304c1e8cdacb533f6fcb7b"
   },
   "braveSearch": {
     "enabled": false,
