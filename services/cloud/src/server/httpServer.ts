@@ -164,7 +164,7 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
 
     const token = authHeader.slice(7);
     const payload = await auth.verifyToken(token);
-    
+
     if (!payload) {
       throw { statusCode: 401, message: "Invalid or expired token" };
     }
@@ -213,18 +213,21 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
   // Chat proxy (Ollama upstream)
   // NOTE: Intended for Electron cloud-mode (requests are made from Electron main process via IPC).
   // Configure a non-local upstream via OLLAMA_HOST (e.g. https://your-ollama-host:11434).
+  // If model is missing or the requested model is not available, falls back to first available model.
   app.post("/api/chat", async (request, reply) => {
     const body = request.body as unknown;
     const parsed = z
       .object({
-        model: z.string().min(1),
+        // Model is now optional - server will auto-select if not provided or if model not found
+        model: z.string().optional(),
         messages: z.array(z.object({ role: z.string(), content: z.string() })),
         stream: z.boolean().optional(),
       })
       .safeParse(body);
 
     if (!parsed.success) {
-      return reply.status(400).send({ error: "invalid_request" });
+      log.warn("chat.parse_error", "Invalid chat request", { errors: parsed.error.issues });
+      return reply.status(400).send({ error: "invalid_request", details: parsed.error.issues });
     }
 
     const upstreamRaw = (process.env.OLLAMA_HOST ?? "").trim();
@@ -233,18 +236,63 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
     }
 
     const upstream = upstreamRaw.replace(/\/+$/, "");
-    const res = await fetch(`${upstream}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: parsed.data.model,
-        messages: parsed.data.messages,
-        stream: false,
-      }),
-    });
 
-    const text = await res.text().catch(() => "");
+    // Helper to get available models from Ollama
+    const getAvailableModels = async (): Promise<string[]> => {
+      try {
+        const tagsRes = await fetch(`${upstream}/api/tags`);
+        if (!tagsRes.ok) return [];
+        const tagsData = await tagsRes.json() as { models?: Array<{ name: string }> };
+        return (tagsData.models ?? []).map(m => m.name);
+      } catch {
+        return [];
+      }
+    };
+
+    // Determine which model to use
+    let modelToUse = (parsed.data.model ?? "").trim();
+
+    // If no model specified, try to get the first available model
+    if (!modelToUse) {
+      const availableModels = await getAvailableModels();
+      if (availableModels.length === 0) {
+        return reply.status(503).send({ error: "no_models_available", message: "No models are installed on the Ollama server" });
+      }
+      modelToUse = availableModels[0]!;
+      log.info("chat.model_auto_select", `No model specified, using first available: ${modelToUse}`);
+    }
+
+    // Try the chat request
+    const attemptChat = async (model: string) => {
+      return await fetch(`${upstream}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          messages: parsed.data.messages,
+          stream: false,
+        }),
+      });
+    };
+
+    let res = await attemptChat(modelToUse);
+    let text = await res.text().catch(() => "");
+
+    // If model not found (404), try fallback to first available model
+    if (!res.ok && res.status === 404 && text.toLowerCase().includes("not found")) {
+      log.warn("chat.model_not_found", `Model '${modelToUse}' not found, attempting fallback...`);
+      const availableModels = await getAvailableModels();
+      const fallbackModel = availableModels.find(m => m !== modelToUse);
+
+      if (fallbackModel) {
+        log.info("chat.model_fallback", `Falling back to model: ${fallbackModel}`);
+        res = await attemptChat(fallbackModel);
+        text = await res.text().catch(() => "");
+      }
+    }
+
     if (!res.ok) {
+      log.error("chat.upstream_error", `Ollama upstream error: ${res.status}`, { body: text });
       return reply.status(502).send({ error: "ollama_upstream_error", status: res.status, body: text });
     }
 
@@ -336,9 +384,9 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
 
   // Token endpoint
   app.post("/auth/token", async (request, reply) => {
-    const body = request.body as { 
-      grant_type: string; 
-      client_id?: string; 
+    const body = request.body as {
+      grant_type: string;
+      client_id?: string;
       client_secret?: string;
       refresh_token?: string;
     };
@@ -361,9 +409,9 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
       }
 
       const tokens = await auth.generateTokenPair(clientId, ["tools:read", "tools:call"], clientId);
-      
+
       log.info("auth.token.issued", "Access token issued", { clientId });
-      
+
       return {
         access_token: tokens.accessToken,
         refresh_token: tokens.refreshToken,
@@ -374,19 +422,19 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
 
     if (body.grant_type === "refresh_token") {
       const refreshToken = body.refresh_token;
-      
+
       if (!refreshToken) {
         return reply.status(400).send({ error: "invalid_request", error_description: "Missing refresh_token" });
       }
 
       const tokens = await auth.refreshTokenPair(refreshToken);
-      
+
       if (!tokens) {
         return reply.status(401).send({ error: "invalid_grant" });
       }
 
       log.info("auth.token.refreshed", "Token refreshed");
-      
+
       return {
         access_token: tokens.accessToken,
         refresh_token: tokens.refreshToken,
@@ -403,7 +451,7 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
   // List tools
   app.get("/mcp/tools", { preHandler: [verifyJwt as never] }, async (request) => {
     const user = (request as { user: TokenPayload }).user;
-    
+
     if (!user.scopes.includes("tools:read")) {
       throw { statusCode: 403, message: "Insufficient permissions" };
     }
@@ -650,7 +698,7 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
   // Call tool
   app.post("/mcp/tools/call", { preHandler: [verifyJwt as never] }, async (request, reply) => {
     const user = (request as { user: TokenPayload }).user;
-    
+
     if (!user.scopes.includes("tools:call")) {
       throw { statusCode: 403, message: "Insufficient permissions" };
     }
@@ -661,10 +709,10 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
     }
 
     const { name, arguments: args } = parseResult.data;
-    
-    log.info("mcp.tools.call", `Tool called: ${name}`, { 
-      agentId: user.agentId, 
-      tool: name 
+
+    log.info("mcp.tools.call", `Tool called: ${name}`, {
+      agentId: user.agentId,
+      tool: name
     });
 
     // Execute tool (simplified - in production connect to actual tool implementations)
@@ -687,7 +735,7 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
   // MCP JSON-RPC endpoint (for full protocol compliance)
   app.post("/mcp", { preHandler: [verifyJwt as never] }, async (request, reply) => {
     const parseResult = McpRequestSchema.safeParse(request.body);
-    
+
     if (!parseResult.success) {
       return reply.status(400).send({
         jsonrpc: "2.0",
@@ -715,11 +763,11 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
   });
 
   // ========== ERROR HANDLER ==========
-  
+
   app.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) => {
     const statusCode = error.statusCode ?? 500;
     log.error("http.error", error.message, { statusCode });
-    
+
     reply.status(statusCode).send({
       error: statusCode >= 500 ? "Internal Server Error" : error.message,
       statusCode
@@ -731,7 +779,7 @@ export async function createServer(config: Partial<ServerConfig> = {}): Promise<
 
 // Tool execution (simplified)
 async function executeToolCall(
-  name: string, 
+  name: string,
   args: Record<string, unknown>,
   _log: HyperLog
 ): Promise<unknown> {
@@ -743,7 +791,7 @@ async function executeToolCall(
       const content = await fs.readFile(path, "utf8");
       return { content };
     }
-    
+
     case "write_file": {
       const path = args.path as string;
       const content = args.content as string;
@@ -751,37 +799,37 @@ async function executeToolCall(
       await fs.writeFile(path, content, "utf8");
       return { success: true, path };
     }
-    
+
     case "run_command": {
       const command = args.command as string;
       const cwd = args.cwd as string | undefined;
-      
+
       // Block dangerous commands
       const blocked = ["rm -rf", "format", "del /", "shutdown"];
       if (blocked.some(b => command.includes(b))) {
         throw new Error("Command blocked by policy");
       }
-      
+
       const { exec } = await import("node:child_process");
       const { promisify } = await import("node:util");
       const execAsync = promisify(exec);
-      
+
       const { stdout, stderr } = await execAsync(command, { cwd, timeout: 30000 });
       return { stdout, stderr };
     }
-    
+
     case "http_request": {
       const url = args.url as string;
       const method = (args.method as string) ?? "GET";
       const headers = args.headers as Record<string, string> | undefined;
       const body = args.body as string | undefined;
-      
+
       const response = await fetch(url, {
         method,
         headers,
         body: method !== "GET" ? body : undefined
       });
-      
+
       const text = await response.text();
       return {
         status: response.status,
@@ -854,7 +902,7 @@ async function handleMcpMethod(
           version: "0.3.0"
         }
       };
-    
+
     case "tools/list":
       return {
         tools: [
@@ -868,19 +916,19 @@ async function handleMcpMethod(
           { name: "search.upsert", description: "Upsert documents", inputSchema: { type: "object", properties: { documents: { type: "array", items: { type: "object" } }, index_name: { type: "string" } }, required: ["documents"] } }
         ]
       };
-    
+
     case "tools/call": {
       const name = params?.name as string;
       const args = params?.arguments as Record<string, unknown> | undefined;
-      
+
       if (!name) throw new Error("Missing tool name");
-      
+
       const result = await executeToolCall(name, args ?? {}, log);
       return {
         content: [{ type: "text", text: JSON.stringify(result) }]
       };
     }
-    
+
     default:
       throw new Error(`Unknown method: ${method}`);
   }
@@ -891,7 +939,7 @@ async function main(): Promise<void> {
   const port = Number.parseInt(process.env.PORT ?? "3000", 10);
   const host = sanitizeHost(process.env.HOST) ?? "::";
   const log = new HyperLog("./logs", "startup.jsonl");
-  
+
   const server = await createServer({ port, host });
 
   // Register user auth routes (register/login)

@@ -305,10 +305,10 @@ async function ensureConnectivityOnStartup(): Promise<void> {
   if (localOk) {
     if (runtimeCfg.useCloud) {
       runtimeCfg = { ...runtimeCfg, useCloud: false };
-        if (unifiedCfg) {
-          unifiedCfg = { ...unifiedCfg, useCloud: false };
-          await persistUnifiedToDisk();
-        }
+      if (unifiedCfg) {
+        unifiedCfg = { ...unifiedCfg, useCloud: false };
+        await persistUnifiedToDisk();
+      }
     }
     return;
   }
@@ -526,22 +526,59 @@ async function chatSendMessage(payload: {
     if (!backend) {
       throw new Error("Cloud mode kræver backendUrl (SCA_BACKEND_URL). Ingen localhost fallback er tilladt.");
     }
-    // In cloud mode, allow "server default model" by omitting `model`.
-    // This avoids hard failures when a client-picked model isn't installed upstream.
-    const body: any = {
-      messages: payload.messages,
-      stream: false,
-      ...(modelRaw ? { model: modelRaw } : {}),
+
+    // Helper to fetch available models from cloud backend
+    const getCloudModels = async (): Promise<string[]> => {
+      try {
+        const res = await fetch(`${backend.replace(/\/+$/, "")}/api/models`);
+        if (!res.ok) return [];
+        const data = await res.json() as { models?: Array<{ name: string }> };
+        return (data.models ?? []).map(m => m.name);
+      } catch {
+        return [];
+      }
     };
-    const res = await fetch(`${backend.replace(/\/+$/, "")}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+
+    // Attempt chat with given model, with automatic fallback
+    const attemptCloudChat = async (model: string | undefined): Promise<Response> => {
+      const body: any = {
+        messages: payload.messages,
+        stream: false,
+        ...(model ? { model } : {}),
+      };
+      return await fetch(`${backend.replace(/\/+$/, "")}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    };
+
+    // First attempt with user's chosen model (or omit for server default)
+    let res = await attemptCloudChat(modelRaw || undefined);
+
+    // If model not found, try automatic fallback
     if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      throw new Error(`Cloud chat failed: ${res.status} ${res.statusText} ${txt}`);
+      const errText = await res.text().catch(() => "");
+      const isModelNotFound = res.status === 502 &&
+        (errText.toLowerCase().includes("not found") || errText.includes("ollama_upstream_error"));
+
+      if (isModelNotFound && modelRaw) {
+        log?.warn("chat.model_fallback", `Model '${modelRaw}' not found on cloud, trying auto-select...`);
+
+        // Try without model (let server pick)
+        res = await attemptCloudChat(undefined);
+
+        if (res.ok) {
+          log?.info("chat.model_fallback_success", "Successfully used server-default model");
+        }
+      }
+
+      if (!res.ok) {
+        const finalErr = await res.text().catch(() => errText);
+        throw new Error(`Cloud chat failed: ${res.status} ${res.statusText} ${finalErr}`);
+      }
     }
+
     const data = await res.json();
     return {
       content: data?.message?.content ?? data?.content ?? "",
@@ -552,16 +589,46 @@ async function chatSendMessage(payload: {
   // Fallback to local Ollama
   const host = (payload.host ?? runtimeCfg.ollamaHost).replace(/\/+$/, "");
   const model = modelRaw || runtimeCfg.ollamaModel;
-  const body = {
-    model,
-    messages: payload.messages,
-    stream: false
+
+  // Helper to get local Ollama models
+  const getLocalModels = async (): Promise<string[]> => {
+    try {
+      const res = await fetch(`${host}/api/tags`);
+      if (!res.ok) return [];
+      const data = await res.json() as { models?: Array<{ name: string }> };
+      return (data.models ?? []).map(m => m.name);
+    } catch {
+      return [];
+    }
   };
-  const res = await fetch(`${host}/api/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  });
+
+  const attemptLocalChat = async (chatModel: string) => {
+    return await fetch(`${host}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: chatModel,
+        messages: payload.messages,
+        stream: false
+      })
+    });
+  };
+
+  let res = await attemptLocalChat(model);
+
+  // If model not found, try fallback
+  if (!res.ok && res.status === 404) {
+    const errText = await res.text().catch(() => "");
+    if (errText.toLowerCase().includes("not found")) {
+      const localModels = await getLocalModels();
+      const fallbackModel = localModels[0];
+      if (fallbackModel && fallbackModel !== model) {
+        log?.warn("chat.local_fallback", `Model '${model}' not found, trying '${fallbackModel}'...`);
+        res = await attemptLocalChat(fallbackModel);
+      }
+    }
+  }
+
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Ollama chat failed: ${res.status} ${res.statusText} ${txt}`);
