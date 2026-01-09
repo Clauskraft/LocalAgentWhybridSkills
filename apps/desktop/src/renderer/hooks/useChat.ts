@@ -5,10 +5,54 @@ import { cleanChatTitle, isModelNotFoundError, commonModelFallbacks } from '../l
 import { PERSONAS } from '../lib/personas';
 
 const DEFAULT_SETTINGS = {
-  // Align with phase2 .env.production default, but browser-mode will also auto-fallback if missing.
-  model: 'qwen2.5-coder:7b',
+  // DeepSeek cloud model as primary, fallback to local qwen2.5-coder if needed
+  model: 'deepseek-coder:33b',
   ollamaHost: 'http://localhost:11434',
 };
+
+// ... later inside sendMessage, after constructing payload
+const payload = {
+  messages: [...messages, userMsg],
+  model: settings?.model ?? DEFAULT_SETTINGS.model,
+  host: settings?.ollamaHost ?? DEFAULT_SETTINGS.ollamaHost,
+  backendUrl: settings?.backendUrl,
+  useCloud: settings?.useCloud,
+  systemPrompt: activePersona?.systemPrompt,
+  options: {
+    temperature: settings?.temperature,
+    num_ctx: settings?.contextLength,
+  },
+};
+
+// Helper for exponential back‑off with jitter
+const MAX_RETRY_ATTEMPTS = 8; // increase if needed
+const MAX_BACKOFF_SECONDS = 60; // ceiling for exponential back‑off
+
+// Helper for exponential back‑off with jitter
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+const sendWithRetry = async (model: string, attempt = 0): Promise<any> => {
+  try {
+    return await api?.sendMessage({ ...payload, model });
+  } catch (e: any) {
+    if (e?.statusCode === 429) {
+      const match = e?.error?.match(/retry in (\d+) seconds/);
+      const waitSec = match ? parseInt(match[1], 10) : Math.min(2 ** attempt, MAX_BACKOFF_SECONDS);
+      await delay(waitSec * 1000 + Math.random() * 500);
+      if (attempt < MAX_RETRY_ATTEMPTS) return sendWithRetry(model, attempt + 1);
+    }
+    // After retries, fall back to local model if cloud was used
+    if (attempt >= MAX_RETRY_ATTEMPTS && settings?.useCloud) {
+      console.warn('Cloud model rate‑limited, falling back to local model');
+      const localPayload = { ...payload, model: DEFAULT_SETTINGS.model, useCloud: false };
+      return await api?.sendMessage(localPayload);
+    }
+    throw e;
+  }
+};
+
+// Replace original attemptSend usage with sendWithRetry
+const attemptSend = async (model: string) => sendWithRetry(model);
+
 
 type Settings = {
   model: string;
