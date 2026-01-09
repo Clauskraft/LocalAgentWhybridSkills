@@ -63,11 +63,24 @@ export const ChatArea = memo(function ChatArea({
   const [showNeuralVisualizer, setShowNeuralVisualizer] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setShowScrollButton(!isAtBottom);
+  }, []);
 
   // Auto-scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+    scrollToBottom();
+  }, [messages, isLoading, scrollToBottom]);
 
   // Focus input on mount
   useEffect(() => {
@@ -327,7 +340,11 @@ export const ChatArea = memo(function ChatArea({
       {messages.length === 0 ? (
         <WelcomeScreen onQuickStart={handleQuickStart} />
       ) : (
-        <div className="flex-1 overflow-y-auto py-8">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto py-8 custom-scrollbar relative scroll-smooth"
+        >
           <div className="max-w-3xl mx-auto px-8 space-y-6">
             {messages.map((message) => (
               <MessageBubble key={message.id} message={message} />
@@ -339,6 +356,17 @@ export const ChatArea = memo(function ChatArea({
 
             <div ref={messagesEndRef} />
           </div>
+
+          {/* Floating Scroll Button */}
+          {showScrollButton && (
+            <button
+              onClick={scrollToBottom}
+              className="absolute bottom-10 right-10 w-12 h-12 glass-card rounded-full flex items-center justify-center text-accent shadow-2xl animate-bounce holographic-glow border-accent/40 z-30 transition-all hover:scale-110 active:scale-95"
+              title="Gå til nyeste beskeder"
+            >
+              <IconChevronDown className="w-6 h-6" />
+            </button>
+          )}
         </div>
       )}
 

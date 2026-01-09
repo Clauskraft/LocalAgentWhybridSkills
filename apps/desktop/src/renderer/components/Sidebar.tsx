@@ -27,15 +27,26 @@ export const Sidebar = memo(function Sidebar({
   isCollapsed = false,
   onToggleCollapsed,
 }: SidebarProps) {
-  const today = new Date().toDateString();
-
   const groupedChats = chats.reduce((acc, chat) => {
-    const date = new Date(chat.createdAt).toDateString();
-    const key = date === today ? 'I dag' : 'Tidligere';
+    const created = new Date(chat.createdAt);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - created.getTime()) / (1000 * 3600 * 24));
+
+    let key = 'Ældre';
+    if (diffDays === 0 && created.toDateString() === now.toDateString()) key = 'I dag';
+    else if (diffDays === 1 || (diffDays === 0 && created.toDateString() !== now.toDateString())) key = 'I går';
+    else if (diffDays < 7) key = 'Sidste 7 dage';
+
     if (!acc[key]) acc[key] = [];
     acc[key].push(chat);
     return acc;
   }, {} as Record<string, Chat[]>);
+
+  // Sorter sektioner så I dag er øverst
+  const sectionOrder = ['I dag', 'I går', 'Sidste 7 dage', 'Ældre'];
+  const orderedSections = Object.keys(groupedChats).sort((a, b) =>
+    sectionOrder.indexOf(a) - sectionOrder.indexOf(b)
+  );
 
   return (
     <aside
@@ -69,53 +80,57 @@ export const Sidebar = memo(function Sidebar({
       </div>
 
       {/* Chat List */}
-      <div className="flex-1 overflow-y-auto p-2 min-h-0">
-        {Object.entries(groupedChats).map(([section, sectionChats]) => (
-          <div key={section}>
-            {!isCollapsed ? (
-              <div className="text-xs text-text-muted uppercase tracking-wide px-2 py-3">{section}</div>
-            ) : null}
-            {sectionChats.map((chat) => (
-              <div
-                key={chat.id}
-                onClick={() => onSelectChat(chat.id)}
-                className={`
+      <div className="flex-1 overflow-y-auto p-2 min-h-0 custom-scrollbar">
+        {orderedSections.map((section) => {
+          const sectionChats = groupedChats[section];
+          return (
+            <div key={section}>
+              {!isCollapsed ? (
+                <div className="text-[10px] text-text-muted uppercase tracking-[0.2em] font-bold px-3 py-4 mt-2 border-b border-white/5 mb-2">
+                  {section}
+                </div>
+              ) : null}
+              {sectionChats.map((chat) => (
+                <div
+                  key={chat.id}
+                  onClick={() => onSelectChat(chat.id)}
+                  className={`
                   group flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer mb-1
                   transition-all duration-200 relative overflow-hidden
                   ${chat.id === currentChatId
-                    ? 'bg-accent/10 border border-accent/20 text-accent ring-1 ring-accent/10'
-                    : 'hover:bg-white/5 border border-transparent text-text-secondary hover:text-text-primary'}
+                      ? 'bg-accent/10 border border-accent/20 text-accent ring-1 ring-accent/10'
+                      : 'hover:bg-white/5 border border-transparent text-text-secondary hover:text-text-primary'}
                 `}
-                title={chat.title}
-              >
-                {chat.id === currentChatId && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-accent rounded-r-full shadow-[2px_0_10px_rgba(226,0,116,0.6)]" />
-                )}
-                <span className={`${chat.id === currentChatId ? 'text-accent' : 'text-text-muted group-hover:text-text-secondary'}`}>
-                  <IconChat className="w-4 h-4" />
-                </span>
-                {!isCollapsed ? (
-                  <span className={`flex-1 text-sm truncate font-medium ${chat.id === currentChatId ? 'text-accent' : ''}`}>
-                    {chat.title}
-                  </span>
-                ) : null}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteChat(chat.id);
-                  }}
-                  className={[
-                    "p-1.5 rounded-lg text-text-muted hover:text-error hover:bg-error/10 transition-all",
-                    isCollapsed ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-                  ].join(" ")}
-                  title="Slet"
+                  title={chat.title}
                 >
-                  <IconTrash className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        ))}
+                  {chat.id === currentChatId && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-accent rounded-r-full shadow-[2px_0_10px_rgba(226,0,116,0.6)]" />
+                  )}
+                  <span className={`${chat.id === currentChatId ? 'text-accent' : 'text-text-muted group-hover:text-text-secondary'}`}>
+                    <IconChat className="w-4 h-4" />
+                  </span>
+                  {!isCollapsed ? (
+                    <span className={`flex-1 text-sm truncate font-medium ${chat.id === currentChatId ? 'text-accent' : ''}`}>
+                      {chat.title}
+                    </span>
+                  ) : null}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteChat(chat.id);
+                    }}
+                    className={[
+                      "p-1.5 rounded-lg text-text-muted hover:text-error hover:bg-error/10 transition-all",
+                      isCollapsed ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                    ].join(" ")}
+                    title="Slet"
+                  >
+                    <IconTrash className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ))}
 
         {chats.length === 0 && (
           !isCollapsed ? (
