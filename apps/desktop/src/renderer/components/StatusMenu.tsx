@@ -16,6 +16,7 @@ interface StatusMenuProps {
     setCuttingEdgeMode: (active: boolean) => void;
     immersiveMode: boolean;
     setImmersiveMode: (active: boolean) => void;
+    mcpServersCount: number;
 }
 
 export const StatusMenu = memo(function StatusMenu({
@@ -28,6 +29,7 @@ export const StatusMenu = memo(function StatusMenu({
     setCuttingEdgeMode,
     immersiveMode,
     setImmersiveMode,
+    mcpServersCount,
 }: StatusMenuProps) {
     return (
         <div className="flex items-center gap-2">
@@ -65,10 +67,15 @@ export const StatusMenu = memo(function StatusMenu({
 
                 <button
                     onClick={() => onOpenSettings('mcp')}
-                    className="p-2 text-accent hover:bg-accent/10 rounded-lg transition-all"
+                    className="p-2 text-accent hover:bg-accent/10 rounded-lg transition-all relative group"
                     title="MCP Status"
                 >
                     <IconPlug className="w-4 h-4" />
+                    {mcpServersCount > 0 && (
+                        <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-accent text-white text-[7px] font-bold flex items-center justify-center rounded-full shadow-[0_0_5px_rgba(226,0,116,0.6)] animate-pulse">
+                            {mcpServersCount}
+                        </div>
+                    )}
                 </button>
 
                 <div className="w-[1px] h-4 bg-white/10 mx-1" />

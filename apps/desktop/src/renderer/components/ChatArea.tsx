@@ -28,6 +28,7 @@ interface ChatAreaProps {
   setCuttingEdgeMode: (active: boolean) => void;
   immersiveMode: boolean;
   setImmersiveMode: (active: boolean) => void;
+  mcpServersCount: number;
 }
 
 export const ChatArea = memo(function ChatArea({
@@ -43,6 +44,7 @@ export const ChatArea = memo(function ChatArea({
   setCuttingEdgeMode,
   immersiveMode,
   setImmersiveMode,
+  mcpServersCount,
 }: ChatAreaProps) {
   const [input, setInput] = useState('');
   const [debouncedInput, setDebouncedInput] = useState('');
@@ -319,6 +321,7 @@ export const ChatArea = memo(function ChatArea({
           setCuttingEdgeMode={setCuttingEdgeMode}
           immersiveMode={immersiveMode}
           setImmersiveMode={setImmersiveMode}
+          mcpServersCount={mcpServersCount}
         />
       </header>
 

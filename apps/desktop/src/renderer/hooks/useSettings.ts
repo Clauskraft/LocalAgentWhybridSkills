@@ -35,6 +35,7 @@ const DEFAULT_SETTINGS: UISettings = {
 export function useSettings() {
   const [settings, setSettings] = useState<UISettings>(DEFAULT_SETTINGS);
   const [ollamaStatus, setOllamaStatus] = useState<OllamaStatus>('checking');
+  const [mcpServersCount, setMcpServersCount] = useState<number>(0);
 
   useEffect(() => {
     const load = async () => {
@@ -44,6 +45,10 @@ export function useSettings() {
           const cfg = await api.getConfig();
           setSettings((prev) => ({ ...prev, ...cfg }));
           applyTheme(cfg.theme ?? DEFAULT_SETTINGS.theme);
+        }
+        if (api?.getMcpServers) {
+          const servers = await api.getMcpServers();
+          setMcpServersCount(Object.keys(servers || {}).length);
         }
       } catch {
         // ignore
@@ -82,6 +87,10 @@ export function useSettings() {
           // fallback: assume online if unreachable
           setOllamaStatus('online');
         }
+        if (api?.getMcpServers) {
+          const servers = await api.getMcpServers();
+          setMcpServersCount(Object.keys(servers || {}).length);
+        }
       } catch {
         setOllamaStatus('offline');
       }
@@ -97,5 +106,6 @@ export function useSettings() {
     settings,
     updateSettings,
     ollamaStatus,
+    mcpServersCount,
   };
 }

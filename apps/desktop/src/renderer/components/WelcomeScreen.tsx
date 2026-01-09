@@ -49,22 +49,26 @@ export const WelcomeScreen = memo(function WelcomeScreen({ onQuickStart }: Welco
       </p>
 
       {/* Quick Actions Grid */}
-      <div className="grid grid-cols-2 gap-4 max-w-xl w-full">
+      <div className="grid grid-cols-2 gap-6 max-w-2xl w-full">
         {quickActions.map((action, i) => (
           <button
             key={action.title}
             onClick={() => onQuickStart(action.prompt)}
-            className="group relative p-5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl text-left hover:border-accent/40 hover:bg-white/10 transition-all duration-300 shadow-lg hover:shadow-[0_0_30px_rgba(226,0,116,0.1)] active:scale-95 animate-slide-up"
-            style={{ animationDelay: `${i * 100}ms` }}
+            className="group relative p-6 glass-card rounded-3xl text-left hover:border-accent/40 transition-all duration-500 shadow-2xl hover:shadow-accent/5 active:scale-95 animate-slide-up"
+            style={{ animationDelay: `${i * 150}ms` }}
           >
-            <div className="w-12 h-12 rounded-xl bg-bg-tertiary border border-white/5 flex items-center justify-center text-accent mb-4 group-hover:bg-accent/10 group-hover:scale-110 transition-all duration-300">
+            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-accent mb-6 group-hover:scale-110 group-hover:bg-accent/10 transition-all duration-500 holographic-glow">
               {action.icon}
             </div>
-            <div className="font-bold text-sm mb-1 text-text-primary group-hover:text-accent transition-colors">{action.title}</div>
-            <div className="text-xs text-text-muted leading-relaxed line-clamp-2">{action.description}</div>
+            <div className="font-bold text-base mb-2 text-text-primary group-hover:text-accent transition-colors">
+              {action.title}
+            </div>
+            <div className="text-xs text-text-muted leading-loose opacity-70 group-hover:opacity-100 transition-opacity">
+              {action.description}
+            </div>
 
-            {/* Subtle corner accent */}
-            <div className="absolute top-2 right-2 w-1 h-1 rounded-full bg-accent opacity-0 group-hover:opacity-100 transition-opacity" />
+            {/* Subtle interactive glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-accent/0 group-hover:from-accent/5 group-hover:to-transparent transition-all duration-500 rounded-3xl pointer-events-none" />
           </button>
         ))}
       </div>

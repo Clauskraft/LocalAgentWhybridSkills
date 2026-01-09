@@ -56,6 +56,7 @@ export function App() {
     settings,
     updateSettings,
     ollamaStatus,
+    mcpServersCount,
   } = useSettings();
 
   const openSettings = useCallback((tab: string = 'general') => {
@@ -69,7 +70,7 @@ export function App() {
 
   // LOOP 5: Panel Management
   const handlePanelToggle = useCallback((panelId: string, visible: boolean) => {
-    setActivePanels(prev => {
+    _setActivePanels(prev => {
       const newPanels = new Set(prev);
       if (visible) {
         newPanels.add(panelId);
@@ -126,6 +127,7 @@ export function App() {
       isLoading={isLoading}
       currentModel={settings.model}
       ollamaStatus={ollamaStatus}
+      mcpServersCount={mcpServersCount}
       security={{
         fullAccess: !!settings.fullAccess,
         autoApprove: !!settings.autoApprove,
@@ -144,8 +146,8 @@ export function App() {
 
   return (
     <div className={`flex h-screen bg-bg-primary text-text-primary overflow-hidden transition-all duration-700 border-t-2 holographic-bg animate-holographic-float ${cuttingEdgeMode ? 'border-purple-500 shadow-[0_-10px_30px_rgba(168,85,247,0.15)]' :
-        immersiveMode ? 'border-accent shadow-[0_-10px_30px_rgba(226,0,116,0.15)]' :
-          'border-white/5'
+      immersiveMode ? 'border-accent shadow-[0_-10px_30px_rgba(226,0,116,0.15)]' :
+        'border-white/5'
       }`}>
       {/* Sidebar */}
       <Sidebar
