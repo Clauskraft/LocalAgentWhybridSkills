@@ -1,5 +1,6 @@
 import { memo, useState } from 'react';
 import { IconBolt, IconPlug, IconSettings, IconShield, IconCode, IconSparkles } from './icons';
+import { PERSONAS } from '../lib/personas';
 
 interface MessageBubbleProps {
   message: Message;
@@ -33,7 +34,14 @@ export const MessageBubble = memo(function MessageBubble({ message }: MessageBub
       <div className="flex-1 min-w-0">
         {/* Header */}
         <div className="flex items-center gap-2 mb-2">
-          <span className="font-semibold text-sm">{roleName}</span>
+          <span className="font-semibold text-sm flex items-center gap-1.5">
+            {roleName}
+            {!isUser && !isSystem && !isTool && (
+              <span className="animate-pulse-slow">
+                {PERSONAS.find(p => message.meta?.personaId === p.id)?.icon || PERSONAS[0].icon}
+              </span>
+            )}
+          </span>
           {message.meta?.model && !isUser && (
             <span className="text-[10px] px-1.5 py-0.5 bg-accent/10 text-accent border border-accent/20 rounded-full font-mono">
               {message.meta.model}

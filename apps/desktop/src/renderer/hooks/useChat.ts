@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import type { Chat, Message } from '../App';
 import { resolveBackendUrl } from '../lib/backend';
 import { cleanChatTitle, isModelNotFoundError, commonModelFallbacks } from '../lib/modelUtils';
+import { PERSONAS } from '../lib/personas';
 
 const DEFAULT_SETTINGS = {
   // Align with phase2 .env.production default, but browser-mode will also auto-fallback if missing.
@@ -16,6 +17,7 @@ type Settings = {
   useCloud?: boolean;
   temperature?: number;
   contextLength?: number;
+  personaId?: string;
 };
 
 function createMessage(role: Message['role'], content: string): Message {
@@ -109,12 +111,15 @@ export function useChat() {
     setIsLoading(true);
     try {
       const api = (window as any).sca01?.chat;
+      const activePersona = PERSONAS.find(p => p.id === (settings?.personaId || 'architect'));
+
       const payload = {
-        messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content })),
+        messages: [...messages, userMsg],
         model: settings?.model ?? DEFAULT_SETTINGS.model,
         host: settings?.ollamaHost ?? DEFAULT_SETTINGS.ollamaHost,
         backendUrl: settings?.backendUrl,
         useCloud: settings?.useCloud,
+        systemPrompt: activePersona?.systemPrompt,
         options: {
           temperature: settings?.temperature,
           num_ctx: settings?.contextLength,
@@ -159,7 +164,10 @@ export function useChat() {
         if (resp?.content) {
           const assistantMsg = createMessage('assistant', resp.content);
           assistantMsg.toolCalls = resp?.toolCalls;
-          assistantMsg.meta = { model: resp?.model || payload.model || "Unknown" };
+          assistantMsg.meta = {
+            model: resp?.model || payload.model || "Unknown",
+            personaId: settings?.personaId || 'architect'
+          };
           setMessages((prev) => [...prev, assistantMsg]);
           setChats((prev) =>
             prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c)

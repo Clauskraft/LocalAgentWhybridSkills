@@ -17,6 +17,7 @@ export interface UISettings {
   temperature?: number;
   contextLength?: number;
   immersiveMode?: boolean;
+  personaId?: string;
 }
 
 // Backwards-compatible name used by other modules/types.
@@ -36,6 +37,7 @@ const DEFAULT_SETTINGS: UISettings = {
   temperature: 0.7,
   contextLength: 4096,
   immersiveMode: false,
+  personaId: 'architect',
 };
 
 export function useSettings() {

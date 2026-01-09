@@ -6,7 +6,8 @@ import { SmartSuggestions } from './SmartSuggestions';
 import { MultiModalInput } from './MultiModalInput';
 import { NeuralVisualizer } from './NeuralVisualizer';
 import { PredictiveInterface } from './PredictiveInterface';
-import { IconChevronDown, IconPlug, IconSend, IconShield, IconBolt, IconSparkles } from './icons';
+import { IconSend, IconChevronDown, IconSettings, IconShield, IconBolt, IconPlus, IconPlug, IconCircle } from './icons';
+import { PERSONAS, Persona } from '../lib/personas';
 import { StatusMenu } from './StatusMenu';
 import { ThinkingIndicator } from './ThinkingIndicator';
 
@@ -308,6 +309,28 @@ export const ChatArea = memo(function ChatArea({
               </div>
             </div>
           )}
+        </div>
+
+        {/* Persona Selector */}
+        <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 shadow-inner">
+          {PERSONAS.map(p => (
+            <button
+              key={p.id}
+              onClick={() => onUpdateSettings({ personaId: p.id })}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-300 ${settings.personaId === p.id
+                  ? 'bg-accent text-white shadow-[0_0_15px_rgba(226,0,116,0.3)] scale-105'
+                  : 'text-text-muted hover:text-text-primary hover:bg-white/5'
+                }`}
+              title={p.description}
+            >
+              <span className="text-sm">{p.icon}</span>
+              {settings.personaId === p.id && (
+                <span className="text-[10px] font-black uppercase tracking-wider animate-fade-in whitespace-nowrap">
+                  {p.name.split(' ')[1]}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
         {/* Simplified Status Group */}
