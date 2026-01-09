@@ -218,7 +218,7 @@ NOTION_DATABASE_ID=xxx
 - [x] **Phase 1:** CLI + Ollama + MCP Tool Server
 - [x] **Phase 2:** Desktop UI + Approval Gates + Full System Access
 - [x] **Phase 3:** Cloud Mode (Railway + PostgreSQL + Notion)
-- [ ] **Phase 4:** Agent-Mesh (Multi-agent coordination)
+- [ ] **Phase 4:** Agent-Mesh (The Constellation of Dots) 🔄 *[In Progress]*
 
 ## 🔗 Links
 
