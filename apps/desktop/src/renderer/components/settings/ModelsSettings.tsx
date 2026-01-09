@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { IconPlus, IconTrash } from '../icons';
+import { IconPlus, IconTrash, IconBolt, IconSettings } from '../icons';
 import { useToast } from '../Toast';
 import { UISettings } from '../../hooks/useSettings';
 
@@ -151,8 +151,8 @@ export function ModelsSettings({ settings, onUpdate }: ModelsSettingsProps) {
                                             }
                                         }}
                                         className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${isSelected
-                                                ? 'bg-purple-500/20 border-purple-500 text-purple-300'
-                                                : 'bg-white/5 border-white/5 text-text-muted hover:border-white/20'
+                                            ? 'bg-purple-500/20 border-purple-500 text-purple-300'
+                                            : 'bg-white/5 border-white/5 text-text-muted hover:border-white/20'
                                             }`}
                                     >
                                         <div className={`w-3 h-3 rounded-sm border ${isSelected ? 'bg-purple-500 border-purple-400' : 'border-white/20'}`} />
