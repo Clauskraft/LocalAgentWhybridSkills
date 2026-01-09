@@ -1,5 +1,6 @@
 import { useState, useEffect, memo, useMemo } from 'react';
-import { IconSearch, IconSettings, IconPlus, IconSparkles, IconShield, IconArchive, IconBolt } from './icons';
+import { IconSearch, IconSettings, IconPlus, IconSparkles, IconShield, IconArchive, IconBolt, IconCircle } from './icons';
+import { SYSTEM_SHORTCUTS } from '../lib/shortcuts';
 
 interface Command {
     id: string;
@@ -19,6 +20,7 @@ interface CommandPaletteProps {
         toggleImmersive: () => void;
         toggleLab: () => void;
         archiveCurrent: () => void;
+        executeShortcut: (cmd: string) => void;
     };
 }
 
@@ -26,13 +28,25 @@ export const CommandPalette = memo(function CommandPalette({ isOpen, onClose, ac
     const [search, setSearch] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
 
-    const commands: Command[] = useMemo(() => [
-        { id: 'new', text: 'Ny Samtale', description: 'Start en frisk chat session', icon: <IconPlus className="w-4 h-4" />, shortcut: 'Ctrl+N', action: actions.newChat },
-        { id: 'settings', text: 'Indstillinger', description: 'Åbn system konfiguration', icon: <IconSettings className="w-4 h-4" />, shortcut: 'Ctrl+,', action: () => actions.openSettings('general') },
-        { id: 'immersive', text: 'Toggle Immersive Mode', description: 'Fuldskærms workspace arkitektur', icon: <IconBolt className="w-4 h-4 text-accent" />, action: actions.toggleImmersive },
-        { id: 'lab', text: 'Toggle Lab Mode', description: 'Eksperimentelle @dot funktioner', icon: <IconSparkles className="w-4 h-4 text-purple-400" />, shortcut: 'Ctrl+/', action: actions.toggleLab },
-        { id: 'archive', text: 'Arkivér Samtale', description: 'Flyt aktiv chat til arkiv', icon: <IconArchive className="w-4 h-4" />, action: actions.archiveCurrent },
-    ], [actions]);
+    const commands: Command[] = useMemo(() => {
+        const base: Command[] = [
+            { id: 'new', text: 'Ny Samtale', description: 'Start en frisk chat session', icon: <IconPlus className="w-4 h-4" />, shortcut: 'Ctrl+N', action: actions.newChat },
+            { id: 'settings', text: 'Indstillinger', description: 'Åbn system konfiguration', icon: <IconSettings className="w-4 h-4" />, shortcut: 'Ctrl+,', action: () => actions.openSettings('general') },
+            { id: 'immersive', text: 'Toggle Immersive Mode', description: 'Fuldskærms workspace arkitektur', icon: <IconBolt className="w-4 h-4 text-accent" />, action: actions.toggleImmersive },
+            { id: 'lab', text: 'Toggle Lab Mode', description: 'Eksperimentelle @dot funktioner', icon: <IconSparkles className="w-4 h-4 text-purple-400" />, shortcut: 'Ctrl+/', action: actions.toggleLab },
+            { id: 'archive', text: 'Arkivér Samtale', description: 'Flyt aktiv chat til arkiv', icon: <IconArchive className="w-4 h-4" />, action: actions.archiveCurrent },
+        ];
+
+        const shortcuts: Command[] = Object.entries(SYSTEM_SHORTCUTS).map(([key, data]) => ({
+            id: `sc-${key}`,
+            text: `/sc:${key}`,
+            description: data.description,
+            icon: <IconCircle className="w-4 h-4 text-emerald-400" />,
+            action: () => actions.executeShortcut(`/sc:${key}`)
+        }));
+
+        return [...base, ...shortcuts];
+    }, [actions]);
 
     const filtered = commands.filter(c => c.text.toLowerCase().includes(search.toLowerCase()) || c.description.toLowerCase().includes(search.toLowerCase()));
 

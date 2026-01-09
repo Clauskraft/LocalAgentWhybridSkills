@@ -92,6 +92,16 @@ export function useChat() {
     }
   }, [lastDeletedChat]);
 
+  const addSystemMessage = useCallback((content: string, meta?: any) => {
+    if (!currentChatId) return;
+    const msg = createMessage('system', content);
+    if (meta) msg.meta = meta;
+    setMessages((prev) => [...prev, msg]);
+    setChats((prev) =>
+      prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, msg] } : c)
+    );
+  }, [currentChatId]);
+
   const sendMessage = useCallback(async (content: string, settings?: Settings) => {
     if (!currentChatId) return;
 
@@ -304,6 +314,7 @@ export function useChat() {
     deleteChat,
     undoDeleteChat,
     archiveChat,
+    addSystemMessage,
     sendMessage,
     lastDeletedChat,
   };

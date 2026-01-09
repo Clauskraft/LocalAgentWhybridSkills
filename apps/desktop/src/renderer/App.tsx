@@ -12,6 +12,7 @@ import { useSettings } from './hooks/useSettings';
 import { ShortcutsModal } from './components/ShortcutsModal';
 import { DropZone } from './components/DropZone';
 import { CommandPalette } from './components/CommandPalette';
+import { findShortcut } from './lib/shortcuts';
 
 type AppView = 'chat' | 'pulse' | 'roma';
 
@@ -172,8 +173,22 @@ export function App() {
   }, [createChat, openSettings]);
 
   const handleSendMessage = useCallback(async (content: string) => {
+    const shortcut = findShortcut(content);
+    if (shortcut) {
+      const result = await shortcut.handler({
+        content,
+        sendMessage: (c) => sendMessage(c, settings),
+        updateSettings,
+        createChat,
+        archiveChat: (id) => archiveChat(id || currentChatId || '')
+      });
+      if (result) {
+        addSystemMessage(result.content, result.meta);
+      }
+      return;
+    }
     await sendMessage(content, settings);
-  }, [sendMessage, settings]);
+  }, [sendMessage, settings, addSystemMessage, updateSettings, createChat, archiveChat, currentChatId]);
 
   // Pulse+ Navigation
   const openPulse = useCallback(() => {
@@ -243,7 +258,8 @@ export function App() {
           archiveCurrent: () => {
             const activeId = chats.find(c => !c.isArchived)?.id;
             if (activeId) archiveChat(activeId);
-          }
+          },
+          executeShortcut: handleSendMessage
         }}
       />
       {/* Sidebar */}
