@@ -25,7 +25,23 @@ export const ThinkingIndicator = memo(function ThinkingIndicator() {
                     <div className="absolute inset-0 bg-gradient-to-r from-accent/20 via-accent to-accent/20 animate-loading-slide shadow-[0_0_10px_rgba(226,0,116,0.5)]" />
                 </div>
 
-                <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono">
+                <div className="flex flex-col gap-1.5 px-3 py-2 bg-white/5 border border-white/10 rounded-xl mt-1 animate-fade-in max-w-xs transition-all">
+                    <div className="flex items-center justify-between text-[9px] font-mono text-accent/70 uppercase tracking-widest">
+                        <span>Neural Trace</span>
+                        <span className="animate-pulse">Active</span>
+                    </div>
+                    <div className="h-4 overflow-hidden relative">
+                        <div className="flex flex-col animate-scroll-vertical gap-1">
+                            {['Analysing Context...', 'Mapping Semantic space...', 'Optimizing Weights...', 'Browsing Knowledge...', 'Synthesizing Response...'].map((trace, i) => (
+                                <span key={i} className="text-[10px] text-text-muted font-mono whitespace-nowrap opacity-60">
+                                    > {trace}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono mt-1">
                     <span className="inline-block w-2 h-2 rounded-full bg-success animate-pulse" />
                     Neural connections active • High confidence
                 </div>

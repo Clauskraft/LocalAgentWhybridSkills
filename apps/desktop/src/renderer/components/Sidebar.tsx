@@ -195,6 +195,17 @@ export const Sidebar = memo(function Sidebar({
           <NavItem icon={<IconPlug className="w-4 h-4" />} label={isCollapsed ? "" : "MCP Servere"} onClick={() => onOpenSettings('mcp')} compact={isCollapsed} />
           <NavItem icon={<IconSettings className="w-4 h-4" />} label={isCollapsed ? "" : "Indstillinger"} onClick={() => onOpenSettings('general')} compact={isCollapsed} kbd="Ctrl+," />
         </div>
+
+        {/* Footer / Watermark */}
+        {!isCollapsed && (
+          <div className="p-4 border-t border-white/5 opacity-30 select-none">
+            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">
+              <span>SCA-01</span>
+              <span>v0.2.5</span>
+            </div>
+            <p className="text-[8px] font-mono text-text-muted mt-1">Neural Engine Active • (claus@local)</p>
+          </div>
+        )}
     </aside>
   );
 });

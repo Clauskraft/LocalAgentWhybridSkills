@@ -758,4 +758,18 @@
   .animate-message-entry {
     animation: message-entry 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
   }
+
+  @keyframes scroll-vertical {
+    0% {
+      transform: translateY(0);
+    }
+
+    100% {
+      transform: translateY(-300%);
+    }
+  }
+
+  .animate-scroll-vertical {
+    animation: scroll-vertical 15s linear infinite;
+  }
 }
