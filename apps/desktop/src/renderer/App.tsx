@@ -11,6 +11,7 @@ import { useChat } from './hooks/useChat';
 import { useSettings } from './hooks/useSettings';
 import { useToast } from './components/Toast';
 import { ShortcutsModal } from './components/ShortcutsModal';
+import { DropZone } from './components/DropZone';
 
 type AppView = 'chat' | 'pulse' | 'roma';
 
@@ -41,6 +42,7 @@ export function App() {
   const [currentView, setCurrentView] = useState<AppView>('chat');
   const [showPulseCurate, setShowPulseCurate] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const { showToast } = useToast();
 
@@ -55,6 +57,7 @@ export function App() {
     undoDeleteChat,
     sendMessage,
     lastDeletedChat,
+    archiveChat, // Added archiveChat
   } = useChat();
 
   // LOOP 9: Undo Delete Notification
@@ -78,6 +81,7 @@ export function App() {
   const {
     settings,
     updateSettings,
+    resetToDefaults, // Added resetToDefaults
     ollamaStatus,
     mcpServersCount,
   } = useSettings();
@@ -91,22 +95,38 @@ export function App() {
     setShowSettings(false);
   }, []);
 
-  // LOOP 5: Panel Management
-  const handlePanelToggle = useCallback((panelId: string, visible: boolean) => {
-    _setActivePanels(prev => {
-      const newPanels = new Set(prev);
-      if (visible) {
-        newPanels.add(panelId);
-      } else {
-        newPanels.delete(panelId);
-      }
-      return newPanels;
-    });
-  }, []);
+  const handleImmersiveToggle = useCallback((active: boolean) => {
+    updateSettings({ immersiveMode: active });
+  }, [updateSettings]);
 
-  const handleImmersiveToggle = useCallback(() => {
-    updateSettings({ immersiveMode: !settings.immersiveMode });
-  }, [settings.immersiveMode, updateSettings]);
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.currentTarget === e.target) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      const file = files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const content = event.target?.result as string;
+        // Send content directly to the active chat
+        sendMessage(`Her er indholdet fra filen "${file.name}":\n\n${content}`, settings);
+      };
+      reader.readAsText(file);
+    }
+  };
 
   // LOOP 10: Cutting Edge Features
   const handleFeatureActivate = useCallback((feature: string, data?: any) => {
@@ -188,10 +208,16 @@ export function App() {
   );
 
   return (
-    <div className={`flex h-screen bg-bg-primary text-text-primary overflow-hidden transition-all duration-700 border-t-2 holographic-bg animate-holographic-float ${cuttingEdgeMode ? 'border-purple-500 shadow-[0_-10px_30px_rgba(168,85,247,0.15)]' :
-      settings.immersiveMode ? 'border-accent shadow-[0_-10px_30px_rgba(226,0,116,0.15)]' :
-        'border-white/5'
-      }`}>
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`flex h-screen bg-bg-primary text-text-primary overflow-hidden transition-all duration-700 border-t-2 holographic-bg animate-holographic-float ${cuttingEdgeMode ? 'border-purple-500 shadow-[0_-10px_30px_rgba(168,85,247,0.15)]' :
+        settings.immersiveMode ? 'border-accent shadow-[0_-10px_30px_rgba(226,0,116,0.15)]' :
+          'border-white/5'
+        }`}>
+
+      <DropZone isDragging={isDragging} />
       {/* Sidebar */}
       <Sidebar
         chats={chats}
