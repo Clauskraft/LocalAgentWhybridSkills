@@ -21,6 +21,7 @@ function createMessage(role: Message['role'], content: string): Message {
     role,
     content,
     timestamp: new Date().toISOString(),
+    meta: {},
   };
 }
 
@@ -124,6 +125,7 @@ export function useChat() {
         if (resp?.content) {
           const assistantMsg = createMessage('assistant', resp.content);
           assistantMsg.toolCalls = resp?.toolCalls;
+          assistantMsg.meta = { model: resp?.model || payload.model || "Unknown" };
           setMessages((prev) => [...prev, assistantMsg]);
           setChats((prev) =>
             prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c)
@@ -160,6 +162,7 @@ export function useChat() {
           const content = data?.message?.content ?? data?.content ?? "";
           const assistantMsg = createMessage('assistant', content);
           assistantMsg.toolCalls = data?.message?.tool_calls;
+          assistantMsg.meta = { model: data?.model || payload.model || "Cloud Model" };
           setMessages((prev) => [...prev, assistantMsg]);
           setChats((prev) =>
             prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c)
@@ -196,6 +199,7 @@ export function useChat() {
                     const data = await res.json();
                     const content = data?.message?.content ?? data?.content ?? "";
                     const assistantMsg = createMessage('assistant', content);
+                    assistantMsg.meta = { model: first.trim() };
                     setMessages((prev) => [...prev, assistantMsg]);
                     setChats((prev) =>
                       prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c)
@@ -215,6 +219,7 @@ export function useChat() {
           const data = await res.json();
           const content = data?.message?.content ?? data?.content ?? "";
           const assistantMsg = createMessage('assistant', content);
+          assistantMsg.meta = { model: params.model || payload.model };
           setMessages((prev) => [...prev, assistantMsg]);
           setChats((prev) =>
             prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c)

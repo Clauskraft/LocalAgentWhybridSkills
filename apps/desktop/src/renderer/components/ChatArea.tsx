@@ -7,6 +7,7 @@ import { MultiModalInput } from './MultiModalInput';
 import { NeuralVisualizer } from './NeuralVisualizer';
 import { PredictiveInterface } from './PredictiveInterface';
 import { IconChevronDown, IconPlug, IconSend, IconShield, IconBolt } from './icons';
+import { StatusMenu } from './StatusMenu';
 
 interface ChatAreaProps {
   messages: Message[];
@@ -92,7 +93,7 @@ export const ChatArea = memo(function ChatArea({
 
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || isLoading) return;
-    
+
     const content = input.trim();
     setInput('');
     await onSendMessage(content);
@@ -203,11 +204,10 @@ export const ChatArea = memo(function ChatArea({
                         setCustomModel("");
                         setShowModelDropdown(false);
                       }}
-                      className={`px-4 py-3 cursor-pointer transition-all duration-150 hover:bg-accent/10 ${
-                        model === currentModel
-                          ? 'bg-accent text-white shadow-lg'
-                          : 'text-text-primary hover:shadow-md'
-                      }`}
+                      className={`px-4 py-3 cursor-pointer transition-all duration-150 hover:bg-accent/10 ${model === currentModel
+                        ? 'bg-accent text-white shadow-lg'
+                        : 'text-text-primary hover:shadow-md'
+                        }`}
                     >
                       <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${model === currentModel ? 'bg-white' : 'bg-accent'} opacity-60`} />
@@ -273,63 +273,14 @@ export const ChatArea = memo(function ChatArea({
           )}
         </div>
 
-        {/* LOOP 1: Glassmorphism Status */}
-        <div className="flex items-center gap-3">
-          <div className="px-4 py-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg">
-            <div className="flex items-center gap-2">
-              <span className={security.fullAccess ? 'text-warning' : 'text-accent'}>
-                <IconShield className="w-4 h-4" />
-              </span>
-              <span className="text-text-primary text-sm font-medium">
-                {security.fullAccess ? '⚠️ Full access' : '🛡️ Safe mode'}
-              </span>
-              <span className="text-text-muted">·</span>
-              <span className="text-accent text-sm">{security.safeDirsCount} dirs</span>
-              <span className="text-text-muted">·</span>
-              <span className={security.autoApprove ? 'text-warning' : 'text-accent'}>
-                {security.autoApprove ? '🤖 Auto' : '👤 Manual'}
-              </span>
-            </div>
-          </div>
-
-          {/* LOOP 6: Neural Visualizer Toggle */}
-          <button
-            onClick={() => setShowNeuralVisualizer(!showNeuralVisualizer)}
-            className={`flex items-center gap-2 px-4 py-2 backdrop-blur-sm border rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl ${
-              showNeuralVisualizer
-                ? 'bg-accent text-white'
-                : 'bg-accent/10 border-accent/20 text-accent hover:bg-accent/20'
-            }`}
-            title="Toggle Neural Network Visualizer"
-          >
-            <IconBolt className="w-4 h-4" />
-            <span className="text-sm font-medium">Neural</span>
-          </button>
-
-          <button
-            onClick={() => onOpenSettings('mcp')}
-            className="flex items-center gap-2 px-4 py-2 bg-accent/10 backdrop-blur-sm border border-accent/20 rounded-xl hover:bg-accent/20 transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
-            <IconPlug className="w-4 h-4 text-accent" />
-            <span className="text-sm font-medium text-accent">MCP</span>
-          </button>
-          <div className="px-3 py-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg">
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-block w-3 h-3 rounded-full shadow-lg ${
-                  ollamaStatus === 'online'
-                    ? 'bg-success shadow-success/50 animate-pulse'
-                    : ollamaStatus === 'offline'
-                    ? 'bg-error shadow-error/50'
-                    : 'bg-warning shadow-warning/50 animate-pulse'
-                }`}
-              />
-              <span className="text-sm font-medium text-text-primary">
-                {ollamaStatus === 'online' ? '🟢 Online' : ollamaStatus === 'offline' ? '🔴 Offline' : '🟡 Checking'}
-              </span>
-            </div>
-          </div>
-        </div>
+        {/* Simplified Status Group */}
+        <StatusMenu
+          ollamaStatus={ollamaStatus}
+          showNeuralVisualizer={showNeuralVisualizer}
+          setShowNeuralVisualizer={setShowNeuralVisualizer}
+          onOpenSettings={onOpenSettings}
+          security={security}
+        />
       </header>
 
       {untrusted.flagged && (
@@ -355,7 +306,7 @@ export const ChatArea = memo(function ChatArea({
             {messages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
-            
+
             {isLoading && (
               <div className="flex gap-4">
                 <div className="w-8 h-8 rounded-md bg-tdc-purple flex items-center justify-center text-white">
@@ -368,7 +319,7 @@ export const ChatArea = memo(function ChatArea({
                 </div>
               </div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </div>
         </div>
@@ -429,14 +380,14 @@ export const ChatArea = memo(function ChatArea({
                 </button>
               </div>
             </div>
-            
+
             <div className="flex gap-2 pt-2 mt-2 border-t border-border-primary">
               <ToolButton icon={<span className="inline-flex items-center justify-center"><IconPlug className="w-4 h-4" /></span>} label="MCP" onClick={() => onOpenSettings('mcp')} />
               <ToolButton icon={<span className="inline-flex items-center justify-center"><IconSend className="w-4 h-4" /></span>} label="Send" onClick={handleSubmit} />
               <ToolButton icon={<span className="inline-flex items-center justify-center"><IconChevronDown className="w-4 h-4" /></span>} label="Prompts" onClick={() => onOpenSettings('prompts')} />
             </div>
           </div>
-          
+
           <p className="text-center text-xs text-text-muted mt-3">
             SCA-01 kan udføre handlinger på din PC. Alle operationer logges.
           </p>
@@ -474,13 +425,13 @@ function detectUntrustedContent(messages: Message[]): { flagged: boolean; reason
   return { flagged: reasons.size > 0, reasons: Array.from(reasons) };
 }
 
-function ToolButton({ 
-  icon, 
-  label, 
-  onClick 
-}: { 
-  icon: React.ReactNode; 
-  label: string; 
+function ToolButton({
+  icon,
+  label,
+  onClick
+}: {
+  icon: React.ReactNode;
+  label: string;
   onClick: () => void;
 }) {
   return (

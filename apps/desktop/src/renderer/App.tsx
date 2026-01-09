@@ -21,6 +21,7 @@ export interface Message {
     name: string;
     arguments: Record<string, unknown>;
   }>;
+  meta?: Record<string, any>;
 }
 
 export interface Chat {
@@ -39,7 +40,7 @@ export function App() {
   const [currentView, setCurrentView] = useState<AppView>('chat');
   const [showPulseCurate, setShowPulseCurate] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  
+
   const {
     chats,
     currentChatId,
@@ -50,7 +51,7 @@ export function App() {
     deleteChat,
     sendMessage,
   } = useChat();
-  
+
   const {
     settings,
     updateSettings,
@@ -176,11 +177,10 @@ export function App() {
           <div className="absolute top-4 right-4 z-50 flex gap-2">
             <button
               onClick={toggleCuttingEdgeMode}
-              className={`px-3 py-2 backdrop-blur-sm border rounded-lg transition-all duration-200 shadow-lg ${
-                cuttingEdgeMode
+              className={`px-3 py-2 backdrop-blur-sm border rounded-lg transition-all duration-200 shadow-lg ${cuttingEdgeMode
                   ? 'bg-purple-500/20 border-purple-500/30 text-purple-400'
                   : 'bg-purple-500/10 border-purple-500/20 text-purple-300 hover:bg-purple-500/20'
-              }`}
+                }`}
               title="Toggle Cutting-Edge Features"
             >
               ⚡ Lab
@@ -204,11 +204,10 @@ export function App() {
           <div className="absolute top-4 right-4 z-50 flex gap-2">
             <button
               onClick={toggleCuttingEdgeMode}
-              className={`px-3 py-2 backdrop-blur-sm border rounded-lg transition-all duration-200 shadow-lg ${
-                cuttingEdgeMode
+              className={`px-3 py-2 backdrop-blur-sm border rounded-lg transition-all duration-200 shadow-lg ${cuttingEdgeMode
                   ? 'bg-purple-500/20 border-purple-500/30 text-purple-400'
                   : 'bg-purple-500/10 border-purple-500/20 text-purple-300 hover:bg-purple-500/20'
-              }`}
+                }`}
               title="Toggle Cutting-Edge Features"
             >
               ⚡ Lab

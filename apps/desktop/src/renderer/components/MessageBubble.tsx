@@ -11,13 +11,13 @@ export const MessageBubble = memo(function MessageBubble({ message }: MessageBub
   const isSystem = message.role === 'system';
   const isTool = message.role === 'tool';
 
-  const avatarBg = isUser 
-    ? 'bg-accent' 
-    : isSystem 
-    ? 'bg-warning' 
-    : isTool 
-    ? 'bg-tdc-blue' 
-    : 'bg-tdc-purple';
+  const avatarBg = isUser
+    ? 'bg-accent'
+    : isSystem
+      ? 'bg-warning'
+      : isTool
+        ? 'bg-tdc-blue'
+        : 'bg-tdc-purple';
 
   const avatarIcon = isUser ? <IconShield className="w-4 h-4" /> : isSystem ? <IconSettings className="w-4 h-4" /> : isTool ? <IconPlug className="w-4 h-4" /> : <IconBolt className="w-4 h-4" />;
   const roleName = isUser ? 'Dig' : isSystem ? 'System' : isTool ? 'Tool' : 'SCA-01';
@@ -34,6 +34,11 @@ export const MessageBubble = memo(function MessageBubble({ message }: MessageBub
         {/* Header */}
         <div className="flex items-center gap-2 mb-2">
           <span className="font-semibold text-sm">{roleName}</span>
+          {message.meta?.model && !isUser && (
+            <span className="text-[10px] px-1.5 py-0.5 bg-accent/10 text-accent border border-accent/20 rounded-full font-mono">
+              {message.meta.model}
+            </span>
+          )}
           <span className="text-xs text-text-muted opacity-0 group-hover:opacity-100 transition-opacity">
             {formatTime(message.timestamp)}
           </span>
@@ -121,10 +126,10 @@ function formatContent(content: string): React.ReactNode {
 function formatInline(text: string): React.ReactNode {
   // Bold
   text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  
+
   // Inline code
   const parts = text.split(/(`[^`]+`)/g);
-  
+
   return parts.map((part, i) => {
     if (part.startsWith('`') && part.endsWith('`')) {
       return (
