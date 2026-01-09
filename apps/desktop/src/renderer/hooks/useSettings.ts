@@ -14,6 +14,8 @@ export interface UISettings {
   backendUrl?: string;
   useCloud?: boolean;
   safeDirs?: string[];
+  temperature?: number;
+  contextLength?: number;
 }
 
 // Backwards-compatible name used by other modules/types.
@@ -30,6 +32,8 @@ const DEFAULT_SETTINGS: UISettings = {
   // Browser/dev mode fallback can be configured via VITE_BACKEND_URL
   backendUrl: resolveBackendUrl(undefined) ?? 'https://sca-01-phase3-production.up.railway.app',
   useCloud: true,
+  temperature: 0.7,
+  contextLength: 4096,
 };
 
 export function useSettings() {

@@ -159,6 +159,58 @@ export function ModelsSettings({ settings, onUpdate }: ModelsSettingsProps) {
                     </div>
                 )}
             </section>
+
+            <section className="pt-6 border-t border-white/5">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted mb-6 flex items-center gap-2">
+                    <IconSettings className="w-3.5 h-3.5" /> Advanced AI Parameters
+                </h3>
+
+                <div className="space-y-8 glass-card p-6 rounded-3xl border-accent/10">
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <label className="text-xs font-bold text-text-primary uppercase tracking-wider">Model Temperature</label>
+                            <span className="px-2 py-1 bg-accent/20 text-accent rounded-lg text-[10px] font-black font-mono">
+                                {(settings.temperature ?? 0.7).toFixed(1)}
+                            </span>
+                        </div>
+                        <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.1"
+                            value={settings.temperature ?? 0.7}
+                            onChange={(e) => onUpdate({ temperature: parseFloat(e.target.value) })}
+                            className="w-full h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer accent-accent"
+                        />
+                        <div className="flex justify-between text-[8px] text-text-muted font-bold uppercase tracking-widest">
+                            <span>Præcis</span>
+                            <span>Kreativ</span>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <label className="text-xs font-bold text-text-primary uppercase tracking-wider">Context Window</label>
+                            <span className="px-2 py-1 bg-accent/20 text-accent rounded-lg text-[10px] font-black font-mono">
+                                {(settings.contextLength ?? 4096).toLocaleString()} tokens
+                            </span>
+                        </div>
+                        <input
+                            type="range"
+                            min="512"
+                            max="32768"
+                            step="512"
+                            value={settings.contextLength ?? 4096}
+                            onChange={(e) => onUpdate({ contextLength: parseInt(e.target.value) })}
+                            className="w-full h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer accent-accent"
+                        />
+                        <div className="flex justify-between text-[8px] text-text-muted font-bold uppercase tracking-widest">
+                            <span>Hurtig</span>
+                            <span>Dyb Hukommelse</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
     );
 }

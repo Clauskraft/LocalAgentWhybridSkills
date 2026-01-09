@@ -14,6 +14,8 @@ type Settings = {
   ollamaHost: string;
   backendUrl?: string;
   useCloud?: boolean;
+  temperature?: number;
+  contextLength?: number;
 };
 
 function createMessage(role: Message['role'], content: string): Message {
@@ -109,6 +111,10 @@ export function useChat() {
         host: settings?.ollamaHost ?? DEFAULT_SETTINGS.ollamaHost,
         backendUrl: settings?.backendUrl,
         useCloud: settings?.useCloud,
+        options: {
+          temperature: settings?.temperature,
+          num_ctx: settings?.contextLength,
+        }
       };
 
       if (api?.sendMessage) {
