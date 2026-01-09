@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { IconShield, IconBolt, IconPlug, IconChevronDown } from './icons';
+import { IconShield, IconBolt, IconPlug, IconChevronDown, IconSparkles } from './icons';
 
 interface StatusMenuProps {
     ollamaStatus: 'online' | 'offline' | 'checking';
@@ -12,6 +12,10 @@ interface StatusMenuProps {
         safeDirsCount: number;
         useCloud: boolean;
     };
+    cuttingEdgeMode: boolean;
+    setCuttingEdgeMode: (active: boolean) => void;
+    immersiveMode: boolean;
+    setImmersiveMode: (active: boolean) => void;
 }
 
 export const StatusMenu = memo(function StatusMenu({
@@ -20,6 +24,10 @@ export const StatusMenu = memo(function StatusMenu({
     setShowNeuralVisualizer,
     onOpenSettings,
     security,
+    cuttingEdgeMode,
+    setCuttingEdgeMode,
+    immersiveMode,
+    setImmersiveMode,
 }: StatusMenuProps) {
     return (
         <div className="flex items-center gap-2">
@@ -27,7 +35,7 @@ export const StatusMenu = memo(function StatusMenu({
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 backdrop-blur-md border border-white/10 rounded-full shadow-inner">
                 <span
                     className={`w-2 h-2 rounded-full ${ollamaStatus === 'online' ? 'bg-success animate-pulse' :
-                            ollamaStatus === 'offline' ? 'bg-error' : 'bg-warning animate-pulse'
+                        ollamaStatus === 'offline' ? 'bg-error' : 'bg-warning animate-pulse'
                         }`}
                 />
                 <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
@@ -61,6 +69,26 @@ export const StatusMenu = memo(function StatusMenu({
                     title="MCP Status"
                 >
                     <IconPlug className="w-4 h-4" />
+                </button>
+
+                <div className="w-[1px] h-4 bg-white/10 mx-1" />
+
+                <button
+                    onClick={() => setCuttingEdgeMode(!cuttingEdgeMode)}
+                    className={`p-2 rounded-lg transition-all ${cuttingEdgeMode ? 'text-purple-400 bg-purple-500/20' : 'text-text-muted hover:bg-white/5'
+                        }`}
+                    title="Cutting-Edge Lab Features"
+                >
+                    <IconSparkles className="w-4 h-4" />
+                </button>
+
+                <button
+                    onClick={() => setImmersiveMode(!immersiveMode)}
+                    className={`p-2 rounded-lg transition-all ${immersiveMode ? 'text-accent bg-accent/20' : 'text-text-muted hover:bg-white/5'
+                        }`}
+                    title="Immersive Mode"
+                >
+                    <span className="text-sm font-bold leading-none">🚀</span>
                 </button>
             </div>
         </div>

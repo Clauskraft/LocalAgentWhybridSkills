@@ -135,6 +135,10 @@ export function App() {
       onSendMessage={handleSendMessage}
       onOpenSettings={openSettings}
       onSelectModel={(model) => updateSettings({ model })}
+      cuttingEdgeMode={cuttingEdgeMode}
+      setCuttingEdgeMode={setCuttingEdgeMode}
+      immersiveMode={immersiveMode}
+      setImmersiveMode={setImmersiveMode}
     />
   );
 
@@ -173,54 +177,12 @@ export function App() {
         </div>
       ) : immersiveMode ? (
         <div className="flex-1 relative min-w-0 min-h-0">
-          {/* LOOP 5 & 10: Mode Toggles */}
-          <div className="absolute top-4 right-4 z-50 flex gap-2">
-            <button
-              onClick={toggleCuttingEdgeMode}
-              className={`px-3 py-2 backdrop-blur-sm border rounded-lg transition-all duration-200 shadow-lg ${cuttingEdgeMode
-                  ? 'bg-purple-500/20 border-purple-500/30 text-purple-400'
-                  : 'bg-purple-500/10 border-purple-500/20 text-purple-300 hover:bg-purple-500/20'
-                }`}
-              title="Toggle Cutting-Edge Features"
-            >
-              ⚡ Lab
-            </button>
-            <button
-              onClick={toggleImmersiveMode}
-              className="px-3 py-2 bg-accent/20 backdrop-blur-sm border border-accent/30 rounded-lg text-accent hover:bg-accent/30 transition-all duration-200 shadow-lg"
-              title="Exit Immersive Mode"
-            >
-              🎭 Exit Immersive
-            </button>
-          </div>
-
           <ImmersiveWorkspace onPanelToggle={handlePanelToggle}>
             {chatAreaContent}
           </ImmersiveWorkspace>
         </div>
       ) : (
         <div className="flex-1 relative min-w-0 min-h-0">
-          {/* LOOP 5 & 10: Mode Toggles */}
-          <div className="absolute top-4 right-4 z-50 flex gap-2">
-            <button
-              onClick={toggleCuttingEdgeMode}
-              className={`px-3 py-2 backdrop-blur-sm border rounded-lg transition-all duration-200 shadow-lg ${cuttingEdgeMode
-                  ? 'bg-purple-500/20 border-purple-500/30 text-purple-400'
-                  : 'bg-purple-500/10 border-purple-500/20 text-purple-300 hover:bg-purple-500/20'
-                }`}
-              title="Toggle Cutting-Edge Features"
-            >
-              ⚡ Lab
-            </button>
-            <button
-              onClick={toggleImmersiveMode}
-              className="px-3 py-2 bg-accent/20 backdrop-blur-sm border border-accent/30 rounded-lg text-accent hover:bg-accent/30 transition-all duration-200 shadow-lg"
-              title="Enter Immersive Mode"
-            >
-              🚀 Immersive Mode
-            </button>
-          </div>
-
           {chatAreaContent}
         </div>
       )}

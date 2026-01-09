@@ -73,7 +73,22 @@ export function useChat() {
     const userMsg = createMessage('user', content);
     setMessages((prev) => [...prev, userMsg]);
     setChats((prev) =>
-      prev.map((c) => c.id === currentChatId ? { ...c, title: content.slice(0, 40), messages: [...c.messages, userMsg] } : c)
+      prev.map((c) => {
+        if (c.id !== currentChatId) return c;
+        const messages = [...c.messages, userMsg];
+        // Auto-title naming for the first user message
+        let title = c.title;
+        if (c.messages.length === 0) {
+          // Clean title: remove emojis, trim, limit to 35 chars
+          title = content
+            .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '')
+            .trim();
+          title = title.charAt(0).toUpperCase() + title.slice(1);
+          if (title.length > 35) title = title.slice(0, 32) + "...";
+          if (!title) title = "Ny samtale";
+        }
+        return { ...c, title, messages };
+      })
     );
 
     setIsLoading(true);

@@ -24,6 +24,10 @@ interface ChatAreaProps {
   onSendMessage: (content: string) => Promise<void>;
   onOpenSettings: (tab: string) => void;
   onSelectModel: (model: string) => void;
+  cuttingEdgeMode: boolean;
+  setCuttingEdgeMode: (active: boolean) => void;
+  immersiveMode: boolean;
+  setImmersiveMode: (active: boolean) => void;
 }
 
 export const ChatArea = memo(function ChatArea({
@@ -35,6 +39,10 @@ export const ChatArea = memo(function ChatArea({
   onSendMessage,
   onOpenSettings,
   onSelectModel,
+  cuttingEdgeMode,
+  setCuttingEdgeMode,
+  immersiveMode,
+  setImmersiveMode,
 }: ChatAreaProps) {
   const [input, setInput] = useState('');
   const [showModelDropdown, setShowModelDropdown] = useState(false);
@@ -281,6 +289,10 @@ export const ChatArea = memo(function ChatArea({
           setShowNeuralVisualizer={setShowNeuralVisualizer}
           onOpenSettings={onOpenSettings}
           security={security}
+          cuttingEdgeMode={cuttingEdgeMode}
+          setCuttingEdgeMode={setCuttingEdgeMode}
+          immersiveMode={immersiveMode}
+          setImmersiveMode={setImmersiveMode}
         />
       </header>
 
