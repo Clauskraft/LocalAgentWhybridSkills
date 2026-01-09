@@ -701,4 +701,23 @@
   .holographic-glow {
     filter: drop-shadow(0 0 8px rgba(226, 0, 116, 0.3));
   }
+
+  @keyframes neural-pulse {
+
+    0%,
+    100% {
+      height: 4px;
+    }
+
+    50% {
+      height: 16px;
+    }
+  }
+
+  .neural-wave-bar {
+    width: 3px;
+    background: currentColor;
+    border-radius: 99px;
+    animation: neural-pulse 1s ease-in-out infinite;
+  }
 }

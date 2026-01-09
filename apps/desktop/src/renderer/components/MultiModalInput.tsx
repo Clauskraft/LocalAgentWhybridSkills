@@ -120,61 +120,70 @@ export const MultiModalInput = memo(function MultiModalInput({
 
   return (
     <div className="flex items-center gap-2 mb-3">
-      {/* Mode Toggle Buttons */}
-      <div className="flex bg-bg-tertiary rounded-lg p-1">
+      {/* Mode Toggle Icons */}
+      <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1 shadow-inner backdrop-blur-md">
         <button
           onClick={() => setMode('text')}
-          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-            mode === 'text'
-              ? 'bg-accent text-white shadow-md'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
-          }`}
+          className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 ${mode === 'text'
+              ? 'bg-accent text-white shadow-[0_0_15px_rgba(226,0,116,0.4)]'
+              : 'text-text-muted hover:text-text-primary hover:bg-white/5'
+            }`}
+          title="Tekst Indtastning"
         >
-          ✏️ Text
+          <span className="text-lg">⌨️</span>
         </button>
         <button
           onClick={() => setMode('voice')}
-          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-            mode === 'voice'
-              ? 'bg-accent text-white shadow-md'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
-          }`}
+          className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 ${mode === 'voice'
+              ? 'bg-accent text-white shadow-[0_0_15px_rgba(226,0,116,0.4)]'
+              : 'text-text-muted hover:text-text-primary hover:bg-white/5'
+            }`}
+          title="Stemme Styring"
         >
-          🎤 Voice
+          <span className="text-lg">🎤</span>
         </button>
         <button
           onClick={() => setMode('drawing')}
-          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-            mode === 'drawing'
-              ? 'bg-accent text-white shadow-md'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
-          }`}
+          className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 ${mode === 'drawing'
+              ? 'bg-accent text-white shadow-[0_0_15px_rgba(226,0,116,0.4)]'
+              : 'text-text-muted hover:text-text-primary hover:bg-white/5'
+            }`}
+          title="Visuel Skitse"
         >
-          🎨 Draw
+          <span className="text-lg">🎨</span>
         </button>
       </div>
 
       {/* Mode-specific Controls */}
       {mode === 'voice' && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4 animate-fade-in glass-card px-4 py-2 rounded-2xl border-accent/20">
           <button
             onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
             disabled={isLoading}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-              isRecording
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isRecording
                 ? 'bg-red-500 text-white animate-pulse'
-                : 'bg-accent text-white hover:bg-accent-hover'
-            } disabled:opacity-50`}
+                : 'bg-accent text-white hover:bg-accent-hover holographic-glow'
+              } shadow-lg`}
           >
             {isRecording ? <IconX className="w-4 h-4" /> : <IconBolt className="w-4 h-4" />}
-            {isRecording ? 'Stop Recording' : 'Start Recording'}
           </button>
-          {isRecording && (
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
-              <span className="text-sm text-red-500 font-medium">Recording...</span>
-            </div>
-          )}
+
+          <div className="flex items-center gap-1.5 h-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="neural-wave-bar text-accent"
+                style={{
+                  animationDelay: `${i * 150}ms`,
+                  opacity: isRecording ? 1 : 0.2
+                }}
+              />
+            ))}
+          </div>
+
+          <span className={`text-xs font-bold uppercase tracking-widest ${isRecording ? 'text-red-500 animate-pulse' : 'text-text-muted'}`}>
+            {isRecording ? 'Neural Listening...' : 'Synthesizing...'}
+          </span>
         </div>
       )}
 
