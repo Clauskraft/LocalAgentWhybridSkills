@@ -19,6 +19,7 @@ export interface UISettings {
   immersiveMode?: boolean;
   personaId?: string;
   performanceMode?: boolean;
+  voiceFeedback?: boolean;
 }
 
 // Backwards-compatible name used by other modules/types.
@@ -40,6 +41,7 @@ const DEFAULT_SETTINGS: UISettings = {
   immersiveMode: false,
   personaId: 'architect',
   performanceMode: false,
+  voiceFeedback: false,
 };
 
 export function useSettings() {

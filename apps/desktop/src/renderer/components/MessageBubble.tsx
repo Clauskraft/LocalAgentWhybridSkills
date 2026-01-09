@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { IconBolt, IconPlug, IconSettings, IconShield, IconCode, IconSparkles } from './icons';
+import { IconBolt, IconPlug, IconSettings, IconShield, IconCode, IconSparkles, IconVolume } from './icons';
 import { PERSONAS } from '../lib/personas';
 
 interface MessageBubbleProps {
@@ -22,6 +22,16 @@ export const MessageBubble = memo(function MessageBubble({ message }: MessageBub
 
   const avatarIcon = isUser ? <IconShield className="w-4 h-4" /> : isSystem ? <IconSettings className="w-4 h-4" /> : isTool ? <IconPlug className="w-4 h-4" /> : <IconBolt className="w-4 h-4" />;
   const roleName = isUser ? 'Dig' : isSystem ? 'System' : isTool ? 'Tool' : 'SCA-01';
+
+  const handleSpeak = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(message.content);
+      utterance.lang = 'da-DK';
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   return (
     <div className="flex gap-4 animate-message-entry group">
@@ -46,6 +56,14 @@ export const MessageBubble = memo(function MessageBubble({ message }: MessageBub
             <span className="text-[10px] px-1.5 py-0.5 bg-accent/10 text-accent border border-accent/20 rounded-full font-mono">
               {message.meta.model}
             </span>
+          )}
+          {!isUser && !isSystem && !isTool && (
+            <button
+              onClick={handleSpeak}
+              className="p-1 px-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-accent hover:bg-accent/10 rounded-lg transition-all border border-transparent hover:border-accent/20"
+            >
+              <IconVolume className="w-3 h-3" /> Lyt
+            </button>
           )}
           <span className="text-xs text-text-muted opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 ml-auto">
             {!isUser && (

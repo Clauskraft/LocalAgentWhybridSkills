@@ -122,6 +122,18 @@ export const SettingsModal = memo(function SettingsModal({
                     </button>
                   </SettingField>
 
+                  <SettingField
+                    label="Natural Voice (Beta)"
+                    description="Aktiver oplæsnings-knappen for AI-svar (Talsyntese via browseren)."
+                  >
+                    <button
+                      onClick={() => onUpdateSettings({ voiceFeedback: !settings.voiceFeedback })}
+                      className={`w-12 h-6 rounded-full transition-all relative ${settings.voiceFeedback ? 'bg-accent' : 'bg-white/10'}`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${settings.voiceFeedback ? 'right-1' : 'left-1'}`} />
+                    </button>
+                  </SettingField>
+
                   <div className="space-y-4">
                     <div className="text-xs font-bold text-text-muted uppercase tracking-widest pl-1">Visual Workspace Style</div>
                     <div className="grid grid-cols-3 gap-4">
