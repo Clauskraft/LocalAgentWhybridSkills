@@ -1,0 +1,55 @@
+{
+  "widgetdc": {
+    "cockpit": {
+      "enabled": true,
+      "url": "http://localhost:3001"
+    },
+    "cyberstreams": {
+      "enabled": false,
+      "serverPath": ""
+    },
+    "cloudflare": {
+      "enabled": false,
+      "workerUrl": ""
+    }
+  },
+  "databases": {
+    "neo4j": {
+      "enabled": true,
+      "uri": "neo4j+s://054eff27.databases.neo4j.io",
+      "user": "neo4j",
+      "password": ""
+    },
+    "postgres": {
+      "enabled": false,
+      "connectionString": ""
+    },
+    "redis": {
+      "enabled": false,
+      "url": ""
+    }
+  },
+  "github": {
+    "enabled": false,
+    "token": ""
+  },
+  "notion": {
+    "enabled": false,
+    "apiKey": "",
+    "databaseId": ""
+  },
+  "braveSearch": {
+    "enabled": false,
+    "apiKey": ""
+  },
+  "ai": {
+    "openai": {
+      "enabled": false,
+      "apiKey": ""
+    },
+    "anthropic": {
+      "enabled": false,
+      "apiKey": ""
+    }
+  }
+}

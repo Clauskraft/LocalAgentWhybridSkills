@@ -32,7 +32,7 @@ widgetdc  → https://github.com/Clauskraft/WidgeTDC.git
 ### 🎯 GODT NYT: Strukturen Matcher
 
 | Komponent | GitHub Status | Lokal Status | Match? |
-|-----------|---------------|--------------|--------|
+| --- | --- | --- | --- |
 | `apps/cli/` | ✅ Eksisterer | ✅ Eksisterer | ✅ |
 | `apps/desktop/` | ✅ Eksisterer | ✅ Eksisterer | ✅ |
 | `apps/web/` | ✅ Eksisterer | ✅ Eksisterer | ✅ |
@@ -71,11 +71,11 @@ security-by-design principles.
 
 ## ⚠️ Identificerede Problemer
 
-### 1. **Legacy Phase Folders (Lokalt)**
+### 1. *## Legacy Phase Folders (Lokalt)*
 
 Disse mapper findes LOKALT men er IKKE på GitHub:
 
-```
+```bash
 ❌ sca-01-phase2/  (Desktop app duplikat?)
 ❌ sca-01-phase3/  (Cloud service duplikat?)  
 ❌ sca-01-phase4/  (Agent mesh - WIP)
@@ -91,7 +91,7 @@ Disse mapper findes LOKALT men er IKKE på GitHub:
 
 Fra agent-tools analyse kan jeg se at disse services er blevet fjernet:
 
-```
+```bash
 ❌ services/roma-bridge/     (Python ROMA integration)
 ❌ services/search/           (OpenDeepSearch service)
 ```
@@ -108,7 +108,7 @@ Fra agent-tools analyse kan jeg se at disse services er blevet fjernet:
 
 ### 3. **Slettede Integrations**
 
-```
+```bash
 ❌ integrations/global-ai-alliance/
 ❌ integrations/neural-interface/
 ❌ integrations/widgetdc/
@@ -388,7 +388,7 @@ npm start  # Expo development server
    - Test Railway deployment
    - Opdater deployment scripts
 
-3. ✅ **Final Review**
+3. ✅ *## Final Review*
     - Code review
     - Security audit
     - Performance test
