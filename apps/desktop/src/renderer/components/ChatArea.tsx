@@ -45,6 +45,16 @@ export const ChatArea = memo(function ChatArea({
   setImmersiveMode,
 }: ChatAreaProps) {
   const [input, setInput] = useState('');
+  const [debouncedInput, setDebouncedInput] = useState('');
+
+  // Debounce predictive trigger
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedInput(input);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [input]);
+
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [models, setModels] = useState<string[]>([]);
   const [modelsLoading, setModelsLoading] = useState(false);
@@ -335,12 +345,12 @@ export const ChatArea = memo(function ChatArea({
           {/* LOOP 8: Smart Suggestions and Predictive Interface positioned above input */}
           <div className="relative mb-2">
             <SmartSuggestions
-              input={input}
+              input={debouncedInput}
               onSuggestionClick={(suggestion) => setInput(suggestion)}
               isLoading={isLoading}
             />
             <PredictiveInterface
-              input={input}
+              input={debouncedInput}
               messages={messages}
               isLoading={isLoading}
               onPredictionSelect={handlePredictionSelect}

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import type { Chat, Message } from '../App';
 import { resolveBackendUrl } from '../lib/backend';
+import { cleanChatTitle, isModelNotFoundError, commonModelFallbacks } from '../lib/modelUtils';
 
 const DEFAULT_SETTINGS = {
   // Align with phase2 .env.production default, but browser-mode will also auto-fallback if missing.
@@ -79,13 +80,7 @@ export function useChat() {
         // Auto-title naming for the first user message
         let title = c.title;
         if (c.messages.length === 0) {
-          // Clean title: remove emojis, trim, limit to 35 chars
-          title = content
-            .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '')
-            .trim();
-          title = title.charAt(0).toUpperCase() + title.slice(1);
-          if (title.length > 35) title = title.slice(0, 32) + "...";
-          if (!title) title = "Ny samtale";
+          title = cleanChatTitle(content);
         }
         return { ...c, title, messages };
       })

@@ -172,12 +172,12 @@ function NavItem({
     <div
       onClick={onClick}
       className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 text-sm ${highlight
-          ? 'text-accent bg-accent/10 border border-accent/20 hover:bg-accent/20 shadow-[0_0_15px_rgba(226,0,116,0.1)]'
-          : 'text-text-secondary hover:bg-white/5 hover:text-text-primary border border-transparent'
+        ? 'text-accent bg-accent/10 border border-accent/20 hover:bg-accent/20 shadow-[0_0_15px_rgba(226,0,116,0.1)]'
+        : 'text-text-secondary hover:bg-white/5 hover:text-text-primary border border-transparent'
         }`}
       title={label || undefined}
     >
-      <span className={`${highlight ? 'text-accent' : 'text-text-muted group-hover:text-text-secondary'} transition-colors`}>{icon}</span>
+      <span className={`${highlight ? 'text-accent drop-shadow-[0_0_8px_rgba(226,0,116,0.4)]' : 'text-text-muted group-hover:text-text-secondary'} transition-all duration-300 group-hover:scale-110 group-active:scale-90`}>{icon}</span>
       {compact ? null : <span className="font-medium flex-1">{label}</span>}
       {highlight && !compact && (
         <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
