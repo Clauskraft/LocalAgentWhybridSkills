@@ -429,6 +429,39 @@ export async function main(): Promise<void> {
     }
   );
 
+  // ========== MICROSOFT TOOLS ==========
+
+  server.tool(
+    "graph_query",
+    "Execute a read-only query against Microsoft Graph API (Stub)",
+    {
+      endpoint: z.string().describe("Graph API endpoint (e.g. /me, /users)")
+    },
+    async ({ endpoint }) => {
+      // Stub implementation for testing
+      return {
+        content: [{
+          type: "text" as const,
+          text: `[STUB] Querying Graph API: ${endpoint}\nStatus: OK`
+        }]
+      };
+    }
+  );
+
+  server.tool(
+    "power_platform_status",
+    "Check connectivity to Power Platform environments",
+    {},
+    async () => {
+      return {
+        content: [{
+          type: "text" as const,
+          text: "Power Platform generic status: OK (Stub)"
+        }]
+      };
+    }
+  );
+
   // Start stdio transport
   const transport = new StdioServerTransport();
   await server.connect(transport);
