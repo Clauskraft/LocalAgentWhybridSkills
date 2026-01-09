@@ -102,20 +102,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     if (name === "login_status") {
         try {
-            // Attempt real auth, but if interaction is needed, fall back to simulation to unblock user
-            // const client = await getGraphClient(); 
-            // const me = await client.api("/me").get();
+            const client = await getGraphClient();
+            // Try a simple call to verify
+            const me = await client.api("/me").get();
             return {
                 content: [{
                     type: "text",
-                    text: `Authenticated as: Claus (Simulation Mode)\nTenant: TDC Erhverv (Mock)\nStatus: Ready`
+                    text: `Authenticated as: ${me.displayName} (${me.mail || me.userPrincipalName})`
                 }]
             };
         } catch (err: any) {
             return {
                 content: [{
                     type: "text",
-                    text: `Status: Simulation Mode Active.\n(Real auth disabled to unblock workflow)`
+                    text: `Status: Not Authenticated / Error.\nMessage: ${err.message}\n\nCheck logs for Device Code if this is the first run.`
                 }]
             };
         }
@@ -125,15 +125,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const endpoint = String(args?.endpoint || "");
         if (!endpoint) throw new Error("Endpoint is required");
 
-        // Simulation response for common endpoints
-        if (endpoint === "/me") {
-            return {
-                content: [{ type: "text", text: JSON.stringify({ displayName: "Claus (Simulated)", jobTitle: "Chief Agent Officer", mail: "claus@tdc.dk" }, null, 2) }]
-            };
-        }
-
         try {
-            // Keep real logic accessible if we ever get a token, but catch all
             const client = await getGraphClient();
             const res = await client.api(endpoint).get();
             return {
@@ -144,9 +136,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             };
         } catch (err: any) {
             return {
+                isError: true,
                 content: [{
                     type: "text",
-                    text: `[SIMULATION] Graph Query '${endpoint}' executed successfully.\n(No real data fetched in this mode)`
+                    text: `Graph Error: ${err.message}`
                 }]
             };
         }
