@@ -112,16 +112,31 @@ export const SettingsModal = memo(function SettingsModal({
                     />
                   </SettingField>
 
-                  <SettingField
-                    label="Holografisk Interface"
-                    description="Aktiver avancerede visuelle effekter og shimmer-animationer."
-                  >
-                    <div className="flex items-center h-10">
-                      <div className="w-12 h-6 rounded-full bg-accent/20 border border-accent/40 relative cursor-pointer">
-                        <div className="absolute right-1 top-1 w-4 h-4 rounded-full bg-accent shadow-[0_0_10px_rgba(226,0,116,0.5)]" />
-                      </div>
+                  <div className="space-y-4">
+                    <div className="text-xs font-bold text-text-muted uppercase tracking-widest pl-1">Visual Workspace Style</div>
+                    <div className="grid grid-cols-3 gap-4">
+                      {[
+                        { id: 'hologram', name: 'Hologram', color: 'bg-[#E20074]', desc: 'Original Cyber' },
+                        { id: 'matrix', name: 'Emerald', color: 'bg-[#10B981]', desc: 'Matrix Pulse' },
+                        { id: 'frost', name: 'Frost', color: 'bg-[#3B82F6]', desc: 'Clean Glass' }
+                      ].map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => onUpdateSettings({ theme: t.id })}
+                          className={`flex flex-col gap-3 p-4 rounded-2xl border transition-all text-left group ${settings.theme === t.id
+                              ? 'bg-accent/10 border-accent shadow-[0_0_20px_rgba(226,0,116,0.1)]'
+                              : 'bg-white/5 border-white/5 hover:border-white/20'
+                            }`}
+                        >
+                          <div className={`w-8 h-8 rounded-lg ${t.color} shadow-lg transition-transform group-hover:scale-110`} />
+                          <div>
+                            <div className="text-[11px] font-black uppercase tracking-wider text-text-primary">{t.name}</div>
+                            <div className="text-[9px] text-text-muted font-bold">{t.desc}</div>
+                          </div>
+                        </button>
+                      ))}
                     </div>
-                  </SettingField>
+                  </div>
                 </div>
               </div>
             )}

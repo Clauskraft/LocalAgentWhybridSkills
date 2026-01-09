@@ -67,6 +67,11 @@ export function useSettings() {
 
   const applyTheme = (theme: string) => {
     document.documentElement.setAttribute('data-theme', theme);
+    // Remove all previous theme classes
+    const classes = Array.from(document.documentElement.classList).filter(c => c.startsWith('theme-'));
+    classes.forEach(c => document.documentElement.classList.remove(c));
+    // Add new theme class
+    document.documentElement.classList.add(`theme-${theme}`);
   };
 
   const resetToDefaults = () => {
