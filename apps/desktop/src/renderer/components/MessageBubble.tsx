@@ -141,21 +141,21 @@ function formatContent(content: string): React.ReactNode {
       if (match) {
         const [, lang, code] = match;
         return (
-          <div key={i} className="relative my-3 group/code">
-            {lang && (
-              <div className="absolute top-0 left-0 px-2 py-1 text-xs text-text-muted bg-bg-elevated rounded-tl-lg">
-                {lang}
-              </div>
-            )}
-            <pre className="bg-bg-primary p-4 rounded-lg overflow-x-auto text-sm font-mono">
+          <div key={i} className="relative my-6 group/code overflow-hidden rounded-2xl holographic-code-block animate-fade-in shadow-2xl">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-white/5">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">
+                {lang || 'code'}
+              </span>
+              <button
+                onClick={() => navigator.clipboard.writeText(code.trim())}
+                className="text-[10px] font-bold uppercase tracking-widest text-text-muted hover:text-accent transition-colors flex items-center gap-1.5"
+              >
+                <IconSparkles className="w-3 h-3" /> Kopiér
+              </button>
+            </div>
+            <pre className="p-6 overflow-x-auto text-sm font-mono code-scrollbar leading-relaxed text-text-primary selection:bg-accent/30">
               <code>{code.trim()}</code>
             </pre>
-            <button
-              onClick={() => navigator.clipboard.writeText(code.trim())}
-              className="absolute top-2 right-2 px-2 py-1 text-xs bg-bg-hover text-text-muted rounded opacity-0 group-hover/code:opacity-100 hover:text-text-primary transition-all"
-            >
-              Kopiér
-            </button>
           </div>
         );
       }
