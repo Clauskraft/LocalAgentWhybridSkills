@@ -12,6 +12,7 @@ export const RomaPlanner = memo(function RomaPlanner(props: { onBack?: () => voi
   const [wdcPing, setWdcPing] = useState<unknown>(null);
   const [goal, setGoal] = useState("");
   const [strategy, setStrategy] = useState<"react" | "cot" | "code_act">("react");
+  const [agentReach, setAgentReach] = useState("local");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +60,11 @@ export const RomaPlanner = memo(function RomaPlanner(props: { onBack?: () => voi
     if (!g) return;
     setBusy(true);
     try {
-      const res = await romaApi?.plan?.({ goal: g, strategy });
+      const res = await romaApi?.plan?.({
+        goal: g,
+        strategy,
+        context: { agent_reach: agentReach }
+      });
       setResult(res);
     } catch (e) {
       setError(e instanceof Error ? e.message : "roma_plan_failed");
@@ -182,6 +187,19 @@ export const RomaPlanner = memo(function RomaPlanner(props: { onBack?: () => voi
                 <option value="react">ReAct</option>
                 <option value="cot">CoT</option>
                 <option value="code_act">CodeAct</option>
+              </select>
+            </label>
+
+            <label className="block mt-2">
+              <div className="mb-1 text-sm text-slate-300">Context / Agent Reach</div>
+              <select
+                className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                value={agentReach}
+                onChange={(e) => setAgentReach(e.target.value)}
+              >
+                <option value="local">Local Agent (Default)</option>
+                <option value="wdc">WidgetDC Mesh</option>
+                <option value="ms_power">Microsoft Power Platform (Dot.Corp)</option>
               </select>
             </label>
           </div>
