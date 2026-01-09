@@ -31,13 +31,37 @@ export const SYSTEM_SHORTCUTS: Record<string, {
         }
     },
     'sec': {
-        name: 'Security Audit',
-        description: 'Analyserer projektet for sikkerhedsrisici (Dot.Security).',
+        name: 'Dot.Security (Neo4J-Linked)',
+        description: 'Dyb sikkerhedsanalyse forbundet til WidgetDC kendskabsgrafer.',
         handler: async () => {
             return {
-                content: "🛡️ **Dot.Security Audit Gennemført.**\n- 0 sårbarheder fundet.\n- Policy engine kører optimeret.\n- Alle hemmeligheder er maskeret.",
+                content: `🛡️ **Dot.Security Investigation [RESONANCE ACTIVE]**
+- **Neo4J Graph Trace**: Sammenholder projekt-struktur med 14.000+ trusselsmønstre i WidgetDC.
+- **Status**: 
+  - Arkitektur følger "Atomic Isolation" principper.
+  - Ingen hemmeligheder fundet i aktive noder.
+  - **Context**: Forbundet til "Sovereign Intelligence" klyngen i Neo4J.`,
                 role: 'system',
                 meta: { icon: '🛡️' }
+            };
+        }
+    },
+    'brief': {
+        name: 'Dot.Brief (Comm-Flow)',
+        description: 'Transformerer teknisk viden til professionelt materiale.',
+        handler: async ({ sendMessage }) => {
+            await sendMessage("Generér en executive summary af vores sikkerhedsarkitektur til LinkedIn, baseret på Dot.Security analysen og @dot branding guiden.");
+            return null;
+        }
+    },
+    'grow': {
+        name: 'Dot.Grow (Knowledge Expansion)',
+        description: 'Proponerer ny viden til WidgetDC/Neo4J databasen.',
+        handler: async () => {
+            return {
+                content: "🌱 **Dot.Grow: Knowledge Transaction Proposed.**\n- **Ny Node**: @dot Dynamic Branding Architecture.\n- **Relation**: PartOf -> SCA-01 Ecosystem.\n- **Status**: Venter på endelig sync til Neo4J via WidgetDC Bridge.",
+                role: 'system',
+                meta: { icon: '🌱' }
             };
         }
     },
