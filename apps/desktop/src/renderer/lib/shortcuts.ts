@@ -217,6 +217,14 @@ export const SYSTEM_SHORTCUTS: Record<string, {
             };
         }
     },
+    'show': {
+        name: 'Dot.Show (The Presenter)',
+        description: 'Genererer premium præsentationer (PPTX/PDF) og høster viden fra Showpad.',
+        handler: async ({ sendMessage }) => {
+            await sendMessage("Forbered en strategisk PowerPoint præsentation baseret på vores nuværende status og høstet viden fra Showpad (TDC Erhverv).");
+            return null;
+        }
+    },
     'intercom': {
         name: 'Dot.Intercom (Neural Radio)',
         description: 'Synkroniserer viden mellem agenter via Redis og arkiverer til Notion.',

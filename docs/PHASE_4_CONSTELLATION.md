@@ -16,6 +16,7 @@ While @dot represents the singular point of interaction, the **Constellation** r
    - **Dot.Brief**: Intelligence gathering, ROMA planning, and OSINT.
    - **Dot.Resilience**: Proactive health monitoring and auto-patching. *[ACTIVE]*
    - **Dot.Plan**: Backlog management and inter-agent orchestration (Manager). *[ACTIVE]*
+   - **Dot.Show**: Premium presentations (PPTX/PDF) and Showpad content harvesting. *[ACTIVE]*
 
 ## 🛠️ Implementation Strategy
 
