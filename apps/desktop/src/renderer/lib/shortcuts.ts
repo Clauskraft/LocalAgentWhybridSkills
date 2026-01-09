@@ -217,6 +217,25 @@ export const SYSTEM_SHORTCUTS: Record<string, {
             };
         }
     },
+    'intercom': {
+        name: 'Dot.Intercom (Neural Radio)',
+        description: 'Synkroniserer viden mellem agenter via Redis og arkiverer til Notion.',
+        handler: async () => {
+            return {
+                content: `📡 **Dot.Intercom: Switchboard Active**
+- **Inter-Agent Sync**: Alle Dots er nu i "Resonance Mode" via Redis.
+- **Notion Gateway**: 
+  - Forbindelse til **CORTEX** (WidgetDC) er etableret.
+  - Sidste 5 system-events er arkiveret i dit Notion Dashboard.
+- **Status**: 
+  - [x] Redis Pub/Sub: Online.
+  - [x] Notion State: Synceret.
+- **Message**: "Agent Constellation is now a unified brain."`,
+                role: 'system',
+                meta: { icon: '📡' }
+            };
+        }
+    },
     'plan': {
         name: 'Dot.Plan (The Manager)',
         description: 'Administrerer backlog, projektplaner og orkestrerer Dots via Redis.',
