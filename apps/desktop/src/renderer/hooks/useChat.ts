@@ -75,6 +75,10 @@ export function useChat() {
     }
   }, [chats, currentChatId, createChat]);
 
+  const archiveChat = useCallback((id: string) => {
+    setChats((prev) => prev.map(c => c.id === id ? { ...c, isArchived: !c.isArchived } : c));
+  }, []);
+
   const undoDeleteChat = useCallback(() => {
     if (lastDeletedChat) {
       setChats((prev) => [lastDeletedChat, ...prev]);
@@ -274,6 +278,7 @@ export function useChat() {
     selectChat,
     deleteChat,
     undoDeleteChat,
+    archiveChat,
     sendMessage,
     lastDeletedChat,
   };

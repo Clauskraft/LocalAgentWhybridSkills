@@ -1,6 +1,6 @@
 import { memo, useState, useMemo } from 'react';
 import type { Chat } from '../App';
-import { IconChat, IconPlus, IconPlug, IconPulse, IconSettings, IconTrash, IconSearch } from './icons';
+import { IconChat, IconPlus, IconPlug, IconPulse, IconSettings, IconTrash, IconSearch, IconArchive } from './icons';
 
 interface SidebarProps {
   chats: Chat[];
@@ -8,6 +8,7 @@ interface SidebarProps {
   onNewChat: () => void;
   onSelectChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
+  onArchiveChat?: (id: string) => void;
   onOpenSettings: (tab: string) => void;
   onOpenPulse?: () => void;
   onOpenRoma?: () => void;
@@ -15,12 +16,8 @@ interface SidebarProps {
   onToggleCollapsed?: () => void;
 }
 
-export const Sidebar = memo(function Sidebar({
-  chats,
-  currentChatId,
-  onNewChat,
-  onSelectChat,
-  onDeleteChat,
+onDeleteChat,
+  onArchiveChat,
   onOpenSettings,
   onOpenPulse,
   onOpenRoma,
@@ -28,11 +25,21 @@ export const Sidebar = memo(function Sidebar({
   onToggleCollapsed,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
 
   const filteredChats = useMemo(() => {
-    if (!searchQuery.trim()) return chats;
-    return chats.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    let result = chats;
+    if (!searchQuery.trim()) {
+      result = result.filter(c => !c.isArchived);
+    } else {
+      result = result.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+    return result;
   }, [chats, searchQuery]);
+
+  const archivedChats = useMemo(() => {
+    return chats.filter(c => c.isArchived);
+  }, [chats]);
 
   const groupedChats = filteredChats.reduce((acc, chat) => {
     const created = new Date(chat.createdAt);
@@ -148,23 +155,27 @@ export const Sidebar = memo(function Sidebar({
                         {chat.title}
                       </span>
                     ) : null}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteChat(chat.id);
-                      }}
-                      className={[
-                        "p-1.5 rounded-lg text-text-muted hover:text-error hover:bg-error/10 transition-all",
-                        isCollapsed ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-                      ].join(" ")}
-                      title="Slet"
-                    >
-                      <IconTrash className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onArchiveChat?.(chat.id); }}
+                        className="p-1.5 text-text-muted hover:text-accent hover:bg-accent/10 rounded-lg transition-all"
+                        title={chat.isArchived ? "Gendan fra arkiv" : "Arkivér samtale"}
+                      >
+                        <IconArchive className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onDeleteChat(chat.id); }}
+                        className="p-1.5 text-text-muted hover:text-error hover:bg-error/10 rounded-lg transition-all"
+                        title="Slet samtale"
+                      >
+                        <IconTrash className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
-            ))}
+            );
+          })}
 
           {chats.length === 0 && (
             !isCollapsed ? (
@@ -195,6 +206,40 @@ export const Sidebar = memo(function Sidebar({
           <NavItem icon={<IconPlug className="w-4 h-4" />} label={isCollapsed ? "" : "MCP Servere"} onClick={() => onOpenSettings('mcp')} compact={isCollapsed} />
           <NavItem icon={<IconSettings className="w-4 h-4" />} label={isCollapsed ? "" : "Indstillinger"} onClick={() => onOpenSettings('general')} compact={isCollapsed} kbd="Ctrl+," />
         </div>
+
+        {/* Archived Section */}
+        {!isCollapsed && archivedChats.length > 0 && (
+          <div className="px-2 mb-2">
+            <button
+              onClick={() => setShowArchived(!showArchived)}
+              className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-text-muted hover:text-text-primary transition-colors bg-white/0 hover:bg-white/5 rounded-xl border border-transparent"
+            >
+              <div className="flex items-center gap-2">
+                <IconArchive className="w-3 h-3" /> Arkiv ({archivedChats.length})
+              </div>
+              <span>{showArchived ? '−' : '+'}</span>
+            </button>
+            {showArchived && (
+              <div className="mt-2 space-y-1 animate-fade-in pl-2">
+                {archivedChats.map(chat => (
+                  <div
+                    key={chat.id}
+                    onClick={() => onSelectChat(chat.id)}
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 cursor-pointer text-[11px] text-text-muted group"
+                  >
+                    <span className="truncate flex-1">{chat.title}</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onArchiveChat?.(chat.id); }}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:text-accent"
+                    >
+                      <IconPlus className="w-3 h-3 rotate-45" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Footer / Watermark */}
         {!isCollapsed && (

@@ -182,4 +182,14 @@ export function IconCode(props: IconProps) {
   );
 }
 
+export function IconArchive(props: IconProps) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M21 8v13H3V8" />
+      <path d="M1 3h22v5H1z" />
+      <path d="M10 12h4" />
+    </svg>
+  );
+}
+
 

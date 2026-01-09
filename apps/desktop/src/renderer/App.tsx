@@ -31,6 +31,7 @@ export interface Chat {
   title: string;
   createdAt: string;
   messages: Message[];
+  isArchived?: boolean;
 }
 
 export function App() {
@@ -198,6 +199,7 @@ export function App() {
         onNewChat={createChat}
         onSelectChat={(id) => { selectChat(id); setCurrentView('chat'); }}
         onDeleteChat={deleteChat}
+        onArchiveChat={archiveChat}
         onOpenSettings={openSettings}
         onOpenPulse={openPulse}
         onOpenRoma={openRoma}
