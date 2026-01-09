@@ -79,7 +79,7 @@
   },
   "build": {
     "appId": "com.clak.sca-01",
-    "productName": "SCA-01 The Finisher",
+    "productName": "@Dot Agent",
     "files": [
       "build/**",
       "package.json",

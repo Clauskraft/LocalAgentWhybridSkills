@@ -483,7 +483,7 @@ function createWindow(): void {
     height: 800,
     minWidth: 800,
     minHeight: 600,
-    title: "SCA-01 The Finisher - Desktop Agent",
+    title: "@Dot Agent",
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
