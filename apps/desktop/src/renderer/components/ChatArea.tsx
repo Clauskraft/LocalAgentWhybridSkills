@@ -197,24 +197,24 @@ export const ChatArea = memo(function ChatArea({
           </button>
 
           {showModelDropdown && (
-            <div className="absolute top-full left-0 mt-3 w-72 bg-bg-secondary/95 backdrop-blur-2xl border border-white/5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] z-50 overflow-hidden animate-slide-down">
-              <div className="px-4 py-3 text-sm font-medium text-text-primary bg-gradient-to-r from-accent/10 to-transparent">
-                🤖 Choose AI Model
+            <div className="absolute top-full left-0 mt-3 w-72 glass-card rounded-2xl z-50 overflow-hidden animate-slide-up border-accent/20">
+              <div className="px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-accent bg-accent/5 border-b border-white/5">
+                🤖 Intelligent Models
               </div>
               {modelsError && (
-                <div className="px-4 py-3 text-sm text-warning bg-warning/10 border-b border-border-primary/30">
+                <div className="px-4 py-3 text-xs text-warning bg-warning/5 border-b border-white/5">
                   ⚠️ {security.useCloud
-                    ? "Cloud: model-list ikke tilgængelig. Indtast modelnavn manuelt."
-                    : "Kunne ikke hente Ollama-modeller. Vælg/indtast manuelt."}
+                    ? "Cloud services restricted. Manual entry only."
+                    : "Local engine offline. Check Ollama status."}
                 </div>
               )}
               {modelsLoading ? (
-                <div className="px-4 py-3 text-sm text-text-muted flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                  Loading models...
+                <div className="px-6 py-8 text-xs text-text-muted flex flex-col items-center gap-3">
+                  <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                  Synchronizing core models...
                 </div>
               ) : (
-                <div className="max-h-48 overflow-y-auto">
+                <div className="max-h-64 overflow-y-auto custom-scrollbar">
                   {models.map((model) => (
                     <div
                       key={model}
@@ -223,15 +223,18 @@ export const ChatArea = memo(function ChatArea({
                         setCustomModel("");
                         setShowModelDropdown(false);
                       }}
-                      className={`px-4 py-3 cursor-pointer transition-all duration-150 hover:bg-accent/10 ${model === currentModel
-                        ? 'bg-accent text-white shadow-lg'
-                        : 'text-text-primary hover:shadow-md'
+                      className={`px-4 py-3 cursor-pointer transition-all duration-300 flex items-center justify-between group ${model === currentModel
+                        ? 'bg-accent/20 text-accent'
+                        : 'text-text-primary hover:bg-white/5'
                         }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${model === currentModel ? 'bg-white' : 'bg-accent'} opacity-60`} />
-                        {model?.trim() ? model : "🎯 Auto (server default)"}
+                      <div className="flex items-center gap-3">
+                        <div className={`w-1.5 h-1.5 rounded-full ${model === currentModel ? 'bg-accent shadow-[0_0_8px_rgba(226,0,116,0.8)]' : 'bg-white/20'}`} />
+                        <span className="text-sm font-medium">{model?.trim() ? model : "Auto Detect"}</span>
                       </div>
+                      {model === currentModel && (
+                        <IconSparkles className="w-3.5 h-3.5 text-accent opacity-50" />
+                      )}
                     </div>
                   ))}
                 </div>

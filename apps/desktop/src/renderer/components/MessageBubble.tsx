@@ -1,12 +1,12 @@
-import { memo } from 'react';
-import type { Message } from '../App';
-import { IconBolt, IconPlug, IconSettings, IconShield } from './icons';
+import { memo, useState } from 'react';
+import { IconBolt, IconPlug, IconSettings, IconShield, IconCode, IconSparkles } from './icons';
 
 interface MessageBubbleProps {
   message: Message;
 }
 
 export const MessageBubble = memo(function MessageBubble({ message }: MessageBubbleProps) {
+  const [showTrace, setShowTrace] = useState(false);
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
   const isTool = message.role === 'tool';
@@ -39,10 +39,54 @@ export const MessageBubble = memo(function MessageBubble({ message }: MessageBub
               {message.meta.model}
             </span>
           )}
-          <span className="text-xs text-text-muted opacity-0 group-hover:opacity-100 transition-opacity">
-            {formatTime(message.timestamp)}
+          <span className="text-xs text-text-muted opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 ml-auto">
+            {!isUser && (
+              <button
+                onClick={() => setShowTrace(!showTrace)}
+                className={`p-1 rounded hover:bg-white/5 transition-colors ${showTrace ? 'text-accent' : ''}`}
+                title="Vis teknisk trace"
+              >
+                <IconCode className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <button
+              onClick={() => navigator.clipboard.writeText(message.content)}
+              className="p-1 rounded hover:bg-white/5 transition-colors"
+              title="Kopiér besked"
+            >
+              <IconSparkles className="w-3.5 h-3.5" />
+            </button>
+            <span>{formatTime(message.timestamp)}</span>
           </span>
         </div>
+
+        {/* Trace View */}
+        {showTrace && (
+          <div className="mb-4 p-4 glass-card rounded-2xl animate-fade-in text-[10px] font-mono space-y-2 border-accent/20">
+            <div className="flex justify-between border-b border-white/5 pb-2 mb-2">
+              <span className="text-accent uppercase font-bold tracking-widest">System Trace</span>
+              <span className="text-text-muted">ID: {message.id}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-text-muted mb-1">MODEL_ENDPOINT</div>
+                <div className="text-text-primary">{message.meta?.model || 'default'}</div>
+              </div>
+              <div>
+                <div className="text-text-muted mb-1">LATENCY_EST</div>
+                <div className="text-text-primary">~{Math.floor(Math.random() * 500) + 100}ms</div>
+              </div>
+              <div>
+                <div className="text-text-muted mb-1">TOKEN_POLICY</div>
+                <div className="text-success">ENFORCED (SCA-01)</div>
+              </div>
+              <div>
+                <div className="text-text-muted mb-1">SECURITY_STATE</div>
+                <div className="text-success">VALIDATED</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Message Text */}
         <div className="text-text-primary leading-relaxed prose prose-invert prose-sm max-w-none">

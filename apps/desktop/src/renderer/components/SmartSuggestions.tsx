@@ -65,12 +65,12 @@ export const SmartSuggestions = memo(function SmartSuggestions({
   if (suggestions.length === 0 && !isGenerating) return null;
 
   return (
-    <div className="absolute bottom-full left-0 right-0 mb-2 p-3 bg-white/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl animate-slide-up">
+    <div className="absolute bottom-full left-0 right-0 mb-4 p-4 glass-card rounded-2xl animate-slide-up border-accent/20">
       <div className="flex items-center gap-2 mb-3">
-        <IconSparkles className="w-4 h-4 text-accent animate-glow-pulse" />
-        <span className="text-sm font-medium text-text-primary">AI Suggestions</span>
+        <IconSparkles className="w-4 h-4 text-accent animate-pulse holographic-glow" />
+        <span className="text-xs font-bold uppercase tracking-widest text-text-primary">AI Suggestions</span>
         {isGenerating && (
-          <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          <div className="w-3 h-3 border-2 border-accent border-t-transparent rounded-full animate-spin ml-auto" />
         )}
       </div>
 
@@ -80,17 +80,20 @@ export const SmartSuggestions = memo(function SmartSuggestions({
             key={index}
             onClick={() => onSuggestionClick(suggestion)}
             disabled={isLoading}
-            className="group flex items-center gap-3 p-3 bg-gradient-to-r from-bg-tertiary/50 to-bg-tertiary/30 hover:from-accent/10 hover:to-accent/5 border border-border-primary/30 hover:border-accent/30 rounded-lg transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="group flex items-center gap-3 p-3 bg-white/5 hover:bg-accent/10 border border-white/5 hover:border-accent/30 rounded-xl transition-all duration-300 hover:shadow-lg disabled:opacity-50 active:scale-95"
           >
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 transition-transform group-hover:scale-110">
               {suggestion.includes('🔍') && <IconSearch className="w-4 h-4 text-accent" />}
               {suggestion.includes('💡') && <IconLightbulb className="w-4 h-4 text-accent" />}
               {suggestion.includes('🧪') && <IconCode className="w-4 h-4 text-accent" />}
               {suggestion.includes('📝') && <IconSparkles className="w-4 h-4 text-accent" />}
             </div>
-            <span className="text-sm text-text-primary text-left group-hover:text-accent transition-colors">
+            <span className="text-xs font-medium text-text-secondary text-left group-hover:text-text-primary transition-colors">
               {suggestion}
             </span>
+            <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+              <IconSparkles className="w-3 h-3 text-accent" />
+            </div>
           </button>
         ))}
       </div>

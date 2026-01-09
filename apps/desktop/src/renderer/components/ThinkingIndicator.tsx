@@ -3,7 +3,7 @@ import { memo } from 'react';
 export const ThinkingIndicator = memo(function ThinkingIndicator() {
     return (
         <div className="flex gap-4 animate-fade-in">
-            <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center text-white flex-shrink-0 animate-pulse-slow shadow-lg shadow-accent/20">
+            <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center text-white flex-shrink-0 animate-pulse-slow shadow-lg shadow-accent/20 holographic-glow">
                 <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
                     <path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm1,15H11V11h2Zm0-8H11V7h2Z" />
                 </svg>
