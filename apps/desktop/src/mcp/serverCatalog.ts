@@ -22,7 +22,7 @@ export interface McpServerDefinition {
   popular?: boolean;
 }
 
-export type McpCategory = 
+export type McpCategory =
   | "filesystem"
   | "code"
   | "database"
@@ -237,6 +237,18 @@ export const MCP_SERVER_CATALOG: McpServerDefinition[] = [
     icon: "🎨",
     tags: ["image", "generation", "art", "ai"],
   },
+  {
+    id: "microsoft",
+    name: "Microsoft Power Platform",
+    description: "Access Microsoft Graph, Dataverse and Power Platform",
+    category: "cloud",
+    transport: "stdio",
+    command: "node",
+    args: ["../../services/mcp-microsoft/build/index.js"],
+    icon: "🪟",
+    tags: ["microsoft", "graph", "power-apps", "cloud", "dot-corp"],
+    popular: true,
+  },
 
   // ============ CLAUDE / ANTHROPIC COMMON ============
   {
@@ -366,7 +378,7 @@ export function getPopularServers(): McpServerDefinition[] {
 
 export function searchServers(query: string): McpServerDefinition[] {
   const q = query.toLowerCase();
-  return MCP_SERVER_CATALOG.filter(s => 
+  return MCP_SERVER_CATALOG.filter(s =>
     s.name.toLowerCase().includes(q) ||
     s.description.toLowerCase().includes(q) ||
     s.tags?.some(t => t.toLowerCase().includes(q))
