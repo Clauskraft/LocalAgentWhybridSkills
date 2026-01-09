@@ -6,8 +6,9 @@ import { SmartSuggestions } from './SmartSuggestions';
 import { MultiModalInput } from './MultiModalInput';
 import { NeuralVisualizer } from './NeuralVisualizer';
 import { PredictiveInterface } from './PredictiveInterface';
-import { IconChevronDown, IconPlug, IconSend, IconShield, IconBolt } from './icons';
+import { IconChevronDown, IconPlug, IconSend, IconShield, IconBolt, IconSparkles } from './icons';
 import { StatusMenu } from './StatusMenu';
+import { ThinkingIndicator } from './ThinkingIndicator';
 
 interface ChatAreaProps {
   messages: Message[];
@@ -178,7 +179,7 @@ export const ChatArea = memo(function ChatArea({
           </button>
 
           {showModelDropdown && (
-            <div className="absolute top-full left-0 mt-2 w-72 bg-white/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl z-50 overflow-hidden animate-slide-down">
+            <div className="absolute top-full left-0 mt-3 w-72 bg-bg-secondary/95 backdrop-blur-2xl border border-white/5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] z-50 overflow-hidden animate-slide-down">
               <div className="px-4 py-3 text-sm font-medium text-text-primary bg-gradient-to-r from-accent/10 to-transparent">
                 🤖 Choose AI Model
               </div>
@@ -218,13 +219,13 @@ export const ChatArea = memo(function ChatArea({
                 </div>
               )}
 
-              <div className="px-4 py-3 border-t border-border-primary/30 bg-bg-tertiary/30">
+              <div className="px-4 py-4 border-t border-white/5 bg-white/5">
                 <input
                   type="text"
                   value={customModel}
                   onChange={(e) => setCustomModel(e.target.value)}
-                  placeholder="🎨 Custom model name..."
-                  className="w-full px-3 py-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
+                  placeholder="Skriv modelnavn..."
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-xs focus:border-accent outline-none transition-all"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       const next = customModel.trim();
@@ -308,16 +309,7 @@ export const ChatArea = memo(function ChatArea({
             ))}
 
             {isLoading && (
-              <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-md bg-tdc-purple flex items-center justify-center text-white">
-                  ⚡
-                </div>
-                <div className="flex items-center gap-1 py-2">
-                  <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
-              </div>
+              <ThinkingIndicator />
             )}
 
             <div ref={messagesEndRef} />
@@ -358,33 +350,30 @@ export const ChatArea = memo(function ChatArea({
                 value={input}
                 onChange={autoResize}
                 onKeyDown={handleKeyDown}
-                placeholder="Skriv en besked..."
+                placeholder="Spørg SCA-01 om hvad som helst..."
                 rows={1}
-                className="flex-1 bg-transparent resize-none text-text-primary placeholder-text-muted focus:outline-none min-h-[24px] max-h-[200px] py-1"
+                className="flex-1 bg-transparent resize-none text-text-primary placeholder-text-muted focus:outline-none min-h-[32px] max-h-[200px] py-2 text-sm leading-relaxed"
               />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onOpenSettings('mcp')}
-                  className="icon-btn"
-                  title="MCP Tools"
-                >
-                  <IconPlug className="w-4 h-4" />
-                </button>
+              <div className="flex gap-1.5 pb-1">
                 <button
                   onClick={handleSubmit}
                   disabled={!input.trim() || isLoading}
-                  className="icon-btn bg-accent text-white border-transparent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`
+                    w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300
+                    ${!input.trim() || isLoading
+                      ? 'bg-bg-tertiary text-text-muted cursor-not-allowed opacity-50'
+                      : 'bg-accent text-white shadow-[0_0_15px_rgba(226,0,116,0.3)] hover:shadow-[0_0_25px_rgba(226,0,116,0.5)] transform hover:scale-105 active:scale-95'
+                    }
+                  `}
                   title="Send (Enter)"
                 >
-                  <IconSend className="w-4 h-4" />
+                  {isLoading ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <IconSend className="w-4 h-4" />
+                  )}
                 </button>
               </div>
-            </div>
-
-            <div className="flex gap-2 pt-2 mt-2 border-t border-border-primary">
-              <ToolButton icon={<span className="inline-flex items-center justify-center"><IconPlug className="w-4 h-4" /></span>} label="MCP" onClick={() => onOpenSettings('mcp')} />
-              <ToolButton icon={<span className="inline-flex items-center justify-center"><IconSend className="w-4 h-4" /></span>} label="Send" onClick={handleSubmit} />
-              <ToolButton icon={<span className="inline-flex items-center justify-center"><IconChevronDown className="w-4 h-4" /></span>} label="Prompts" onClick={() => onOpenSettings('prompts')} />
             </div>
           </div>
 

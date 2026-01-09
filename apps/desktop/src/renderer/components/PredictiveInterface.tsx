@@ -187,10 +187,10 @@ export const PredictiveInterface = memo(function PredictiveInterface({
   if (predictions.length === 0 || isLoading) return null;
 
   return (
-    <div className="absolute bottom-full left-0 right-0 mb-2 p-2 bg-white/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl animate-slide-up">
-      <div className="flex items-center gap-2 mb-2">
-        <IconSparkles className="w-4 h-4 text-accent animate-glow-pulse" />
-        <span className="text-xs font-medium text-text-primary">Predictions</span>
+    <div className="absolute bottom-full left-0 right-0 mb-3 p-3 bg-bg-secondary/95 backdrop-blur-2xl border border-white/5 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] animate-slide-up z-40">
+      <div className="flex items-center gap-2 mb-3">
+        <IconSparkles className="w-3.5 h-3.5 text-accent animate-glow-pulse" />
+        <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Suggested Actions</span>
       </div>
 
       <div className="space-y-1">
@@ -200,30 +200,30 @@ export const PredictiveInterface = memo(function PredictiveInterface({
             onClick={() => handlePredictionClick(prediction)}
             onMouseEnter={() => setHoveredPrediction(prediction.id)}
             onMouseLeave={() => setHoveredPrediction(null)}
-            className={`w-full text-left p-2 rounded-lg transition-all duration-200 group ${hoveredPrediction === prediction.id
-              ? 'bg-accent/20 shadow-lg transform scale-105'
-              : 'bg-bg-tertiary/50 hover:bg-accent/10'
+            className={`w-full text-left p-2.5 rounded-xl transition-all duration-300 group relative overflow-hidden ${hoveredPrediction === prediction.id
+              ? 'bg-accent/10 border-accent/20 translate-x-1'
+              : 'bg-white/5 border border-transparent hover:bg-white/10'
               }`}
           >
-            <div className="flex items-center gap-2">
-              <span className={hoveredPrediction === prediction.id ? 'text-accent' : 'text-text-secondary'}>
+            <div className="flex items-center gap-3 relative z-10">
+              <span className={`p-1.5 rounded-lg ${hoveredPrediction === prediction.id ? 'bg-accent text-white' : 'bg-bg-tertiary text-text-muted transition-colors'}`}>
                 {prediction.icon}
               </span>
-              <span className={`text-sm flex-1 ${hoveredPrediction === prediction.id ? 'text-accent font-medium' : 'text-text-primary'}`}>
+              <span className={`text-xs flex-1 truncate ${hoveredPrediction === prediction.id ? 'text-accent font-semibold' : 'text-text-primary'}`}>
                 {prediction.content}
               </span>
-              <span className={`text-xs px-2 py-1 rounded-full ${prediction.confidence > 0.8 ? 'bg-success/20 text-success' :
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${prediction.confidence > 0.8 ? 'bg-success/20 text-success' :
                 prediction.confidence > 0.6 ? 'bg-warning/20 text-warning' :
-                  'bg-bg-tertiary text-text-muted'
+                  'bg-white/10 text-text-muted'
                 }`}>
                 {(prediction.confidence * 100).toFixed(0)}%
               </span>
             </div>
 
             {/* Confidence bar */}
-            <div className="mt-1 w-full bg-bg-tertiary rounded-full h-1">
+            <div className="mt-2 w-full bg-white/5 rounded-full h-0.5 overflow-hidden">
               <div
-                className={`h-1 rounded-full transition-all duration-300 ${prediction.confidence > 0.8 ? 'bg-success' :
+                className={`h-full rounded-full transition-all duration-1000 ease-out ${prediction.confidence > 0.8 ? 'bg-success' :
                   prediction.confidence > 0.6 ? 'bg-warning' :
                     'bg-accent'
                   }`}

@@ -36,13 +36,13 @@ export const WelcomeScreen = memo(function WelcomeScreen({ onQuickStart }: Welco
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-8 animate-fade-in">
       {/* Logo */}
-      <div className="w-14 h-14 rounded-2xl bg-bg-secondary border border-border-primary flex items-center justify-center mb-4 text-accent">
-        <IconBolt className="w-7 h-7" />
+      <div className="w-16 h-16 rounded-[2rem] bg-gradient-to-br from-accent/20 via-bg-secondary to-bg-tertiary border border-white/10 flex items-center justify-center mb-6 text-accent shadow-[0_0_30px_rgba(226,0,116,0.15)] animate-morphing-blob">
+        <IconBolt className="w-8 h-8 animate-glow-pulse" />
       </div>
-      
+
       {/* Title */}
       <h1 className="text-3xl font-semibold mb-2">SCA-01 The Finisher</h1>
-      
+
       {/* Subtitle */}
       <p className="text-text-secondary mb-8">
         Din lokale AI-agent med enterprise-grade sikkerhed og fuld PC-adgang
