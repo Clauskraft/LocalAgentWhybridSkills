@@ -37,7 +37,7 @@ const DEFAULT_SETTINGS: UISettings = {
   theme: 'dark',
   // Browser/dev mode fallback can be configured via VITE_BACKEND_URL
   backendUrl: resolveBackendUrl(undefined) ?? 'https://sca-01-phase3-production.up.railway.app',
-  useCloud: true,
+  useCloud: false, // Railway backend doesn't have /api/chat - use local Ollama
   temperature: 0.7,
   contextLength: 4096,
   immersiveMode: false,
