@@ -34,6 +34,7 @@ export interface SCA01API {
     }) => Promise<{ content: string; toolCalls?: unknown[] }>;
     getModels: () => Promise<Array<{ name: string; size?: string }>>;
     updateSettings: (partial: Record<string, unknown>) => void;
+    pullModel: (modelName: string) => Promise<{ success: boolean; error?: string }>;
     setTheme: (theme: string) => void;
   };
   cloud: {
@@ -146,6 +147,7 @@ const api: SCA01API = {
     updateSettings: (partial: Record<string, unknown>) => {
       ipcRenderer.invoke("chat-update-settings", partial);
     },
+    pullModel: (modelName: string) => ipcRenderer.invoke("chat:pullModel", modelName),
     setTheme: (theme: string) => {
       ipcRenderer.invoke("chat-set-theme", theme);
     }

@@ -196,11 +196,11 @@ function PerformanceSettings() {
   );
 }
 
-function GeneralSettings({ 
-  settings, 
-  onUpdate 
-}: { 
-  settings: Settings; 
+function GeneralSettings({
+  settings,
+  onUpdate
+}: {
+  settings: Settings;
   onUpdate: (s: Partial<Settings>) => void;
 }) {
   return (
@@ -609,68 +609,124 @@ function ReposSettings({
   );
 }
 
-function ModelsSettings({ 
-  settings, 
-  onUpdate 
-}: { 
-  settings: Settings; 
+function ModelsSettings({
+  settings,
+  onUpdate
+}: {
+  settings: Settings;
   onUpdate: (s: Partial<Settings>) => void;
 }) {
   const [models, setModels] = useState<Array<{ name: string; size: string }>>([]);
   const [loading, setLoading] = useState(true);
+  const [pullInput, setPullInput] = useState('');
+  const [pulling, setPulling] = useState(false);
+  const [pullStatus, setPullStatus] = useState<string | null>(null);
+
+  const refreshModels = async () => {
+    setLoading(true);
+    try {
+      const api = (window as any).sca01?.chat;
+      const list = await api?.getModels?.();
+      const parsed = Array.isArray(list)
+        ? list
+          .filter((m) => m && typeof m.name === 'string')
+          .map((m) => ({ name: m.name as string, size: (m.size as string) ?? '' }))
+        : [];
+      setModels(parsed);
+    } catch {
+      setModels([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const api = (window as any).sca01?.chat;
-        const list = await api?.getModels?.();
-        const parsed = Array.isArray(list)
-          ? list
-              .filter((m) => m && typeof m.name === 'string')
-              .map((m) => ({ name: m.name as string, size: (m.size as string) ?? '' }))
-          : [];
-        if (!cancelled) setModels(parsed);
-      } catch {
-        if (!cancelled) setModels([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    refreshModels();
   }, []);
+
+  const handlePull = async () => {
+    const model = pullInput.trim();
+    if (!model) return;
+
+    setPulling(true);
+    setPullStatus(`Downloader ${model}...`);
+    try {
+      const api = (window as any).sca01?.chat;
+      // Vi antager at api.pullModel findes eller vi skal implementere den i main.ts
+      const res = await api?.pullModel?.(model);
+      if (res?.success) {
+        setPullStatus(`Færdig! ${model} er installeret.`);
+        setPullInput('');
+        await refreshModels();
+      } else {
+        setPullStatus(`Fejl: ${res?.error || 'Kunne ikke hente model'}`);
+      }
+    } catch (e) {
+      setPullStatus(`Fejl: ${e instanceof Error ? e.message : 'Ukendt fejl'}`);
+    } finally {
+      setPulling(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
+      <Section title="📥 Installer Ny Model">
+        <p className="text-sm text-text-secondary mb-3">
+          Indtast navnet på en model fra Ollama library (fx <code>phi3:mini</code> eller <code>mistral</code>) for at installere den.
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={pullInput}
+            onChange={(e) => setPullInput(e.target.value)}
+            placeholder="phi3:mini"
+            className="form-input flex-1"
+            disabled={pulling}
+          />
+          <button
+            onClick={handlePull}
+            disabled={pulling || !pullInput.trim()}
+            className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50"
+          >
+            {pulling ? 'Henter...' : 'Installer'}
+          </button>
+        </div>
+        {pullStatus && (
+          <p className={`mt-2 text-xs font-medium ${pullStatus.startsWith('Fejl') ? 'text-error' : 'text-accent'}`}>
+            {pullStatus}
+          </p>
+        )}
+      </Section>
+
       <Section title="📦 Installerede Modeller">
         {loading ? (
           <p className="text-text-muted">Henter modeller...</p>
         ) : (
           <div className="space-y-2">
-            {models.map((model) => (
-              <div
-                key={model.name}
-                className="flex items-center justify-between p-3 bg-bg-tertiary border border-border-primary rounded-lg"
-              >
-                <div>
-                  <div className="font-semibold">{model.name}</div>
-                  <div className="text-sm text-text-muted">{model.size}</div>
-                </div>
-                <button
-                  onClick={() => onUpdate({ model: model.name })}
-                  className={`px-3 py-1 rounded text-sm ${
-                    model.name === settings.model
-                      ? 'bg-accent text-white'
-                      : 'bg-bg-secondary border border-border-primary hover:bg-bg-hover'
-                  }`}
+            {models.length === 0 ? (
+              <p className="text-sm text-text-muted italic">Ingen modeller fundet. Installér en ovenfor eller tjek din Ollama forbindelse.</p>
+            ) : (
+              models.map((model) => (
+                <div
+                  key={model.name}
+                  className="flex items-center justify-between p-3 bg-bg-tertiary border border-border-primary rounded-lg"
                 >
-                  {model.name === settings.model ? 'Aktiv' : 'Vælg'}
-                </button>
-              </div>
-            ))}
+                  <div>
+                    <div className="font-semibold">{model.name}</div>
+                    <div className="text-sm text-text-muted">{model.size}</div>
+                  </div>
+                  <button
+                    onClick={() => onUpdate({ model: model.name })}
+                    className={`px-3 py-1 rounded text-sm ${model.name === settings.model
+                        ? 'bg-accent text-white'
+                        : 'bg-bg-secondary border border-border-primary hover:bg-bg-hover'
+                      }`}
+                  >
+                    {model.name === settings.model ? 'Aktiv' : 'Vælg'}
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         )}
       </Section>
@@ -690,23 +746,23 @@ function MCPSettings() {
   const mcp = ((window as unknown as { sca01?: any }).sca01?.mcp ??
     (window as unknown as { chat?: any }).chat) as
     | {
-        getMcpServers?: () => Promise<
-          Array<{ id: string; name: string; type: string; endpoint: string; enabled: boolean }>
-        >;
-        installMcpFromCatalog?: (serverId: string) => Promise<{
-          success: boolean;
-          error?: string;
-          requiresAuth?: boolean;
-          authEnvVar?: string;
-        }>;
-        removeMcpServer?: (name: string) => Promise<boolean>;
-        autoSetupMcp?: (opts?: { includeAuth?: boolean }) => Promise<{
-          success: boolean;
-          installed: string[];
-          skipped: Array<{ id: string; name: string; reason: string; authEnvVar?: string }>;
-          requiresAuth: Array<{ id: string; name: string; authEnvVar?: string }>;
-        }>;
-      }
+      getMcpServers?: () => Promise<
+        Array<{ id: string; name: string; type: string; endpoint: string; enabled: boolean }>
+      >;
+      installMcpFromCatalog?: (serverId: string) => Promise<{
+        success: boolean;
+        error?: string;
+        requiresAuth?: boolean;
+        authEnvVar?: string;
+      }>;
+      removeMcpServer?: (name: string) => Promise<boolean>;
+      autoSetupMcp?: (opts?: { includeAuth?: boolean }) => Promise<{
+        success: boolean;
+        installed: string[];
+        skipped: Array<{ id: string; name: string; reason: string; authEnvVar?: string }>;
+        requiresAuth: Array<{ id: string; name: string; authEnvVar?: string }>;
+      }>;
+    }
     | undefined;
 
   async function refreshInstalled() {
@@ -969,11 +1025,11 @@ function PromptsSettings({
   );
 }
 
-function SecuritySettings({ 
-  settings, 
-  onUpdate 
-}: { 
-  settings: Settings; 
+function SecuritySettings({
+  settings,
+  onUpdate
+}: {
+  settings: Settings;
   onUpdate: (s: Partial<Settings>) => void;
 }) {
   return (
@@ -1039,11 +1095,10 @@ function ThemeSettings({
             <button
               key={t.id}
               onClick={() => onUpdate({ theme: t.id })}
-              className={`p-3 border rounded-lg text-left transition-colors ${
-                settings.theme === t.id
+              className={`p-3 border rounded-lg text-left transition-colors ${settings.theme === t.id
                   ? 'border-accent bg-bg-tertiary'
                   : 'border-border-primary hover:border-accent'
-              }`}
+                }`}
             >
               <div className="font-semibold">{t.label}</div>
               <div className="text-sm text-text-muted">{t.id}</div>
@@ -1299,11 +1354,10 @@ function PulseSettings() {
           {(Object.keys(CATEGORY_INFO) as PulseCategory[]).map((cat) => (
             <div
               key={cat}
-              className={`p-3 border rounded-lg transition-colors ${
-                prefs.categories[cat].enabled
+              className={`p-3 border rounded-lg transition-colors ${prefs.categories[cat].enabled
                   ? 'border-accent/50 bg-bg-tertiary'
                   : 'border-border-primary bg-bg-secondary opacity-60'
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
                 <input
