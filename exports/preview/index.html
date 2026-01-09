@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="da">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TDC Erhverv | Strategisk Briefing - Digital Suverænitet</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;700&family=Open+Sans:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --tdc-magenta: #E20074;
+            --tdc-dark-blue: #002855;
+            --tdc-white: #FFFFFF;
+            --tdc-gray: #666666;
+            --tdc-light-gray: #F5F5F5;
+            --tdc-cyan: #00B5E2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--tdc-white);
+            color: #333;
+            font-family: 'Open Sans', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .deck-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: var(--tdc-light-gray);
+        }
+
+        .slide {
+            width: 100%;
+            max-width: 1200px;
+            height: 675px;
+            /* 16:9 */
+            background: var(--tdc-white);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 40, 85, 0.1);
+            padding: 4rem;
+            display: none;
+            position: relative;
+            border-top: 8px solid var(--tdc-magenta);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        h1 {
+            font-family: 'Nunito Sans', sans-serif;
+            font-size: 3rem;
+            color: var(--tdc-dark-blue);
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            font-family: 'Nunito Sans', sans-serif;
+            font-size: 2rem;
+            color: var(--tdc-magenta);
+            margin-bottom: 1.5rem;
+        }
+
+        .content {
+            font-size: 1.25rem;
+            line-height: 1.6;
+            color: var(--tdc-gray);
+        }
+
+        .figures {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .figure-card {
+            background: var(--tdc-light-gray);
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .figure-value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--tdc-magenta);
+        }
+
+        .figure-label {
+            font-size: 1rem;
+            color: var(--tdc-dark-blue);
+            margin-top: 0.5rem;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            border-top: 1px solid #eee;
+            padding-top: 2rem;
+        }
+
+        .logo {
+            font-weight: 700;
+            color: var(--tdc-magenta);
+            font-size: 1.5rem;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        button {
+            background: var(--tdc-dark-blue);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: var(--tdc-magenta);
+        }
+
+        .tag {
+            background: var(--tdc-magenta);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="deck-container">
+        <!-- SLIDE 1: COVER -->
+        <div class="slide active" id="slide-1">
+            <span class="tag">Strategisk Briefing</span>
+            <h1>Danmarks Digitale Forsvar & Suverænitet</h1>
+            <p class="content">Transformation af teknisk intelligens til forretningsværdi for TDC Erhverv. Baseret på
+                harvested viden (Sovereignty 2025).</p>
+
+            <div class="figures">
+                <div class="figure-card">
+                    <div class="figure-value">87%</div>
+                    <div class="figure-label">Cloudmarked styret af USA</div>
+                </div>
+                <div class="figure-card">
+                    <div class="figure-value">21 mia</div>
+                    <div class="figure-label">IT-behov i Forsvaret</div>
+                </div>
+                <div class="figure-card">
+                    <div class="figure-value">100%</div>
+                    <div class="figure-label">Dansk Suverænitet med @dot</div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <div class="logo">TDC Erhverv x @dot</div>
+                <div>01 / 04</div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: THE PROBLEM -->
+        <div class="slide" id="slide-2">
+            <span class="tag">Udfordringen</span>
+            <h1>Den Sikkerhedspolitiske Krise</h1>
+            <div class="content">
+                <p>Rusland udgør en stigende cybertrussel mod dansk kritisk infrastruktur. Forsvarets IT-sikkerhed er i
+                    "strukturel ubalance" ifølge Statsrevisorerne.</p>
+                <ul style="margin-top: 2rem; margin-left: 2rem;">
+                    <li>Schrems II & GDPR skaber juridisk usikkerhed for cloud.</li>
+                    <li>NIS2 kravene stiller nye strenge krav til ledelsesansvar.</li>
+                    <li>Behov for suveræn dansk infrastruktur har aldrig været større.</li>
+                </ul>
+            </div>
+            <div class="footer">
+                <div class="logo">TDC Erhverv x @dot</div>
+                <div>02 / 04</div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: THE SOLUTIONS -->
+        <div class="slide" id="slide-3">
+            <span class="tag">Løsningen</span>
+            <h1>Det Suveræne Output (The Stack)</h1>
+            <div class="content">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem;">
+                    <div style="background: var(--tdc-light-gray); padding: 1.5rem; border-radius: 8px;">
+                        <h3 style="color: var(--tdc-magenta); margin-bottom: 0.5rem;">CloudKey®</h3>
+                        <p style="font-size: 1rem;">BYOK/HYOK løsning, der sikrer 100% kontrol over krypteringsnøgler på
+                            dansk jord.</p>
+                    </div>
+                    <div style="background: var(--tdc-light-gray); padding: 1.5rem; border-radius: 8px;">
+                        <h3 style="color: var(--tdc-magenta); margin-bottom: 0.5rem;">Gefion AI</h3>
+                        <p style="font-size: 1rem;">Suveræn AI compute i Danmark, synkroniseret med @dot agenter.</p>
+                    </div>
+                    <div style="background: var(--tdc-light-gray); padding: 1.5rem; border-radius: 8px;">
+                        <h3 style="color: var(--tdc-magenta); margin-bottom: 0.5rem;">5G Private Networks</h3>
+                        <p style="font-size: 1rem;">Isoleret, sikker konnektivitet til militærbaser og kritisk industri.
+                        </p>
+                    </div>
+                    <div style="background: var(--tdc-light-gray); padding: 1.5rem; border-radius: 8px;">
+                        <h3 style="color: var(--tdc-magenta); margin-bottom: 0.5rem;">@dot Constellation</h3>
+                        <p style="font-size: 1rem;">Autonom orkestrering af viden og sikkerhed i realtid.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="footer">
+                <div class="logo">TDC Erhverv x @dot</div>
+                <div>03 / 04</div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: CALL TO ACTION -->
+        <div class="slide" id="slide-4">
+            <span class="tag">Next Steps</span>
+            <h1>Fra Strategi til Eksekvering</h1>
+            <div class="content">
+                <p>Phase 4 er nu operationaliseret og klar til briefing af interessenter.</p>
+                <div style="margin-top: 2rem; border-left: 5px solid var(--tdc-magenta); padding-left: 2rem;">
+                    <p><strong>Q1 2026:</strong> Etablering af Forsvars-salgsteam og POC-opstart.</p>
+                    <p><strong>Q2 2026:</strong> Fuld integration af Gefion AI i CloudKey økosystemet.</p>
+                    <p><strong>End-goal:</strong> Et suverænt Danmark, understøttet af @dot intelligens.</p>
+                </div>
+            </div>
+            <div class="footer">
+                <div class="logo">TDC Erhverv x @dot</div>
+                <div>04 / 04</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="prevSlide()">Forrige</button>
+            <button onclick="nextSlide()">Næste</button>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 4;
+
+        function showSlide(n) {
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            document.getElementById(`slide-${n}`).classList.add('active');
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                showSlide(currentSlide);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                showSlide(currentSlide);
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+    </script>
+
+</body>
+
+</html>

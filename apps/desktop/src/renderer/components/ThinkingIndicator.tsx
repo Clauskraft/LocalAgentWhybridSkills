@@ -34,7 +34,7 @@ export const ThinkingIndicator = memo(function ThinkingIndicator() {
                         <div className="flex flex-col animate-scroll-vertical gap-1">
                             {['Analysing Context...', 'Mapping Semantic space...', 'Optimizing Weights...', 'Browsing Knowledge...', 'Synthesizing Response...'].map((trace, i) => (
                                 <span key={i} className="text-[10px] text-text-muted font-mono whitespace-nowrap opacity-60">
-                                    > {trace}
+                                    &gt; {trace}
                                 </span>
                             ))}
                         </div>
