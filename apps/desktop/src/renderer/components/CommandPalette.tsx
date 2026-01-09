@@ -39,10 +39,10 @@ export const CommandPalette = memo(function CommandPalette({ isOpen, onClose, ac
 
         const shortcuts: Command[] = Object.entries(SYSTEM_SHORTCUTS).map(([key, data]) => ({
             id: `sc-${key}`,
-            text: `/sc:${key}`,
+            text: `//@Dot:${key}`,
             description: data.description,
             icon: <IconCircle className="w-4 h-4 text-emerald-400" />,
-            action: () => actions.executeShortcut(`/sc:${key}`)
+            action: () => actions.executeShortcut(`//@Dot:${key}`)
         }));
 
         return [...base, ...shortcuts];

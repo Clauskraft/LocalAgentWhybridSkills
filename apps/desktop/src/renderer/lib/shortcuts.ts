@@ -67,21 +67,21 @@ export const SYSTEM_SHORTCUTS: Record<string, {
     },
     'help': {
         name: 'Dot.Help (Central)',
-        description: 'Oplister alle tilgængelige /sc kommandoer og deres funktionalitet.',
+        description: 'Oplister alle tilgængelige //@Dot kommandoer og deres funktionalitet.',
         handler: async () => {
             return {
-                content: `📖 **@dot Command Registry**
+                content: `📖 **@dot Agent Registry**
             
 | Kommando | Beskrivelse | Agent |
 | :--- | :--- | :--- |
-| **/sc:task** | Eksekvér opgaver | Dot.Plan |
-| **/sc:test** | QA & Kvalitet | Dot.Resilience |
-| **/sc:analyze** | Dyb kodeanalyse | Dot.Security |
-| **/sc:implement** | Kodning & Imp. | Dot.Architect |
-| **/sc:scout** | Opdag ny viden | MasterDot |
-| **/sc:spec-panel** | Design Review | Sentinel |
-| **/sc:plan** | Backlog & Status | Dot.Plan |
-| **/sc:git** | Git Operationer | Dot.Ops |
+| **//@Dot:task** | Eksekvér opgaver | Dot.Plan |
+| **//@Dot:test** | QA & Kvalitet | Dot.Resilience |
+| **//@Dot:analyze** | Dyb kodeanalyse | Dot.Security |
+| **//@Dot:implement** | Kodning & Imp. | Dot.Architect |
+| **//@Dot:scout** | Opdag ny viden | MasterDot |
+| **//@Dot:spec-panel** | Design Review | Sentinel |
+| **//@Dot:plan** | Backlog & Status | Dot.Plan |
+| **//@Dot:git** | Git Operationer | Dot.Ops |
 
 *Tip: Brug Ctrl+K for at søge i disse kommandoer visuelt.*`,
                 role: 'system',
@@ -251,7 +251,8 @@ export const SYSTEM_SHORTCUTS: Record<string, {
 };
 
 export function findShortcut(input: string) {
-    if (!input.startsWith('/sc:')) return null;
-    const command = input.substring(4).split(' ')[0].toLowerCase();
+    const prefix = '//@Dot:';
+    if (!input.startsWith(prefix)) return null;
+    const command = input.substring(prefix.length).split(' ')[0].toLowerCase();
     return SYSTEM_SHORTCUTS[command] || null;
 }
