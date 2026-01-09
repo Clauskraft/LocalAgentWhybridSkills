@@ -74,25 +74,28 @@ export const SmartSuggestions = memo(function SmartSuggestions({
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
+      <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar no-scrollbar">
         {suggestions.map((suggestion, index) => (
           <button
             key={index}
             onClick={() => onSuggestionClick(suggestion)}
             disabled={isLoading}
-            className="group flex items-center gap-3 p-3 bg-white/5 hover:bg-accent/10 border border-white/5 hover:border-accent/30 rounded-xl transition-all duration-300 hover:shadow-lg disabled:opacity-50 active:scale-95"
+            className="suggestion-card-hologram min-w-[200px] flex flex-col items-start gap-4 p-5 rounded-3xl transition-all disabled:opacity-50 active:scale-95 text-left group"
           >
-            <div className="flex-shrink-0 transition-transform group-hover:scale-110">
-              {suggestion.includes('🔍') && <IconSearch className="w-4 h-4 text-accent" />}
-              {suggestion.includes('💡') && <IconLightbulb className="w-4 h-4 text-accent" />}
-              {suggestion.includes('🧪') && <IconCode className="w-4 h-4 text-accent" />}
-              {suggestion.includes('📝') && <IconSparkles className="w-4 h-4 text-accent" />}
+            <div className="p-3 bg-accent/20 rounded-2xl group-hover:bg-accent group-hover:text-white transition-all duration-300">
+              {suggestion.includes('🔍') && <IconSearch className="w-5 h-5" />}
+              {suggestion.includes('💡') && <IconLightbulb className="w-5 h-5" />}
+              {suggestion.includes('🧪') && <IconCode className="w-5 h-5" />}
+              {suggestion.includes('📝') && <IconSparkles className="w-5 h-5" />}
+              {!['🔍', '💡', '🧪', '📝'].some(s => suggestion.includes(s)) && <IconSparkles className="w-5 h-5" />}
             </div>
-            <span className="text-xs font-medium text-text-secondary text-left group-hover:text-text-primary transition-colors">
-              {suggestion}
-            </span>
-            <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
-              <IconSparkles className="w-3 h-3 text-accent" />
+            <div>
+              <div className="text-[11px] font-black uppercase tracking-[0.15em] text-accent mb-1">
+                {suggestion.includes('🔍') ? 'Analysis' : suggestion.includes('💡') ? 'Innovation' : suggestion.includes('🧪') ? 'Testing' : 'Content'}
+              </div>
+              <span className="text-xs font-medium text-text-secondary leading-tight group-hover:text-text-primary transition-colors">
+                {suggestion.replace(/[🔍💡🧪📝]/g, '').trim()}
+              </span>
             </div>
           </button>
         ))}
