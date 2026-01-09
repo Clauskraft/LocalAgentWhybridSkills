@@ -31,6 +31,7 @@ import { getConfigStore } from "../config/configStore.js";
 import { MCP_SERVER_CATALOG, getPopularServers, getServerById } from "../mcp/serverCatalog.js";
 import { initUpdater } from "../updater/autoUpdater.js";
 import { registerPulseIpcHandlers } from "../pulse/ipc.js";
+import { RomaEngine } from "../roma/RomaEngine.js";
 
 import type { ApprovalRequest } from "../approval/approvalQueue.js";
 
@@ -1098,11 +1099,21 @@ async function setupIpc(): Promise<void> {
     }
   });
 
-  // ROMA bridge (local service via docker-compose)
-  ipcMain.handle("roma-health", () => romaHealth());
-  ipcMain.handle("roma-plan", (_event: unknown, payload: Parameters<typeof romaPlan>[0]) => romaPlan(payload));
-  ipcMain.handle("roma-act", (_event: unknown, payload: Parameters<typeof romaAct>[0]) => romaAct(payload));
-  ipcMain.handle("roma-schema", (_event: unknown, which: "plan" | "act") => romaSchema(which));
+  // ROMA bridge (Integrated TypeScript Engine)
+  const romaEngine = new RomaEngine(async (messages) => {
+    // Use the existing chat infrastructure using current config
+    const res = await chatSendMessage({
+      messages,
+      useCloud: runtimeCfg.useCloud,
+      backendUrl: runtimeCfg.backendUrl
+    });
+    return res.content;
+  });
+
+  ipcMain.handle("roma-health", () => romaEngine.health());
+  ipcMain.handle("roma-plan", (_event: unknown, payload: Parameters<typeof romaPlan>[0]) => romaEngine.plan(payload.goal, payload.strategy as any, payload.context));
+  ipcMain.handle("roma-act", (_event: unknown, payload: Parameters<typeof romaAct>[0]) => romaEngine.act(payload));
+  ipcMain.handle("roma-schema", (_event: unknown, which: "plan" | "act") => romaEngine.schema(which));
 
   // WidgetDC (HTTP MCP endpoints)
   ipcMain.handle("widgetdc-tools", () => widgetdcListTools());
