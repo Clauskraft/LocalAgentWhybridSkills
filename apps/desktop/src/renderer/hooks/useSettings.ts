@@ -20,6 +20,8 @@ export interface UISettings {
   personaId?: string;
   performanceMode?: boolean;
   voiceFeedback?: boolean;
+  compareMode?: boolean;
+  compareModels?: string[];
 }
 
 // Backwards-compatible name used by other modules/types.
@@ -42,6 +44,8 @@ const DEFAULT_SETTINGS: UISettings = {
   personaId: 'architect',
   performanceMode: false,
   voiceFeedback: false,
+  compareMode: false,
+  compareModels: [],
 };
 
 export function useSettings() {

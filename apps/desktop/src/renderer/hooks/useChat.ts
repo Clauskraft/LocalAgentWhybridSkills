@@ -18,6 +18,8 @@ type Settings = {
   temperature?: number;
   contextLength?: number;
   personaId?: string;
+  compareMode?: boolean;
+  compareModels?: string[];
 };
 
 function createMessage(role: Message['role'], content: string): Message {
@@ -131,47 +133,62 @@ export function useChat() {
           return await api.sendMessage({ ...payload, model });
         };
 
-        let resp: any;
-        try {
-          resp = await attemptSend(payload.model);
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
+        const modelsToTry = (settings?.compareMode && settings?.compareModels && settings.compareModels.length > 0)
+          ? settings.compareModels
+          : [payload.model];
 
-          // Best-effort cloud fallback: if model is missing upstream, try a safer default and persist it.
-          const modelMissing =
-            /model/i.test(msg) && /not found/i.test(msg) && (payload.useCloud || /Cloud chat failed/i.test(msg));
-
-          if (modelMissing) {
-            // Try "auto" first (cloud server default = omit model), then common fallbacks.
-            const candidates = ['', 'qwen3:8b', 'qwen3', 'llama3.1', 'mistral'];
-            for (const candidate of candidates) {
-              // NOTE: empty string means "auto" (omit model in cloud IPC).
-              if (candidate === payload.model) continue;
-              try {
-                const retry = await attemptSend(candidate);
-                // Persist the working model for future sends (renderer-side settings)
-                api?.updateSettings?.({ model: candidate });
-                resp = retry;
-                break;
-              } catch {
-                // keep trying candidates
+        if (settings?.compareMode) {
+          await Promise.all(modelsToTry.map(async (m) => {
+            try {
+              const resp = await attemptSend(m);
+              if (resp?.content) {
+                const assistantMsg = createMessage('assistant', resp.content);
+                assistantMsg.toolCalls = resp?.toolCalls;
+                assistantMsg.meta = {
+                  model: resp?.model || m || "Unknown",
+                  personaId: settings?.personaId || 'architect',
+                  isCompare: true
+                };
+                setMessages((prev) => [...prev, assistantMsg]);
+                setChats((prev) =>
+                  prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c)
+                );
+              }
+            } catch (err) {
+              console.error(`Compare failed for ${m}:`, err);
+            }
+          }));
+        } else {
+          let resp: any;
+          try {
+            resp = await attemptSend(payload.model);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            if (isModelNotFoundError(msg)) {
+              const candidates = commonModelFallbacks(payload.model);
+              for (const candidate of candidates) {
+                try {
+                  const retry = await attemptSend(candidate);
+                  api?.updateSettings?.({ model: candidate });
+                  resp = retry;
+                  break;
+                } catch { /* ignore */ }
               }
             }
+            if (!resp) throw e;
           }
-
-          if (!resp) throw e;
-        }
-        if (resp?.content) {
-          const assistantMsg = createMessage('assistant', resp.content);
-          assistantMsg.toolCalls = resp?.toolCalls;
-          assistantMsg.meta = {
-            model: resp?.model || payload.model || "Unknown",
-            personaId: settings?.personaId || 'architect'
-          };
-          setMessages((prev) => [...prev, assistantMsg]);
-          setChats((prev) =>
-            prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c)
-          );
+          if (resp?.content) {
+            const assistantMsg = createMessage('assistant', resp.content);
+            assistantMsg.toolCalls = resp?.toolCalls;
+            assistantMsg.meta = {
+              model: resp?.model || payload.model || "Unknown",
+              personaId: settings?.personaId || 'architect'
+            };
+            setMessages((prev) => [...prev, assistantMsg]);
+            setChats((prev) =>
+              prev.map((c) => c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMsg] } : c)
+            );
+          }
         }
       } else {
         // Browser mode (no Electron IPC):

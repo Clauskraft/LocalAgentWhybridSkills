@@ -117,6 +117,54 @@ export function ModelsSettings({ settings, onUpdate }: ModelsSettingsProps) {
                 )}
             </section>
 
+            <section className="p-6 glass-card rounded-3xl border-purple-500/20 bg-purple-500/5">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-purple-400 mb-1 flex items-center gap-2">
+                            <IconBolt className="w-3.5 h-3.5" /> Parallel Compare Mode (Alpha)
+                        </h3>
+                        <p className="text-[10px] text-text-muted font-medium">Sammenlign svar fra op til 3 forskellige modeller samtidigt.</p>
+                    </div>
+                    <button
+                        onClick={() => onUpdate({ compareMode: !settings.compareMode })}
+                        className={`w-12 h-6 rounded-full transition-all relative ${settings.compareMode ? 'bg-purple-500' : 'bg-white/10'}`}
+                    >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${settings.compareMode ? 'right-1' : 'left-1'}`} />
+                    </button>
+                </div>
+
+                {settings.compareMode && (
+                    <div className="space-y-3 animate-fade-in">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">Vælg Modeller til sammenligning:</div>
+                        <div className="grid grid-cols-2 gap-2">
+                            {models.slice(0, 6).map(model => {
+                                const isSelected = settings.compareModels?.includes(model.name);
+                                return (
+                                    <button
+                                        key={model.name}
+                                        onClick={() => {
+                                            const current = settings.compareModels || [];
+                                            if (isSelected) {
+                                                onUpdate({ compareModels: current.filter(m => m !== model.name) });
+                                            } else if (current.length < 3) {
+                                                onUpdate({ compareModels: [...current, model.name] });
+                                            }
+                                        }}
+                                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${isSelected
+                                                ? 'bg-purple-500/20 border-purple-500 text-purple-300'
+                                                : 'bg-white/5 border-white/5 text-text-muted hover:border-white/20'
+                                            }`}
+                                    >
+                                        <div className={`w-3 h-3 rounded-sm border ${isSelected ? 'bg-purple-500 border-purple-400' : 'border-white/20'}`} />
+                                        <span className="text-[11px] font-bold truncate">{model.name}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </section>
+
             <section>
                 <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted mb-4">
                     Installerede Modeller ({models.length})
@@ -211,6 +259,6 @@ export function ModelsSettings({ settings, onUpdate }: ModelsSettingsProps) {
                     </div>
                 </div>
             </section>
-        </div>
+        </div >
     );
 }
