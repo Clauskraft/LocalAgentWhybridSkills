@@ -2,9 +2,15 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { DeviceCodeCredential } from "@azure/identity";
+import { DeviceCodeCredential, useIdentityPlugin, DeviceCodeCredentialOptions } from "@azure/identity";
+import { cachePersistencePlugin } from "@azure/identity-cache-persistence";
 import { Client } from "@microsoft/microsoft-graph-client";
 import { TokenCredentialAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials/index.js";
+import path from "path";
+import os from "os";
+
+// Enable Token Cache Persistence
+useIdentityPlugin(cachePersistencePlugin);
 
 const server = new Server(
     {
@@ -33,16 +39,23 @@ let credential: DeviceCodeCredential | null = null;
 async function getGraphClient() {
     if (graphClient) return graphClient;
 
-    console.error("[Dot.Corp] Initializing Azure Auth (Device Code Flow)...");
+    console.error("[Dot.Corp] Initializing Azure Auth (Device Code + Persistence)...");
 
-    // Using DeviceCodeCredential which prints a code to stderr for the user to login
-    credential = new DeviceCodeCredential({
+    const persistenceOptions: DeviceCodeCredentialOptions = {
         tenantId: MS_CONFIG.tenantId,
         clientId: MS_CONFIG.clientId,
+        tokenCachePersistenceOptions: {
+            enabled: true,
+            name: "dot-corp-token-cache",
+            unsafeAllowUnencryptedStorage: true // Fallback for environments without secure storage
+        },
         userPromptCallback: (info) => {
             console.error(`[AUTH REQUIRED] Please go to ${info.verificationUri} and enter code: ${info.userCode}`);
         }
-    });
+    };
+
+    // Using DeviceCodeCredential which prints a code to stderr for the user to login
+    credential = new DeviceCodeCredential(persistenceOptions);
 
     const authProvider = new TokenCredentialAuthenticationProvider(credential, {
         scopes: ["User.Read", "Directory.Read.All", "Files.Read.All", "Sites.Read.All"]
