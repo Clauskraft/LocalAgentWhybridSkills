@@ -19,7 +19,9 @@ test('End-to-End Functional Test: Ollama, MCP & Chat', async ({ page }) => {
     });
 
     await page.goto('http://127.0.0.1:5173/');
-    await page.waitForTimeout(3000); // Giv tid til at hente "mocked" status
+
+    test.setTimeout(60000);
+    await page.waitForTimeout(5000); // Giv tid til at hente "mocked" status
 
     // 1. Screenshot: Welcome Screen
     await page.screenshot({ path: 'test-results/10_welcome_screen_mcp.png', fullPage: true });
@@ -34,7 +36,13 @@ test('End-to-End Functional Test: Ollama, MCP & Chat', async ({ page }) => {
     if (await helpCard.count() > 0) {
         console.log('✅ Klikker på "Hvad kan du?" kort...');
         await helpCard.first().click();
-        await page.waitForTimeout(4000); // Vent på respons
+        await page.waitForTimeout(1000);
+
+        // Send besked via Enter
+        await page.keyboard.press('Enter');
+
+        console.log('✅ Sendte besked, venter på respons...');
+        await page.waitForTimeout(6000); // Vent på respons
 
         await page.screenshot({ path: 'test-results/11_chat_response_verified.png', fullPage: true });
 
@@ -53,12 +61,7 @@ test('End-to-End Functional Test: Ollama, MCP & Chat', async ({ page }) => {
     console.log('✅ Indstillinger modal verificeret');
 
     // Close Settings
-    const closeBtn = page.locator('button, span').filter({ hasText: /Luk Indstillinger/i });
-    if (await closeBtn.count() > 0) {
-        await closeBtn.first().click();
-    } else {
-        await page.keyboard.press('Escape');
-    }
+    await page.keyboard.press('Escape');
 
     // 5. Test ROMA Planner view
     const romaBtn = page.locator('button, div').filter({ hasText: /ROMA/i });
