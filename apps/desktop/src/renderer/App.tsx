@@ -10,6 +10,7 @@ import { RomaPlanner } from "./components/RomaPlanner";
 import { useChat } from './hooks/useChat';
 import { useSettings } from './hooks/useSettings';
 import { useToast } from './components/Toast';
+import { ShortcutsModal } from './components/ShortcutsModal';
 
 type AppView = 'chat' | 'pulse' | 'roma';
 
@@ -36,11 +37,11 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [settingsTab, setSettingsTab] = useState<string>('general');
   const [immersiveMode, setImmersiveMode] = useState(false);
-  const [_activePanels, _setActivePanels] = useState<Set<string>>(new Set(['chat']));
   const [cuttingEdgeMode, setCuttingEdgeMode] = useState(false);
   const [currentView, setCurrentView] = useState<AppView>('chat');
   const [showPulseCurate, setShowPulseCurate] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const { showToast } = useToast();
 
   const {
@@ -116,6 +117,26 @@ export function App() {
   const toggleCuttingEdgeMode = useCallback(() => {
     setCuttingEdgeMode(prev => !prev);
   }, []);
+
+  // LOOP 10: Global Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === '/') {
+        e.preventDefault();
+        setShowShortcuts(prev => !prev);
+      }
+      if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        createChat();
+      }
+      if (e.ctrlKey && e.key === ',') {
+        e.preventDefault();
+        openSettings();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [createChat, openSettings]);
 
   const handleSendMessage = useCallback(async (content: string) => {
     await sendMessage(content, settings);
@@ -237,6 +258,11 @@ export function App() {
         isOpen={showPulseCurate}
         onClose={() => setShowPulseCurate(false)}
         onSubmit={handlePulseCurate}
+      />
+
+      <ShortcutsModal
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
       />
     </div>
   );

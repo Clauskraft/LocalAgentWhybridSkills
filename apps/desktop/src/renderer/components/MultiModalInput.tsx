@@ -125,8 +125,8 @@ export const MultiModalInput = memo(function MultiModalInput({
         <button
           onClick={() => setMode('text')}
           className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 ${mode === 'text'
-              ? 'bg-accent text-white shadow-[0_0_15px_rgba(226,0,116,0.4)]'
-              : 'text-text-muted hover:text-text-primary hover:bg-white/5'
+            ? 'bg-accent text-white shadow-[0_0_15px_rgba(226,0,116,0.4)]'
+            : 'text-text-muted hover:text-text-primary hover:bg-white/5'
             }`}
           title="Tekst Indtastning"
         >
@@ -135,8 +135,8 @@ export const MultiModalInput = memo(function MultiModalInput({
         <button
           onClick={() => setMode('voice')}
           className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 ${mode === 'voice'
-              ? 'bg-accent text-white shadow-[0_0_15px_rgba(226,0,116,0.4)]'
-              : 'text-text-muted hover:text-text-primary hover:bg-white/5'
+            ? 'bg-accent text-white shadow-[0_0_15px_rgba(226,0,116,0.4)]'
+            : 'text-text-muted hover:text-text-primary hover:bg-white/5'
             }`}
           title="Stemme Styring"
         >
@@ -145,8 +145,8 @@ export const MultiModalInput = memo(function MultiModalInput({
         <button
           onClick={() => setMode('drawing')}
           className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 ${mode === 'drawing'
-              ? 'bg-accent text-white shadow-[0_0_15px_rgba(226,0,116,0.4)]'
-              : 'text-text-muted hover:text-text-primary hover:bg-white/5'
+            ? 'bg-accent text-white shadow-[0_0_15px_rgba(226,0,116,0.4)]'
+            : 'text-text-muted hover:text-text-primary hover:bg-white/5'
             }`}
           title="Visuel Skitse"
         >
@@ -161,8 +161,8 @@ export const MultiModalInput = memo(function MultiModalInput({
             onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
             disabled={isLoading}
             className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isRecording
-                ? 'bg-red-500 text-white animate-pulse'
-                : 'bg-accent text-white hover:bg-accent-hover holographic-glow'
+              ? 'bg-red-500 text-white animate-pulse'
+              : 'bg-accent text-white hover:bg-accent-hover holographic-glow'
               } shadow-lg`}
           >
             {isRecording ? <IconX className="w-4 h-4" /> : <IconBolt className="w-4 h-4" />}
@@ -219,14 +219,18 @@ export const MultiModalInput = memo(function MultiModalInput({
 
       {/* Drawing Canvas */}
       {isDrawing && (
-        <div className="absolute bottom-full left-0 right-0 mb-4 p-4 bg-white/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl">
-          <canvas
-            ref={canvasRef}
-            width={600}
-            height={300}
-            className="border border-border-primary rounded-lg cursor-crosshair bg-white"
-            style={{ touchAction: 'none' }}
-          />
+        <div className="absolute bottom-full left-0 right-0 mb-4 p-4 glass-card rounded-3xl shadow-2xl border-accent/20 animate-slide-up">
+          <div className="relative overflow-hidden rounded-2xl border border-white/10">
+            <div className="absolute inset-0 pointer-events-none opacity-20"
+              style={{ backgroundImage: 'radial-gradient(circle, #E20074 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+            <canvas
+              ref={canvasRef}
+              width={600}
+              height={300}
+              className="cursor-crosshair bg-white/5"
+              style={{ touchAction: 'none' }}
+            />
+          </div>
           <div className="mt-2 text-sm text-text-muted text-center">
             Draw with your mouse or finger. Click "Finish Drawing" when done.
           </div>
