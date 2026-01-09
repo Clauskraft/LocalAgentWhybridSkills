@@ -243,12 +243,14 @@ onDeleteChat,
 
         {/* Footer / Watermark */}
         {!isCollapsed && (
-          <div className="p-4 border-t border-white/5 opacity-30 select-none">
-            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">
-              <span>SCA-01</span>
-              <span>v0.2.5</span>
+          <div className="p-4 border-t border-white/5 opacity-40 select-none">
+            <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-[0.2em] text-text-muted">
+              <div className="flex items-center gap-1.5">
+                <IconShield className="w-3 h-3 text-accent" />
+                <span>SCA-01</span>
+              </div>
+              <span className="text-accent/60">v0.2.0 - PRODUCTION READY</span>
             </div>
-            <p className="text-[8px] font-mono text-text-muted mt-1">Neural Engine Active • (claus@local)</p>
           </div>
         )}
     </aside>

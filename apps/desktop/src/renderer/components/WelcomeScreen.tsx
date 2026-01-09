@@ -44,9 +44,15 @@ export const WelcomeScreen = memo(function WelcomeScreen({ onQuickStart }: Welco
       <h1 className="text-3xl font-semibold mb-2">SCA-01 The Finisher</h1>
 
       {/* Subtitle */}
-      <p className="text-text-secondary mb-8">
+      <p className="text-text-secondary mb-4">
         Din lokale AI-agent med enterprise-grade sikkerhed og fuld PC-adgang
       </p>
+
+      {/* Certification Badge */}
+      <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-accent/5 border border-accent/20 mb-12 animate-fade-in shadow-lg shadow-accent/5">
+        <IconShield className="w-3 h-3 text-accent" />
+        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-accent/80">SCA-01 Stabilization Complete • January 2026</span>
+      </div>
 
       {/* Quick Actions Grid */}
       <div className="grid grid-cols-2 gap-6 max-w-2xl w-full">
