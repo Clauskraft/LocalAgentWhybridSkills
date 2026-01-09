@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 
 import { MCP_SERVER_CATALOG } from '../../mcp/serverCatalog';
 import { IconBolt, IconPlug, IconPulse, IconSettings, IconShield, IconX } from './icons';
+import { useToast } from './Toast';
+import { UISettings } from '../hooks/useSettings';
 
 interface Settings {
   ollamaHost: string;
@@ -613,9 +615,10 @@ function ModelsSettings({
   settings,
   onUpdate
 }: {
-  settings: Settings;
-  onUpdate: (s: Partial<Settings>) => void;
+  settings: UISettings;
+  onUpdate: (s: Partial<UISettings>) => void;
 }) {
+  const { showToast } = useToast();
   const [models, setModels] = useState<Array<{ name: string; size: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [pullInput, setPullInput] = useState('');
@@ -655,14 +658,19 @@ function ModelsSettings({
       // Vi antager at api.pullModel findes eller vi skal implementere den i main.ts
       const res = await api?.pullModel?.(model);
       if (res?.success) {
+        showToast(`${model} er installeret!`, 'success');
         setPullStatus(`Færdig! ${model} er installeret.`);
         setPullInput('');
         await refreshModels();
       } else {
-        setPullStatus(`Fejl: ${res?.error || 'Kunne ikke hente model'}`);
+        const error = res?.error || 'Kunne ikke hente model';
+        showToast(`Fejl under hentning: ${error}`, 'error');
+        setPullStatus(`Fejl: ${error}`);
       }
     } catch (e) {
-      setPullStatus(`Fejl: ${e instanceof Error ? e.message : 'Ukendt fejl'}`);
+      const error = e instanceof Error ? e.message : 'Ukendt fejl';
+      showToast(`Kritisk fejl: ${error}`, 'error');
+      setPullStatus(`Fejl: ${error}`);
     } finally {
       setPulling(false);
     }
@@ -718,8 +726,8 @@ function ModelsSettings({
                   <button
                     onClick={() => onUpdate({ model: model.name })}
                     className={`px-3 py-1 rounded text-sm ${model.name === settings.model
-                        ? 'bg-accent text-white'
-                        : 'bg-bg-secondary border border-border-primary hover:bg-bg-hover'
+                      ? 'bg-accent text-white'
+                      : 'bg-bg-secondary border border-border-primary hover:bg-bg-hover'
                       }`}
                   >
                     {model.name === settings.model ? 'Aktiv' : 'Vælg'}
@@ -1096,8 +1104,8 @@ function ThemeSettings({
               key={t.id}
               onClick={() => onUpdate({ theme: t.id })}
               className={`p-3 border rounded-lg text-left transition-colors ${settings.theme === t.id
-                  ? 'border-accent bg-bg-tertiary'
-                  : 'border-border-primary hover:border-accent'
+                ? 'border-accent bg-bg-tertiary'
+                : 'border-border-primary hover:border-accent'
                 }`}
             >
               <div className="font-semibold">{t.label}</div>
@@ -1355,8 +1363,8 @@ function PulseSettings() {
             <div
               key={cat}
               className={`p-3 border rounded-lg transition-colors ${prefs.categories[cat].enabled
-                  ? 'border-accent/50 bg-bg-tertiary'
-                  : 'border-border-primary bg-bg-secondary opacity-60'
+                ? 'border-accent/50 bg-bg-tertiary'
+                : 'border-border-primary bg-bg-secondary opacity-60'
                 }`}
             >
               <div className="flex items-center gap-3">
