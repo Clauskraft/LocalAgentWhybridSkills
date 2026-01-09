@@ -9,6 +9,7 @@ import { PulseCurate } from './components/PulseCurate';
 import { RomaPlanner } from "./components/RomaPlanner";
 import { useChat } from './hooks/useChat';
 import { useSettings } from './hooks/useSettings';
+import { useToast } from './components/Toast';
 
 type AppView = 'chat' | 'pulse' | 'roma';
 
@@ -40,6 +41,7 @@ export function App() {
   const [currentView, setCurrentView] = useState<AppView>('chat');
   const [showPulseCurate, setShowPulseCurate] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { showToast } = useToast();
 
   const {
     chats,
@@ -49,8 +51,28 @@ export function App() {
     createChat,
     selectChat,
     deleteChat,
+    undoDeleteChat,
     sendMessage,
+    lastDeletedChat,
   } = useChat();
+
+  // LOOP 9: Undo Delete Notification
+  useEffect(() => {
+    if (lastDeletedChat) {
+      showToast(
+        <div className="flex items-center gap-3">
+          <span>Samtale slettet</span>
+          <button
+            onClick={() => undoDeleteChat()}
+            className="px-2 py-1 bg-accent/20 hover:bg-accent/40 text-accent rounded-md text-[10px] uppercase font-bold tracking-widest transition-all"
+          >
+            Fortryd
+          </button>
+        </div>,
+        'info'
+      );
+    }
+  }, [lastDeletedChat, undoDeleteChat, showToast]);
 
   const {
     settings,

@@ -23,7 +23,7 @@ export const MessageBubble = memo(function MessageBubble({ message }: MessageBub
   const roleName = isUser ? 'Dig' : isSystem ? 'System' : isTool ? 'Tool' : 'SCA-01';
 
   return (
-    <div className="flex gap-4 animate-slide-up group">
+    <div className="flex gap-4 animate-message-entry group">
       {/* Avatar */}
       <div className={`w-8 h-8 rounded-md ${avatarBg} flex items-center justify-center text-white flex-shrink-0`}>
         {avatarIcon}

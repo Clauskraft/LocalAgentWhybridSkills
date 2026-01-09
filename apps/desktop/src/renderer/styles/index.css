@@ -720,4 +720,42 @@
     border-radius: 99px;
     animation: neural-pulse 1s ease-in-out infinite;
   }
+
+  /* Magnetic Glow Effect for Sidebar Items */
+  .item-magnetic-glow {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .item-magnetic-glow::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(226, 0, 116, 0.1) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  .item-magnetic-glow:hover::before {
+    opacity: 1;
+  }
+
+  @keyframes message-entry {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) scale(0.98);
+      filter: blur(4px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  .animate-message-entry {
+    animation: message-entry 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
 }

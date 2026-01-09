@@ -31,6 +31,7 @@ export function useChat() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastDeletedChat, setLastDeletedChat] = useState<Chat | null>(null);
 
   useEffect(() => {
     const initialChat: Chat = {
@@ -62,11 +63,24 @@ export function useChat() {
   }, [chats]);
 
   const deleteChat = useCallback((id: string) => {
-    setChats((prev) => prev.filter((c) => c.id !== id));
-    if (id === currentChatId) {
-      createChat();
+    const chatToDelete = chats.find(c => c.id === id);
+    if (chatToDelete) {
+      setLastDeletedChat(chatToDelete);
+      setChats((prev) => prev.filter((c) => c.id !== id));
+      if (id === currentChatId) {
+        createChat();
+      }
     }
-  }, [currentChatId, createChat]);
+  }, [chats, currentChatId, createChat]);
+
+  const undoDeleteChat = useCallback(() => {
+    if (lastDeletedChat) {
+      setChats((prev) => [lastDeletedChat, ...prev]);
+      setCurrentChatId(lastDeletedChat.id);
+      setMessages(lastDeletedChat.messages);
+      setLastDeletedChat(null);
+    }
+  }, [lastDeletedChat]);
 
   const sendMessage = useCallback(async (content: string, settings?: Settings) => {
     if (!currentChatId) return;
@@ -253,7 +267,9 @@ export function useChat() {
     createChat,
     selectChat,
     deleteChat,
+    undoDeleteChat,
     sendMessage,
+    lastDeletedChat,
   };
 }
 

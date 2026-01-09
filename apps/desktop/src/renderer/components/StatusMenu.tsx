@@ -34,14 +34,21 @@ export const StatusMenu = memo(function StatusMenu({
     return (
         <div className="flex items-center gap-2">
             {/* Mini status indicator */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 backdrop-blur-md border border-white/10 rounded-full shadow-inner">
-                <span
-                    className={`w-2 h-2 rounded-full ${ollamaStatus === 'online' ? 'bg-success animate-pulse' :
-                        ollamaStatus === 'offline' ? 'bg-error' : 'bg-warning animate-pulse'
-                        }`}
-                />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                    {ollamaStatus === 'online' ? 'System Ready' : 'System Busy'}
+            <div className={`flex items-center gap-2 px-4 py-2 glass-card rounded-2xl shadow-lg border-opacity-40 transition-all duration-500 ${ollamaStatus === 'online' ? 'border-success/30' : 'border-warning/30'
+                }`}>
+                <div className="relative flex items-center justify-center">
+                    <span
+                        className={`w-2.5 h-2.5 rounded-full ${ollamaStatus === 'online' ? 'bg-success' :
+                            ollamaStatus === 'offline' ? 'bg-error' : 'bg-warning'
+                            }`}
+                    />
+                    {ollamaStatus === 'online' && (
+                        <span className="absolute inset-0 w-2.5 h-2.5 bg-success rounded-full animate-ping opacity-75" />
+                    )}
+                </div>
+                <span className={`text-[11px] font-black uppercase tracking-[0.15em] ${ollamaStatus === 'online' ? 'text-success' : 'text-warning'
+                    }`}>
+                    {ollamaStatus === 'online' ? 'Neural Link Active' : 'Connecting...'}
                 </span>
             </div>
 
