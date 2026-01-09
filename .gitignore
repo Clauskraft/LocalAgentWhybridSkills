@@ -59,3 +59,7 @@ apps/desktop/test-results/
 sca-01-phase4/.agent-registry.json
 sca-01-phase4/docs/AGENTS.md
 
+~*
+*.log
+npm_install_log.txt
+build_ui_log_2.txt
