@@ -5,6 +5,16 @@
   "engines": {
     "node": ">=20"
   },
+  "workspaces": [
+    "apps/*",
+    "mcp-backend",
+    "packages/*",
+    "sca-01-mobile",
+    "sca-01-phase4",
+    "sentient-src",
+    "services/*",
+    "shared/*"
+  ],
   "scripts": {
     "dev": "npm run desktop",
     "desktop": "npm --prefix apps/desktop run dev:ui",
@@ -19,8 +29,7 @@
     "cloud:build": "npm --prefix services/cloud run build",
     "cloud:test": "npm --prefix services/cloud run test",
     "cli": "npm --prefix apps/cli run dev -- run",
-    "cli:doctor": "npm --prefix apps/cli run dev -- doctor",
-    "install:all": "npm --prefix apps/cli install && npm --prefix apps/desktop install && npm --prefix apps/web install && npm --prefix services/cloud install"
+    "cli:doctor": "npm --prefix apps/cli run dev -- doctor"
   },
   "dependencies": {
     "pptxgenjs": "^4.0.1"
