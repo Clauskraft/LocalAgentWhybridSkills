@@ -51,6 +51,9 @@ jobs:
       - name: Docs sanity (Phase 2)
         run: make docs-sanity
         working-directory: apps/desktop
+      - name: Markdown lint CLAK docs
+        run: npx markdownlint "../claudedocs/**/*.md"
+        working-directory: .
 
       - name: Build Phase 1
         run: npm run build
