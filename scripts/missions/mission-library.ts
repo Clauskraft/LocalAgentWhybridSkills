@@ -71,10 +71,11 @@ export const MISSION_TEMPLATES: Record<string, MissionConfig> = {
     strategy: 'react',
     budget: { maxSteps: 25, maxTimeMs: 300000, maxTokens: 50000 },
     inputs: {
-      domain: 'example.com',
+      domain: 'showpad.com',
       depth: 2,
       includeOsint: true,
-      generatePpt: true
+      generatePpt: true,
+      harvestSources: ['harvest.docs.showpad', 'harvest.intel.domain', 'harvest.intel.osint']
     },
     outputs: ['security_report.md', 'security_presentation.pptx', 'evidence.json']
   },
@@ -82,17 +83,22 @@ export const MISSION_TEMPLATES: Record<string, MissionConfig> = {
   'multi-domain-comparison': {
     id: 'multi-domain-comparison',
     name: 'Comparative Domain Security Analysis',
-    description: `Compare security posture of multiple domains. Scrape each domain, scan for 
+    description: `Compare security posture of multiple enterprise domains. Scrape each domain, scan for 
     open ports/services, collect WHOIS/DNS info. Output comparative table in Markdown and 
     LinkedIn post.`,
     category: 'security',
     strategy: 'cot',
     budget: { maxSteps: 40, maxTimeMs: 600000, maxTokens: 80000 },
     inputs: {
-      domains: ['example.com', 'example.net', 'example.org'],
+      domains: ['showpad.com', 'scribd.com', 'slideshare.net'],
       scanPorts: true,
       collectWhois: true,
-      collectDns: true
+      collectDns: true,
+      platformMapping: {
+        'showpad.com': 'harvest.docs.showpad',
+        'scribd.com': 'harvest.docs.scribd',
+        'slideshare.net': 'harvest.docs.slideshare'
+      }
     },
     outputs: ['comparison_report.md', 'comparison_table.csv', 'linkedin_post.txt']
   },
@@ -100,17 +106,20 @@ export const MISSION_TEMPLATES: Record<string, MissionConfig> = {
   'domain-monitoring': {
     id: 'domain-monitoring',
     name: 'Recurring Domain Monitor',
-    description: `Set up recurring mission to monitor domain every 24 hours for DNS changes, 
+    description: `Set up recurring mission to monitor enterprise domains every 24 hours for DNS changes, 
     WHOIS updates, and new vulnerabilities. Log findings, update spreadsheet, send weekly 
     summary.`,
     category: 'monitoring',
     strategy: 'react',
     budget: { maxSteps: 15, maxTimeMs: 120000, maxTokens: 20000 },
     inputs: {
-      domain: 'example.com',
+      domain: 'showpad.com',
+      additionalDomains: ['scribd.com', 'slideshare.net'],
       interval: '24h',
       notifyEmail: 'security@company.com',
-      spreadsheetId: '<google-drive-sheet-id>'
+      spreadsheetId: '<google-drive-sheet-id>',
+      checkCertificates: true,
+      detectNewSubdomains: true
     },
     outputs: ['monitor_log.json', 'weekly_summary.md']
   },
