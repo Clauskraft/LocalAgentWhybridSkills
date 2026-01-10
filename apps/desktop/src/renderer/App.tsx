@@ -111,9 +111,9 @@ export function App() {
     setShowSettings(false);
   }, []);
 
-  const handleImmersiveToggle = useCallback((active: boolean) => {
-    updateSettings({ immersiveMode: active });
-  }, [updateSettings]);
+  // const handleImmersiveToggle = useCallback((active: boolean) => {
+  //   updateSettings({ immersiveMode: active });
+  // }, [updateSettings]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -150,7 +150,7 @@ export function App() {
     if (chatApi?.onPullProgress) {
       chatApi.onPullProgress((data: any) => {
         const { model, status, percent } = data;
-        const id = `pull-${model}`;
+        // const id = `pull-${model}`;
         showToast(
           <div className="flex flex-col gap-1 min-w-[200px]">
             <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
@@ -159,10 +159,7 @@ export function App() {
             </div>
             <div className="text-[11px] opacity-70 mb-1">{status}</div>
             <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-accent transition-all duration-300"
-                style={{ width: `${percent}%` }}
-              />
+              <div className={`h-full bg-accent transition-all duration-300 w-[${percent}%]`} />
             </div>
           </div>,
           'info',
@@ -178,9 +175,9 @@ export function App() {
     // Here you could integrate with actual advanced features
   }, []);
 
-  const toggleCuttingEdgeMode = useCallback(() => {
-    setCuttingEdgeMode(prev => !prev);
-  }, []);
+  // const toggleCuttingEdgeMode = useCallback(() => {
+  //   setCuttingEdgeMode(prev => !prev);
+  // }, []);
 
   // LOOP 10: Global Keyboard Shortcuts
   useEffect(() => {

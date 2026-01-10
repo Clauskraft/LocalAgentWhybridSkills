@@ -140,7 +140,7 @@ export function useSettings() {
     };
     check();
     // Dynamic interval: check more often if offline (10s), otherwise every minute (60s)
-    let intervalTime = ollamaStatus === 'offline' ? 10000 : 60000;
+    const intervalTime = ollamaStatus === 'offline' ? 10000 : 60000;
     const interval = setInterval(check, intervalTime);
     return () => clearInterval(interval);
   }, [ollamaStatus]);

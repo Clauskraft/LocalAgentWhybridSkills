@@ -246,6 +246,7 @@ export const Sidebar = memo(function Sidebar({
                   <span className="truncate flex-1">{chat.title}</span>
                   <button
                     onClick={(e) => { e.stopPropagation(); onArchiveChat?.(chat.id); }}
+                    aria-label="Toggle archive section"
                     className="opacity-0 group-hover:opacity-100 p-1 hover:text-accent"
                   >
                     <IconPlus className="w-3 h-3 rotate-45" />

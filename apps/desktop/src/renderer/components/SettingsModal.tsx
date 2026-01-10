@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useState } from 'react';
+import React, { memo, useEffect } from 'react';
 import { IconSettings, IconShield, IconBolt, IconPlug, IconPulse, IconX, IconTrash } from './icons';
 import { UISettings } from '../hooks/useSettings';
 import { ModelsSettings } from './settings/ModelsSettings';
@@ -95,6 +95,7 @@ export const SettingsModal = memo(function SettingsModal({
                     <input
                       type="number"
                       value={settings.maxTurns}
+                      aria-label="Max Turns"
                       onChange={(e) => onUpdateSettings({ maxTurns: parseInt(e.target.value) || 1 })}
                       className="w-24 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:border-accent outline-none transition-all"
                     />
@@ -106,6 +107,7 @@ export const SettingsModal = memo(function SettingsModal({
                   >
                     <input
                       type="text"
+                      aria-label="Ollama Host"
                       value={settings.ollamaHost}
                     />
                   </SettingField>
@@ -116,6 +118,7 @@ export const SettingsModal = memo(function SettingsModal({
                   >
                     <button
                       onClick={() => onUpdateSettings({ performanceMode: !settings.performanceMode })}
+                      aria-label="Toggle Ghost Mode"
                       className={`w-12 h-6 rounded-full transition-all relative ${settings.performanceMode ? 'bg-accent' : 'bg-white/10'}`}
                     >
                       <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${settings.performanceMode ? 'right-1' : 'left-1'}`} />
@@ -128,6 +131,7 @@ export const SettingsModal = memo(function SettingsModal({
                   >
                     <button
                       onClick={() => onUpdateSettings({ voiceFeedback: !settings.voiceFeedback })}
+                      aria-label="Toggle Natural Voice"
                       className={`w-12 h-6 rounded-full transition-all relative ${settings.voiceFeedback ? 'bg-accent' : 'bg-white/10'}`}
                     >
                       <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${settings.voiceFeedback ? 'right-1' : 'left-1'}`} />

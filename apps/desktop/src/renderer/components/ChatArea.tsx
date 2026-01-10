@@ -6,8 +6,8 @@ import { SmartSuggestions } from './SmartSuggestions';
 import { MultiModalInput } from './MultiModalInput';
 import { NeuralVisualizer } from './NeuralVisualizer';
 import { PredictiveInterface } from './PredictiveInterface';
-import { IconSend, IconChevronDown, IconSettings, IconShield, IconBolt, IconPlus, IconPlug, IconCircle, IconSparkles } from './icons';
-import { PERSONAS, Persona } from '../lib/personas';
+import { IconSend, IconChevronDown, IconSparkles } from './icons';
+import { PERSONAS } from '../lib/personas';
 import { StatusMenu } from './StatusMenu';
 import { ThinkingIndicator } from './ThinkingIndicator';
 
@@ -504,22 +504,4 @@ function detectUntrustedContent(messages: Message[]): { flagged: boolean; reason
   return { flagged: reasons.size > 0, reasons: Array.from(reasons) };
 }
 
-function ToolButton({
-  icon,
-  label,
-  onClick
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="px-2 py-1 text-xs text-text-muted border border-border-primary rounded-md hover:bg-bg-tertiary hover:text-text-secondary transition-colors flex items-center gap-1"
-    >
-      {icon} {label}
-    </button>
-  );
-}
 

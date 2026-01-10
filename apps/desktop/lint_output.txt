@@ -1,0 +1,32 @@
+
+> sca-01-phase2@0.2.0 lint
+> eslint .
+
+
+C:\Users\claus\Projects\Local_Agent\apps\desktop\src\renderer\components\CommandPalette.tsx
+  2:60  warning  'IconShield' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\claus\Projects\Local_Agent\apps\desktop\src\renderer\components\StatusMenu.tsx
+  2:42  warning  'IconChevronDown' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\claus\Projects\Local_Agent\apps\desktop\src\renderer\components\Toast.tsx
+  1:20  warning  'useEffect' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\claus\Projects\Local_Agent\apps\desktop\src\renderer\components\settings\ModelsSettings.tsx
+  53:18  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\claus\Projects\Local_Agent\apps\desktop\src\renderer\hooks\useChat.ts
+  54:7  warning  'attemptSend' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\claus\Projects\Local_Agent\apps\desktop\src\roma\RomaEngine.ts
+  76:18  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\claus\Projects\Local_Agent\apps\desktop\src\ui\main.ts
+  532:11  warning  'getCloudModels' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  663:16  warning  'romaHealth' is defined but never used. Allowed unused vars must match /^_/u               @typescript-eslint/no-unused-vars
+  667:16  warning  'romaPlan' is defined but only used as a type. Allowed unused vars must match /^_/u        @typescript-eslint/no-unused-vars
+  671:16  warning  'romaAct' is defined but only used as a type. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
+  675:16  warning  'romaSchema' is defined but never used. Allowed unused vars must match /^_/u               @typescript-eslint/no-unused-vars
+
+Ô£û 11 problems (0 errors, 11 warnings)
+

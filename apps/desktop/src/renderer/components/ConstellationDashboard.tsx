@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { IconBolt, IconShield, IconBolt as IconCode, IconSparkles } from './icons';
+import { IconBolt, IconSparkles } from './icons';
 
 interface DotProps {
     id: string;
@@ -9,8 +9,8 @@ interface DotProps {
     load: number;
 }
 
-const DotNode = ({ name, role, status, load }: DotProps) => (
-    <div className={`p-4 glass-card rounded-2xl border transition-all duration-500 hover:scale-105 group relative overflow-hidden ${status === 'active' ? 'border-accent/40 bg-accent/5' : 'border-white/10 bg-white/5'
+const DotNode = ({ id, name, role, status, load }: DotProps) => (
+    <div key={id} className={`p-4 glass-card rounded-2xl border transition-all duration-500 hover:scale-105 group relative overflow-hidden ${status === 'active' ? 'border-accent/40 bg-accent/5' : 'border-white/10 bg-white/5'
         }`}>
         <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity">
             <IconSparkles className="w-12 h-12" />
@@ -32,8 +32,8 @@ const DotNode = ({ name, role, status, load }: DotProps) => (
             </div>
             <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                 <div
-                    className="h-full bg-accent transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(226,0,116,0.5)]"
-                    style={{ width: `${load}%` }}
+                    className="load-bar"
+                    style={{ '--load-width': `${load}%` } as React.CSSProperties}
                 />
             </div>
         </div>
@@ -83,10 +83,10 @@ export const ConstellationDashboard = memo(function ConstellationDashboard({ onB
                             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-accent">Active Specialized Nodes</h2>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <DotNode name="Dot.Code" role="Refactoring Precision" status="active" load={84} />
-                            <DotNode name="Dot.Sec" role="Audit & Policy" status="idle" load={12} />
-                            <DotNode name="Dot.Ops" role="Infra Orchestrator" status="idle" load={0} />
-                            <DotNode name="Dot.Brief" role="OSINT & Intel" status="active" load={42} />
+                            <DotNode id="dot.code" name="Dot.Code" role="Refactoring Precision" status="active" load={84} />
+                            <DotNode id="dot.sec" name="Dot.Sec" role="Audit & Policy" status="idle" load={12} />
+                            <DotNode id="dot.ops" name="Dot.Ops" role="Infra Orchestrator" status="idle" load={0} />
+                            <DotNode id="dot.brief" name="Dot.Brief" role="OSINT & Intel" status="active" load={42} />
                         </div>
                     </section>
 
@@ -115,7 +115,7 @@ export const ConstellationDashboard = memo(function ConstellationDashboard({ onB
 
                         <div className="glass-card rounded-3xl p-8 border-white/10 flex flex-col items-center justify-center text-center">
                             <div className="w-48 h-48 relative mb-8">
-                                <div className="absolute inset-0 border-4 border-accent/20 rounded-full animate-ping" style={{ animationDuration: '4s' }} />
+                                <div className="absolute inset-0 border-4 border-accent/20 rounded-full animate-ping duration-[4000ms]" />
                                 <div className="absolute inset-4 border-2 border-accent/40 rounded-full animate-pulse-slow" />
                                 <div className="absolute inset-0 flex items-center justify-center">
                                     <div className="text-6xl text-accent holographic-glow">@</div>

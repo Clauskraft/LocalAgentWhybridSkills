@@ -9,7 +9,7 @@
     "dev": "npm run desktop",
     "desktop": "npm --prefix apps/desktop run dev:ui",
     "desktop:build": "npm --prefix apps/desktop run build",
-    "desktop:test": "npm --prefix apps/desktop run test",
+    "test": "npm run desktop:test",
     "web": "npm --prefix apps/web run dev -- --host 127.0.0.1 --port 5174 --strictPort",
     "web:build": "npm --prefix apps/web run build",
     "web:test": "npm --prefix apps/web run typecheck && npm --prefix apps/web run lint",

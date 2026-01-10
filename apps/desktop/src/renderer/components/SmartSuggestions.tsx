@@ -94,7 +94,7 @@ export const SmartSuggestions = memo(function SmartSuggestions({
                 {suggestion.includes('🔍') ? 'Analysis' : suggestion.includes('💡') ? 'Innovation' : suggestion.includes('🧪') ? 'Testing' : 'Content'}
               </div>
               <span className="text-xs font-medium text-text-secondary leading-tight group-hover:text-text-primary transition-colors">
-                {suggestion.replace(/[🔍💡🧪📝]/g, '').trim()}
+                {suggestion.replace(/[.🔍💡🧪📝]/gu, '').trim()}
               </span>
             </div>
           </button>

@@ -64,7 +64,7 @@ export const ThinkingIndicator = memo(function ThinkingIndicator() {
                         </div>
                     </div>
                     <div className="h-4 overflow-hidden relative">
-                        <div className="flex flex-col gap-1 transition-transform duration-500" style={{ transform: `translateY(-${traceIndex * 16}px)` }}>
+                        <div className="flex flex-col gap-1 constellation-traces" style={{ transform: `translateY(-${traceIndex * 16}px)` }}>
                             {TRACES.map((trace, i) => (
                                 <span key={i} className={`text-[10px] font-mono whitespace-nowrap transition-opacity duration-300 ${i === traceIndex ? 'opacity-100 text-text-primary' : 'opacity-20 text-text-muted'}`}>
                                     &gt; {trace}

@@ -128,6 +128,7 @@ export function ModelsSettings({ settings, onUpdate }: ModelsSettingsProps) {
                     <button
                         onClick={() => onUpdate({ compareMode: !settings.compareMode })}
                         className={`w-12 h-6 rounded-full transition-all relative ${settings.compareMode ? 'bg-purple-500' : 'bg-white/10'}`}
+                        aria-label="Toggle compare mode"
                     >
                         <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${settings.compareMode ? 'right-1' : 'left-1'}`} />
                     </button>
@@ -229,6 +230,7 @@ export function ModelsSettings({ settings, onUpdate }: ModelsSettingsProps) {
                             value={settings.temperature ?? 0.7}
                             onChange={(e) => onUpdate({ temperature: parseFloat(e.target.value) })}
                             className="w-full h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer accent-accent"
+                            aria-label="Temperature"
                         />
                         <div className="flex justify-between text-[8px] text-text-muted font-bold uppercase tracking-widest">
                             <span>Præcis</span>
@@ -251,6 +253,7 @@ export function ModelsSettings({ settings, onUpdate }: ModelsSettingsProps) {
                             value={settings.contextLength ?? 4096}
                             onChange={(e) => onUpdate({ contextLength: parseInt(e.target.value) })}
                             className="w-full h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer accent-accent"
+                            aria-label="Context length"
                         />
                         <div className="flex justify-between text-[8px] text-text-muted font-bold uppercase tracking-widest">
                             <span>Hurtig</span>
