@@ -1,0 +1,42 @@
+
+> desktop:build
+> npm --prefix apps/desktop run build
+
+
+> sca-01-phase2@0.2.0 build
+> tsc -p tsconfig.json && npm run build:preload && npm run build:renderer
+
+
+> sca-01-phase2@0.2.0 build:preload
+> node build-preload.js
+
+Ô£à Preload script bundled successfully
+
+> sca-01-phase2@0.2.0 build:renderer
+> vite build --config vite.config.ts
+
+[36mvite v4.5.14 [32mbuilding for production...[36m[39m
+transforming...
+[32mÔ£ô[39m 16 modules transformed.
+[32mÔ£ô built in 30.28s[39m
+[vite:css] [postcss] C:/Users/claus/Projects/Local_Agent/apps/desktop/src/renderer/styles/index.css:923:5: The `shadow-[0_0_10px_rgba(226,` class does not exist. If `shadow-[0_0_10px_rgba(226,` is a custom class, make sure it is defined within a `@layer` directive.
+file: C:/Users/claus/Projects/Local_Agent/apps/desktop/src/renderer/styles/index.css:923:5
+error during build:
+CssSyntaxError: [postcss] C:/Users/claus/Projects/Local_Agent/apps/desktop/src/renderer/styles/index.css:923:5: The `shadow-[0_0_10px_rgba(226,` class does not exist. If `shadow-[0_0_10px_rgba(226,` is a custom class, make sure it is defined within a `@layer` directive.
+    at Input.error (C:\Users\claus\Projects\Local_Agent\apps\desktop\node_modules\postcss\lib\input.js:135:16)
+    at AtRule.error (C:\Users\claus\Projects\Local_Agent\apps\desktop\node_modules\postcss\lib\node.js:146:32)
+    at processApply (C:\Users\claus\Projects\Local_Agent\apps\desktop\node_modules\tailwindcss\lib\lib\expandApplyAtRules.js:380:29)
+    at C:\Users\claus\Projects\Local_Agent\apps\desktop\node_modules\tailwindcss\lib\lib\expandApplyAtRules.js:551:9
+    at C:\Users\claus\Projects\Local_Agent\apps\desktop\node_modules\tailwindcss\lib\processTailwindFeatures.js:55:50
+    at async plugins (C:\Users\claus\Projects\Local_Agent\apps\desktop\node_modules\tailwindcss\lib\plugin.js:38:17)
+    at async LazyResult.runAsync (C:\Users\claus\Projects\Local_Agent\apps\desktop\node_modules\postcss\lib\lazy-result.js:293:11)
+    at async compileCSS (file:///C:/Users/claus/Projects/Local_Agent/apps/desktop/node_modules/vite/dist/node/chunks/dep-827b23df.js:38904:25)
+    at async Object.transform (file:///C:/Users/claus/Projects/Local_Agent/apps/desktop/node_modules/vite/dist/node/chunks/dep-827b23df.js:38301:56)
+    at async transform (file:///C:/Users/claus/Projects/Local_Agent/apps/desktop/node_modules/rollup/dist/es/shared/node-entry.js:24449:16)
+npm error Lifecycle script `build:renderer` failed with error:
+npm error code 1
+npm error path C:\Users\claus\Projects\Local_Agent\apps\desktop
+npm error workspace sca-01-phase2@0.2.0
+npm error location C:\Users\claus\Projects\Local_Agent\apps\desktop
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c vite build --config vite.config.ts
