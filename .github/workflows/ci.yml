@@ -28,7 +28,7 @@ jobs:
           cache-dependency-path: apps/desktop/package-lock.json
 
       - name: Install dependencies (Phase 1)
-        run: npm ci
+        run: npm ci --legacy-peer-deps
         working-directory: apps/cli
 
       - name: Install dependencies (Phase 2)
@@ -109,7 +109,7 @@ jobs:
           cache-dependency-path: services/cloud/package-lock.json
 
       - name: Install dependencies (Phase 3)
-        run: npm ci
+        run: npm ci --legacy-peer-deps
         working-directory: services/cloud
 
       - name: Lint Phase 3
@@ -146,7 +146,7 @@ jobs:
           cache-dependency-path: sca-01-phase4/package-lock.json
 
       - name: Install dependencies (Phase 4)
-        run: npm ci
+        run: npm ci --legacy-peer-deps
         working-directory: sca-01-phase4
 
       - name: Build Phase 4
@@ -171,7 +171,7 @@ jobs:
           cache-dependency-path: mcp-backend/package-lock.json
 
       - name: Install dependencies (mcp-backend)
-        run: npm ci
+        run: npm ci --legacy-peer-deps
         working-directory: mcp-backend
 
       - name: Lint (mcp-backend)
@@ -200,7 +200,7 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
 
       - name: Install dependencies (web)
-        run: npm ci
+        run: npm ci --legacy-peer-deps
         working-directory: apps/web
 
       - name: Lint (web)

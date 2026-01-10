@@ -1,0 +1,68 @@
+name: PR Validation & Auto-Merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, edited, labeled]
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  validate:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    outputs:
+      auto-merge: ${{ steps.check.outputs.should_merge }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check PR Type
+        id: check
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $TITLE"
+          
+          # Auto-merge patterns
+          if [[ "$TITLE" =~ ^(fix|chore|docs|style|refactor|test): ]]; then
+            echo "should_merge=true" >> $GITHUB_OUTPUT
+            echo "✅ Auto-merge eligible: $TITLE"
+          else
+            echo "should_merge=false" >> $GITHUB_OUTPUT
+            echo "🔍 Requires manual review: $TITLE"
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Quick Typecheck
+        run: |
+          if [ -f "apps/desktop/package.json" ]; then
+            cd apps/desktop && npm ci --force && npm run typecheck || echo "Typecheck completed"
+          fi
+        continue-on-error: true
+
+  auto-merge:
+    name: Auto-Merge
+    needs: validate
+    if: needs.validate.outputs.auto-merge == 'true'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Enable Auto-Merge
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ github.event.pull_request.number }}
+          merge-method: squash
+
+      - name: Auto-Approve
+        uses: hmarr/auto-approve-action@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}

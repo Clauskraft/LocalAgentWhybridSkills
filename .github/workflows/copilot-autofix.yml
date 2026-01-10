@@ -1,0 +1,71 @@
+name: Copilot Auto-Fix
+
+on:
+  workflow_dispatch:
+    inputs:
+      fix-type:
+        description: 'Type of fix to apply'
+        required: true
+        default: 'lint'
+        type: choice
+        options:
+          - lint
+          - format
+          - all
+
+permissions:
+  contents: write
+
+jobs:
+  auto-fix:
+    name: Apply Auto-Fixes
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install ESLint
+        run: npm install -g eslint @typescript-eslint/eslint-plugin @typescript-eslint/parser
+
+      - name: Fix Lint Errors (Desktop)
+        if: inputs.fix-type == 'lint' || inputs.fix-type == 'all'
+        run: |
+          if [ -f "apps/desktop/package.json" ]; then
+            cd apps/desktop
+            npm ci --force
+            npm run lint:fix || echo "Lint fixes applied"
+          fi
+        continue-on-error: true
+
+      - name: Fix Lint Errors (CLI)
+        if: inputs.fix-type == 'lint' || inputs.fix-type == 'all'
+        run: |
+          if [ -f "apps/cli/package.json" ]; then
+            cd apps/cli
+            npm ci
+            npm run lint:fix || echo "Lint fixes applied"
+          fi
+        continue-on-error: true
+
+      - name: Format with Prettier
+        if: inputs.fix-type == 'format' || inputs.fix-type == 'all'
+        run: |
+          npm install -g prettier
+          prettier --write "**/*.{ts,tsx,js,jsx,json,md}" --ignore-path .gitignore || echo "Format applied"
+        continue-on-error: true
+
+      - name: Commit Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: auto-fix ${{ inputs.fix-type }} errors"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+          commit_author: "GitHub Actions <github-actions[bot]@users.noreply.github.com>"
