@@ -208,6 +208,137 @@ export class WidgeTDCMCPClient {
   }
 
   // ============================================
+  // Harvest Methods
+  // ============================================
+
+  /**
+   * Harvest Showpad sales assets
+   */
+  async harvestShowpad(options: { 
+    limit?: number;
+    assetTypes?: string[];
+  } = {}): Promise<any> {
+    const result = await this.callTool('harvest.docs.showpad', {
+      limit: options.limit || 100,
+      assetTypes: options.assetTypes || ['all']
+    });
+    return result.content[0];
+  }
+
+  /**
+   * Harvest Scribd documents
+   */
+  async harvestScribd(options: {
+    query?: string;
+    limit?: number;
+  } = {}): Promise<any> {
+    const result = await this.callTool('harvest.docs.scribd', {
+      query: options.query || '',
+      limit: options.limit || 50
+    });
+    return result.content[0];
+  }
+
+  /**
+   * Harvest SlideShare presentations
+   */
+  async harvestSlideShare(options: {
+    query?: string;
+    limit?: number;
+  } = {}): Promise<any> {
+    const result = await this.callTool('harvest.docs.slideshare', {
+      query: options.query || '',
+      limit: options.limit || 50
+    });
+    return result.content[0];
+  }
+
+  /**
+   * Domain intelligence scan
+   */
+  async scanDomain(domain: string, options: {
+    includeDns?: boolean;
+    includeWhois?: boolean;
+    includeSsl?: boolean;
+    includeSubdomains?: boolean;
+  } = {}): Promise<any> {
+    const result = await this.callTool('harvest.intel.domain', {
+      domain,
+      includeDns: options.includeDns ?? true,
+      includeWhois: options.includeWhois ?? true,
+      includeSsl: options.includeSsl ?? true,
+      includeSubdomains: options.includeSubdomains ?? false
+    });
+    return result.content[0];
+  }
+
+  /**
+   * OSINT investigation
+   */
+  async osintInvestigate(target: string, options: {
+    type?: 'domain' | 'person' | 'company' | 'email';
+    depth?: 'shallow' | 'medium' | 'deep';
+  } = {}): Promise<any> {
+    const result = await this.callTool('harvest.intel.osint', {
+      target,
+      type: options.type || 'domain',
+      depth: options.depth || 'medium'
+    });
+    return result.content[0];
+  }
+
+  /**
+   * Harvest emails from IMAP
+   */
+  async harvestEmails(options: {
+    folder?: string;
+    limit?: number;
+    since?: string;
+  } = {}): Promise<any> {
+    const result = await this.callTool('harvest.intel.email', {
+      folder: options.folder || 'INBOX',
+      limit: options.limit || 100,
+      since: options.since
+    });
+    return result.content[0];
+  }
+
+  /**
+   * Web scrape a URL
+   */
+  async webScrape(url: string, options: {
+    depth?: number;
+    followLinks?: boolean;
+    extractImages?: boolean;
+  } = {}): Promise<any> {
+    const result = await this.callTool('harvest.web.scrape', {
+      url,
+      depth: options.depth || 1,
+      followLinks: options.followLinks ?? false,
+      extractImages: options.extractImages ?? true
+    });
+    return result.content[0];
+  }
+
+  /**
+   * GitHub repository harvest
+   */
+  async harvestGitHub(options: {
+    owner?: string;
+    repo?: string;
+    includeIssues?: boolean;
+    includePRs?: boolean;
+  } = {}): Promise<any> {
+    const result = await this.callTool('harvest.repo.github', {
+      owner: options.owner,
+      repo: options.repo,
+      includeIssues: options.includeIssues ?? true,
+      includePRs: options.includePRs ?? true
+    });
+    return result.content[0];
+  }
+
+  // ============================================
   // Private Methods
   // ============================================
 

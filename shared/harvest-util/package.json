@@ -1,0 +1,48 @@
+{
+  "name": "@local-agent/harvest-util",
+  "version": "1.0.0",
+  "description": "Shared harvest utilities for ROMA + WidgeTDC integration",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./skill-registry": {
+      "import": "./dist/skill-registry.js",
+      "types": "./dist/skill-registry.d.ts"
+    },
+    "./roma-bridge": {
+      "import": "./dist/roma-bridge.js",
+      "types": "./dist/roma-bridge.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "harvest",
+    "roma",
+    "widgetdc",
+    "mcp",
+    "utilities"
+  ],
+  "author": "Clauskraft",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}
