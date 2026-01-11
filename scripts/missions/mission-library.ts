@@ -146,6 +146,125 @@ export const MISSION_TEMPLATES: Record<string, MissionConfig> = {
   },
 
   // ──────────────────────────────────────────────────────────────────────────
+  // 🤖 CI/CD SELF-HEALING & DEVOPS AUTOMATION
+  // ──────────────────────────────────────────────────────────────────────────
+
+  'ci-self-heal': {
+    id: 'ci-self-heal',
+    name: 'CI/CD Self-Healing Pipeline',
+    description: `Autonomously monitor GitHub Actions for failures, diagnose errors from logs,
+    apply known fixes (npm cache issues, workspace errors, actionlint violations), commit
+    repairs, and re-trigger workflows. Uses gh CLI for GitHub API access.`,
+    category: 'ci',
+    strategy: 'react',
+    budget: { maxSteps: 20, maxTimeMs: 300000, maxTokens: 25000 },
+    inputs: {
+      repo: 'Clauskraft/WidgeTDC',
+      lookbackHours: 24,
+      autoFix: true,
+      autoRetrigger: true,
+      knownPatterns: [
+        { pattern: 'ENOWORKSPACES', fix: 'remove-npm-cache' },
+        { pattern: 'npm ci failed', fix: 'use-npm-install' },
+        { pattern: 'set-output was deprecated', fix: 'update-github-output' },
+        { pattern: 'actionlint', fix: 'run-problem-healer' },
+        { pattern: '@v3', fix: 'upgrade-action-versions' }
+      ]
+    },
+    outputs: ['healing_log.json', 'fixes_applied.md', 'workflow_status.json']
+  },
+
+  'branch-guardian-mission': {
+    id: 'branch-guardian-mission',
+    name: 'Autonomous Branch Stewardship',
+    description: `Monitor repository for stale branches, unmerged work, and orphaned PRs.
+    Delete branches inactive for >14 days, create draft PRs for active untracked work,
+    and maintain a clean git history.`,
+    category: 'ci',
+    strategy: 'react',
+    budget: { maxSteps: 15, maxTimeMs: 180000, maxTokens: 15000 },
+    inputs: {
+      repo: 'Clauskraft/WidgeTDC',
+      staleDays: 14,
+      protectedBranches: ['main', 'master', 'develop', 'release-', 'hotfix-'],
+      dryRun: false
+    },
+    outputs: ['branch_report.md', 'deleted_branches.json', 'created_prs.json']
+  },
+
+  'health-monitor-mission': {
+    id: 'health-monitor-mission',
+    name: 'Production Health Monitor',
+    description: `Continuously monitor production endpoints for health status. Check backend
+    /health, /api/mcp/tools, and frontend availability. Trigger self-healing or create
+    GitHub issues on degradation.`,
+    category: 'monitoring',
+    strategy: 'react',
+    budget: { maxSteps: 10, maxTimeMs: 60000, maxTokens: 10000 },
+    inputs: {
+      endpoints: [
+        { url: 'https://backend-production-d3da.up.railway.app/health', type: 'backend' },
+        { url: 'https://backend-production-d3da.up.railway.app/api/mcp/tools', type: 'api' },
+        { url: 'https://widgetdc-v2.vercel.app', type: 'frontend' }
+      ],
+      thresholds: { degraded: 2000, critical: 5000 },
+      createIssueOnFailure: true
+    },
+    outputs: ['health_status.json', 'incident_report.md']
+  },
+
+  'prometheus-scan-mission': {
+    id: 'prometheus-scan-mission',
+    name: 'PROMETHEUS Code Scan',
+    description: `Execute autonomous code analysis using PROMETHEUS inventions. Run Code
+    Embedding Space analysis, Code Dreaming for pattern discovery, and RL Architecture
+    optimization suggestions.`,
+    category: 'ci',
+    strategy: 'react',
+    budget: { maxSteps: 25, maxTimeMs: 600000, maxTokens: 50000 },
+    inputs: {
+      targetPath: '.',
+      maxFiles: 100,
+      inventions: ['code-embedding', 'code-dreaming', 'rl-optimizer'],
+      outputFormat: 'markdown'
+    },
+    outputs: ['prometheus_report.md', 'optimization_suggestions.json', 'embedding_analysis.json']
+  },
+
+  'cortex-e2e-mission': {
+    id: 'cortex-e2e-mission',
+    name: 'Cortex E2E Test Suite',
+    description: `Execute comprehensive E2E tests for CORTEX (Notion integration). Validate
+    database sync, search functionality, task queue processing, and neural chat bridge.`,
+    category: 'testing',
+    strategy: 'react',
+    budget: { maxSteps: 30, maxTimeMs: 480000, maxTokens: 40000 },
+    inputs: {
+      testSuites: ['smoke', 'full-integration'],
+      notionDatabases: ['UNIVERSAL_TODO', 'CORTEX_ALERTS', 'TDC_PRODUCT_HIERARCHY'],
+      validateSync: true
+    },
+    outputs: ['e2e_results.json', 'test_report.md', 'coverage.html']
+  },
+
+  'actionlint-healer': {
+    id: 'actionlint-healer',
+    name: 'Actionlint Auto-Healer',
+    description: `Scan all GitHub workflow files with actionlint, identify violations,
+    automatically apply fixes (deprecated commands, outdated action versions, syntax errors),
+    and commit repairs.`,
+    category: 'ci',
+    strategy: 'react',
+    budget: { maxSteps: 15, maxTimeMs: 120000, maxTokens: 15000 },
+    inputs: {
+      workflowsPath: '.github/workflows',
+      autoFix: true,
+      commitMessage: 'chore(workflows): auto-heal actionlint violations [skip ci]'
+    },
+    outputs: ['actionlint_report.txt', 'fixes_applied.md']
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
   // 🧪 TESTING & VALIDATION
   // ──────────────────────────────────────────────────────────────────────────
 
