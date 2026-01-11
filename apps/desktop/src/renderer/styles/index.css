@@ -920,7 +920,8 @@
 
   /* Extracted Inline Styles */
   .load-bar {
-    @apply h-full bg-accent transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(226, 0, 116, 0.5)];
+    @apply h-full bg-accent transition-all duration-1000 ease-out;
+    box-shadow: 0 0 10px rgba(226, 0, 116, 0.5);
     width: var(--load-width);
   }
 
