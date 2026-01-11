@@ -436,6 +436,122 @@ export const MISSION_TEMPLATES: Record<string, MissionConfig> = {
   },
 
   // ──────────────────────────────────────────────────────────────────────────
+  // 🎯 OSINT & PENTEST UX REVOLUTION
+  // ──────────────────────────────────────────────────────────────────────────
+
+  'osint-pentest-ux-revolution': {
+    id: 'osint-pentest-ux-revolution',
+    name: 'OSINT & Pentest Frontend UX Revolution',
+    description: `Transform OSINT and Penetration Testing frontends from basic tools to 
+    world-class, ultra-intuitive interfaces with 1000x usability improvement.
+    
+    Includes:
+    - Real-time graph visualization (D3.js, react-force-graph)
+    - AI-assisted analysis (HuggingFace NER, CodeBERT)
+    - One-click automation (Nuclei, theHarvester, OWASP ZAP)
+    - Natural language interaction
+    - Interactive dashboards with risk scoring`,
+    category: 'osint',
+    strategy: 'react',
+    budget: { maxSteps: 100, maxTimeMs: 3600000, maxTokens: 200000 },
+    inputs: {
+      phase: 'all', // 'backend' | 'frontend' | 'ai' | 'all'
+      targetRepos: ['Clauskraft/WidgeTDC'],
+      tools: {
+        github: [
+          'laramies/theHarvester',
+          'projectdiscovery/nuclei',
+          'projectdiscovery/subfinder',
+          'projectdiscovery/httpx',
+          'zaproxy/zaproxy',
+          'smicallef/spiderfoot'
+        ],
+        huggingface: [
+          'dslim/bert-base-NER',
+          'microsoft/codebert-base',
+          'cardiffnlp/twitter-roberta-base-sentiment'
+        ],
+        npm: [
+          'd3', 'visx', 'react-force-graph', 'deck.gl', 'react-flow', 'echarts'
+        ]
+      },
+      deliverables: [
+        'apps/backend/src/services/osint/OsintOrchestrator.ts',
+        'apps/backend/src/services/pentest/PentestOrchestrator.ts',
+        'apps/matrix-frontend/src/widgets/OsintCommandCenterWidget.tsx',
+        'apps/matrix-frontend/src/widgets/PentestDashboardWidget.tsx',
+        'packages/osint-tools/',
+        'docker/osint-stack.yml'
+      ],
+      successMetrics: {
+        timeToFirstInsight: { current: '15min', target: '15sec', multiplier: 60 },
+        clicksForFullScan: { current: 25, target: 1, multiplier: 25 },
+        learningCurve: { current: '2days', target: '10min', multiplier: 288 },
+        combinedUsability: 1000
+      }
+    },
+    outputs: [
+      'osint_orchestrator.ts',
+      'pentest_orchestrator.ts',
+      'osint_command_center_widget.tsx',
+      'pentest_dashboard_widget.tsx',
+      'implementation_report.md',
+      'tool_integration_status.json'
+    ]
+  },
+
+  'osint-tool-integration': {
+    id: 'osint-tool-integration',
+    name: 'OSINT Tool Integration Pipeline',
+    description: `Integrate external OSINT tools from GitHub into WidgeTDC backend.
+    
+    Tools to integrate:
+    - theHarvester: Email/subdomain enumeration
+    - Subfinder: Subdomain discovery
+    - httpx: HTTP probing and tech detection
+    - Spiderfoot: Automated OSINT scanning
+    
+    Creates CLI wrappers with caching and rate limiting.`,
+    category: 'osint',
+    strategy: 'react',
+    budget: { maxSteps: 50, maxTimeMs: 1800000, maxTokens: 100000 },
+    inputs: {
+      tools: [
+        { name: 'theHarvester', repo: 'laramies/theHarvester', type: 'python' },
+        { name: 'subfinder', repo: 'projectdiscovery/subfinder', type: 'go' },
+        { name: 'httpx', repo: 'projectdiscovery/httpx', type: 'go' },
+        { name: 'nuclei', repo: 'projectdiscovery/nuclei', type: 'go' }
+      ],
+      outputPath: 'apps/backend/src/services/osint/'
+    },
+    outputs: ['tool_wrappers.ts', 'integration_report.md', 'docker-compose.yml']
+  },
+
+  'pentest-automation-framework': {
+    id: 'pentest-automation-framework',
+    name: 'Pentest Automation Framework',
+    description: `Build automated penetration testing framework with OWASP ZAP 
+    and Nuclei integration. Provides one-click scanning with AI-prioritized results.
+    
+    Features:
+    - OWASP Top-10 checklist automation
+    - Nuclei template execution
+    - Vulnerability aggregation and deduplication
+    - AI-powered prioritization
+    - Auto-fix suggestions`,
+    category: 'security',
+    strategy: 'react',
+    budget: { maxSteps: 60, maxTimeMs: 2400000, maxTokens: 120000 },
+    inputs: {
+      targetTypes: ['web-app', 'api', 'mobile', 'cloud'],
+      integrations: ['owasp-zap', 'nuclei', 'burp-suite-api'],
+      aiModels: ['microsoft/codebert-base'],
+      outputPath: 'apps/backend/src/services/pentest/'
+    },
+    outputs: ['pentest_orchestrator.ts', 'vuln_analyzer.ts', 'report_generator.ts']
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
   // 🧪 TESTING & VALIDATION
   // ──────────────────────────────────────────────────────────────────────────
 
