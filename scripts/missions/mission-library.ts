@@ -265,6 +265,177 @@ export const MISSION_TEMPLATES: Record<string, MissionConfig> = {
   },
 
   // ──────────────────────────────────────────────────────────────────────────
+  // 🔧 GEMINI CLI WORKFLOW MISSIONS (from .agent/workflows)
+  // ──────────────────────────────────────────────────────────────────────────
+
+  'agent-trigger': {
+    id: 'agent-trigger',
+    name: 'Agent Trigger Script Runner',
+    description: `Generic agent-triggered script runner for user or autonomous agents.
+    Executes predefined scripts based on agent context and returns results.`,
+    category: 'ci',
+    strategy: 'react',
+    budget: { maxSteps: 10, maxTimeMs: 60000, maxTokens: 10000 },
+    inputs: {
+      scriptName: 'default',
+      context: 'autonomous',
+      dryRun: false
+    },
+    outputs: ['execution_log.json', 'script_output.txt']
+  },
+
+  'branch-guardian-workflow': {
+    id: 'branch-guardian-workflow',
+    name: 'Branch Guardian - Cleanup and Stewardship',
+    description: `Autonomous branch cleanup and stewardship. Remove stale branches,
+    manage PRs, and maintain clean git history across repositories.`,
+    category: 'ci',
+    strategy: 'react',
+    budget: { maxSteps: 20, maxTimeMs: 180000, maxTokens: 20000 },
+    inputs: {
+      repos: ['Clauskraft/WidgeTDC', 'Clauskraft/LocalAgentWhybridSkills'],
+      staleDays: 14,
+      protectedBranches: ['main', 'master', 'develop'],
+      dryRun: false
+    },
+    outputs: ['branch_report.md', 'deleted_branches.json']
+  },
+
+  'ci-pr-validation-workflow': {
+    id: 'ci-pr-validation-workflow',
+    name: 'CI PR Validation',
+    description: `Re-run CI PR validation including type-check, lint, and auto-approve
+    for passing PRs. Ensures code quality gates are met.`,
+    category: 'ci',
+    strategy: 'react',
+    budget: { maxSteps: 15, maxTimeMs: 300000, maxTokens: 25000 },
+    inputs: {
+      prNumber: 'latest',
+      autoApprove: true,
+      requiredChecks: ['type-check', 'lint', 'build']
+    },
+    outputs: ['validation_report.md', 'pr_status.json']
+  },
+
+  'cleanup-stale-workflow': {
+    id: 'cleanup-stale-workflow',
+    name: 'Cleanup Stale Workflow',
+    description: `Manually trigger cleanup of stale branches, PRs, and workflow runs.
+    Frees up resources and maintains repository hygiene.`,
+    category: 'ci',
+    strategy: 'react',
+    budget: { maxSteps: 15, maxTimeMs: 120000, maxTokens: 15000 },
+    inputs: {
+      staledaysThreshold: 30,
+      includeWorkflowRuns: true,
+      includeDraftPRs: false
+    },
+    outputs: ['cleanup_report.md', 'deleted_items.json']
+  },
+
+  'cortex-e2e-workflow': {
+    id: 'cortex-e2e-workflow',
+    name: 'Cortex E2E Test Suite',
+    description: `Run Cortex E2E test suite manually. Tests Notion integration,
+    database sync, and neural chat functionality.`,
+    category: 'testing',
+    strategy: 'react',
+    budget: { maxSteps: 30, maxTimeMs: 600000, maxTokens: 50000 },
+    inputs: {
+      testSuite: 'full',
+      notionSync: true,
+      neuralChat: true
+    },
+    outputs: ['e2e_results.json', 'test_report.md', 'screenshots.zip']
+  },
+
+  'e2e-production-workflow': {
+    id: 'e2e-production-workflow',
+    name: 'E2E Production Tests',
+    description: `Run production-environment E2E tests manually. Validates live
+    backend endpoints, frontend accessibility, and critical user flows.`,
+    category: 'testing',
+    strategy: 'react',
+    budget: { maxSteps: 25, maxTimeMs: 480000, maxTokens: 40000 },
+    inputs: {
+      environment: 'production',
+      endpoints: ['health', 'mcp/tools', 'cortex'],
+      smokeTest: true
+    },
+    outputs: ['production_test_report.md', 'performance_metrics.json']
+  },
+
+  'health-monitor-workflow': {
+    id: 'health-monitor-workflow',
+    name: 'Health Monitor Workflow',
+    description: `Run Health-Monitor workflow for self-healing status check.
+    Monitors all services and triggers auto-healing on degradation.`,
+    category: 'monitoring',
+    strategy: 'react',
+    budget: { maxSteps: 15, maxTimeMs: 120000, maxTokens: 15000 },
+    inputs: {
+      services: ['backend', 'frontend', 'neo4j', 'redis'],
+      autoHeal: true,
+      notifyOnDegradation: true
+    },
+    outputs: ['health_status.json', 'healing_actions.md']
+  },
+
+  'prometheus-scan-workflow': {
+    id: 'prometheus-scan-workflow',
+    name: 'PROMETHEUS Nightly Scan',
+    description: `Run PROMETHEUS nightly scan for code analysis, embedding generation,
+    and autonomous improvement suggestions.`,
+    category: 'ci',
+    strategy: 'react',
+    budget: { maxSteps: 40, maxTimeMs: 900000, maxTokens: 80000 },
+    inputs: {
+      scanType: 'full',
+      generateEmbeddings: true,
+      runCodeDreaming: true,
+      notifySlack: false
+    },
+    outputs: ['prometheus_report.md', 'embeddings.json', 'suggestions.md']
+  },
+
+  'self-heal-audit-workflow': {
+    id: 'self-heal-audit-workflow',
+    name: 'Self-Heal Audit Workflow',
+    description: `Run Self-Heal Audit workflow to check for missing secrets,
+    outdated dependencies, and configuration drift.`,
+    category: 'monitoring',
+    strategy: 'react',
+    budget: { maxSteps: 20, maxTimeMs: 180000, maxTokens: 25000 },
+    inputs: {
+      checkSecrets: true,
+      checkDependencies: true,
+      checkConfiguration: true,
+      autoFix: true
+    },
+    outputs: ['audit_report.md', 'fixes_applied.json', 'recommendations.md']
+  },
+
+  'cross-repo-sync-workflow': {
+    id: 'cross-repo-sync-workflow',
+    name: 'Cross-Repository Sync',
+    description: `Sync changes between WidgeTDC and Local_Agent repositories.
+    Commit, pull, push, and run self-healing on both repos autonomously.`,
+    category: 'ci',
+    strategy: 'react',
+    budget: { maxSteps: 20, maxTimeMs: 240000, maxTokens: 20000 },
+    inputs: {
+      repos: [
+        { name: 'WidgeTDC', path: 'C:\\Users\\claus\\Projects\\WidgeTDC_fresh' },
+        { name: 'Local_Agent', path: 'C:\\Users\\claus\\Projects\\Local_Agent' }
+      ],
+      autoCommit: true,
+      autoPush: true,
+      autoHeal: true
+    },
+    outputs: ['sync_report.md', 'commit_log.json']
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
   // 🧪 TESTING & VALIDATION
   // ──────────────────────────────────────────────────────────────────────────
 
