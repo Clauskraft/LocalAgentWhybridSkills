@@ -551,6 +551,35 @@ export const MISSION_TEMPLATES: Record<string, MissionConfig> = {
     outputs: ['pentest_orchestrator.ts', 'vuln_analyzer.ts', 'report_generator.ts']
   },
 
+  'cross-repo-stability-monitor': {
+    id: 'cross-repo-stability-monitor',
+    name: 'Cross-Repo Stability Monitor',
+    description: `Continuously monitor stability across WidgeTDC and Local_Agent repositories.
+    
+    Detects and auto-fixes:
+    - Build errors (TypeScript, CSS, PostCSS)
+    - Runtime errors
+    - Deployment failures  
+    - Health check failures
+    - Tailwind CSS syntax errors
+    
+    Commits and pushes fixes automatically.`,
+    category: 'monitoring',
+    strategy: 'react',
+    budget: { maxSteps: 30, maxTimeMs: 300000, maxTokens: 40000 },
+    inputs: {
+      repos: [
+        { name: 'WidgeTDC', path: 'C:\\\\Users\\\\claus\\\\Projects\\\\WidgeTDC_fresh', healthUrl: 'https://backend-production-d3da.up.railway.app/health' },
+        { name: 'Local_Agent', path: 'C:\\\\Users\\\\claus\\\\Projects\\\\Local_Agent', healthUrl: null }
+      ],
+      autoFix: true,
+      autoCommit: true,
+      autoPush: true,
+      errorPatterns: ['shadow-syntax', 'missing-module', 'typescript-error']
+    },
+    outputs: ['stability_report.json', 'fixes_applied.md', 'health_status.json']
+  },
+
   // ──────────────────────────────────────────────────────────────────────────
   // 🧪 TESTING & VALIDATION
   // ──────────────────────────────────────────────────────────────────────────
