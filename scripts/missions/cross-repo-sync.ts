@@ -18,7 +18,6 @@
  */
 
 import { execSync } from 'child_process';
-import cron from 'node-cron';
 
 // Repository configurations
 const REPOS = [
@@ -219,23 +218,9 @@ export async function runCrossRepoSync(): Promise<void> {
   console.log('═══════════════════════════════════════════════════════════\n');
 }
 
-// Cron schedule: Every 30 minutes
-export function startCrossRepoSyncCron(): void {
-  console.log('[CrossRepoSync] 🕐 Starting Cross-Repo Sync Cron (every 30 min)');
-  
-  cron.schedule('*/30 * * * *', async () => {
-    console.log(`[CrossRepoSync] ⏰ Cron trigger at ${new Date().toISOString()}`);
-    try {
-      await runCrossRepoSync();
-    } catch (error) {
-      console.error('[CrossRepoSync] Cron cycle failed:', error);
-    }
-  });
-  
-  console.log('[CrossRepoSync] ✅ Cron scheduled: */30 * * * * (every 30 min)');
-}
+// Note: Cron scheduling is handled by Railway backend (selfHealingCron.ts)
+// This script is for standalone/manual execution
 
 // Run if called directly
-if (process.argv[1]?.includes('cross-repo-sync')) {
-  runCrossRepoSync().catch(console.error);
-}
+runCrossRepoSync().catch(console.error);
+
