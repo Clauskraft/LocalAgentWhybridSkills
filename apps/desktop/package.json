@@ -38,7 +38,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "@modelcontextprotocol/sdk": "^1.10.2",
-    "better-sqlite3": "^12.5.0",
+    "better-sqlite3": "^12.6.0",
     "electron-store": "^11.0.2",
     "electron-updater": "^6.7.3",
     "execa": "^9.5.0",
