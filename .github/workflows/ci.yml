@@ -293,7 +293,7 @@ jobs:
           docker compose -f ci-bench.yml down
 
       - name: Upload benchmark results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: benchmark-results-${{ github.sha }}
           path: benchmark-results/
